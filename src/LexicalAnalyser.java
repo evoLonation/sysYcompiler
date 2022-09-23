@@ -7,7 +7,6 @@ import java.util.concurrent.atomic.AtomicReference;
 interface WordInterface {
 }
 class LexException extends RuntimeException {
-
 }
 class DigitWord implements WordInterface{
     protected String type;
@@ -51,16 +50,32 @@ class Word implements WordInterface{
 }
 
 class LexicalAnalyser {
+    ListIterator<Character> iterator;
+    public LexicalAnalyser(ListIterator<Character> iterator){
+        this.iterator = iterator;
+    }
+
     public boolean isIdentifierNoDigit(char c){
         return Character.isLetter(c) || c == '_';
     }
 
-    public Optional<WordInterface> analysis(ListIterator<Character> iterator) {
-        // 先获得字符判断接下来是数字还是标识符还是其他符号
-        // 一共两种特殊符号，一种是全英文，一种是符号
+    public List<WordInterface> analysis(){
+        List<WordInterface> wordList = new ArrayList<>();
+        while(true){
+            Optional<WordInterface> optional = analysisOne();
+            if (optional.isPresent()){
+                wordList.add(optional.get());
+            }else{
+                return wordList;
+            }
+        }
+    }
+    public Optional<WordInterface> analysisOne() {
+        // 鍏堣幏寰楀瓧绗﹀垽鏂帴涓嬫潵鏄暟瀛楄繕鏄爣璇嗙杩樻槸鍏朵粬绗﹀彿
+        // 涓�鍏变袱绉嶇壒娈婄鍙凤紝涓�绉嶆槸鍏ㄨ嫳鏂囷紝涓�绉嶆槸绗﹀彿
         AtomicReference<Optional<WordInterface>> ret = new AtomicReference<>();
         ret.set(Optional.empty());
-        getNextChar(iterator).ifPresent((Character c) -> {
+        getNextChar().ifPresent((Character c) -> {
             if (isIdentifierNoDigit(c)) {
                 StringBuilder lexeme = new StringBuilder(c.toString());
                 while (iterator.hasNext()) {
@@ -87,7 +102,10 @@ class LexicalAnalyser {
                 ret.set(Optional.of(new DigitWord("INTCON", Integer.parseInt(digits.toString()))));
             } else if(c == '"') {
                 ret.set(Optional.of(new Word("STRCON" , "\"" + getChars(iterator) +"\"")));
+            }else if(c == '/' && iterator.next() == '/'){
+
             }else{
+                if(c == '/') iterator.previous();
                 iterator.previous();
                 ret.set(Optional.of(getOperator(iterator)));
             }
@@ -95,11 +113,31 @@ class LexicalAnalyser {
         return ret.get();
     }
 
-    // 获取非空字符
-    private Optional<Character> getNextChar(Iterator<Character> iterator) {
+    // 鑾峰彇闈炵┖瀛楃
+    private Optional<Character> getNextChar() {
         while (iterator.hasNext()) {
             char c = iterator.next();
-            if (Character.isSpaceChar(c)) {
+            if(c == '/'){
+                char nextC = iterator.next();
+                if(nextC == '/'){
+                    char commentChar = iterator.next();
+                    while(commentChar != '\n' && commentChar != '\r'){
+                        commentChar = iterator.next();
+                    }
+                    return getNextChar();
+                }else if(nextC == '*') {
+                    char commentChar1 = iterator.next();
+                    char commentChar2 = iterator.next();
+                    while(commentChar1 != '*' || commentChar2 != '/'){
+                        commentChar1 = commentChar2;
+                        commentChar2 = iterator.next();
+                    }
+                    return getNextChar();
+                }else{
+                    iterator.previous();
+                }
+            }
+            if (Character.isSpaceChar(c) || c == '\r' || c == '\n' || c == '\t') {
                 continue;
             }
             return Optional.of(c);
@@ -108,25 +146,28 @@ class LexicalAnalyser {
     }
 
     private Word getByLexeme(String lex) {
+        Map<String, String> reservedWordMap = new HashMap<>();
+
+
         String type;
         switch (lex){
-            case "main" : type = "MAINTK";
-            case "const" : type = "CONSTTK";
-            case "break" : type = "BREAKTK";
-            case "continue" : type = "CONTINUETK";
-            case "int" : type = "INTTK";
-            case "if" : type = "IFTK";
-            case "else" : type = "ELSETK";
-            case "while" : type = "WHILETK";
-            case "getint" : type = "GETINTTK";
-            case "printf" : type = "PRINTFTK";
-            case "return" : type = "RETURNTK";
-            case "void" : type = "VOIDTK";
-            default: type = "IDENFR";
+            case "main" : type = "MAINTK"; break;
+            case "const" : type = "CONSTTK"; break;
+            case "break" : type = "BREAKTK"; break;
+            case "continue" : type = "CONTINUETK"; break;
+            case "int" : type = "INTTK"; break;
+            case "if" : type = "IFTK"; break;
+            case "else" : type = "ELSETK"; break;
+            case "while" : type = "WHILETK"; break;
+            case "getint" : type = "GETINTTK"; break;
+            case "printf" : type = "PRINTFTK"; break;
+            case "return" : type = "RETURNTK"; break;
+            case "void" : type = "VOIDTK"; break;
+            default: type = "IDENFR"; break;
         }
         return new Word(type, lex);
     }
-    //遇到'"'正常返回，没有则直接报错
+    //閬囧埌'"'姝ｅ父杩斿洖锛屾病鏈夊垯鐩存帴鎶ラ敊
     private String getChars(ListIterator<Character> iterator){
         StringBuilder ret = new StringBuilder();
 
@@ -149,6 +190,7 @@ class LexicalAnalyser {
                     value += '=';
                     type = "NEQ";
                 } else {
+                    iterator.previous();
                     type = "NOT";
                 }
                 break;
@@ -199,7 +241,7 @@ class LexicalAnalyser {
                 type = "PLUS";
                 break;
             case '-':
-                type = "MINUS";
+                type = "MINU";
                 break;
             case '*':
                 type = "MULT";
@@ -239,38 +281,3 @@ class LexicalAnalyser {
     }
 }
 
-class Test{
-    public static void main(String[] args) {
-        String inputFile = "input.txt";
-        List<Character> charList = new ArrayList<>();
-        try{
-            File file = new File(inputFile);
-            FileInputStream is = null;
-            is = new FileInputStream(file);
-            while (true) {
-                int c = is.read();
-                if(c == -1){
-                    break;
-                }
-                charList.add((char) c);
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-
-
-
-        LexicalAnalyser analyser = new LexicalAnalyser();
-
-        ListIterator<Character> iterator = charList.listIterator();
-        while(true){
-            Optional<WordInterface> optional = analyser.analysis(iterator);
-            if (optional.isPresent()){
-                System.out.println(optional.get());
-            }else{
-                break;
-            }
-        }
-
-    }
-}

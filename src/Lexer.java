@@ -1,57 +1,9 @@
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-interface WordInterface {
-}
-class LexException extends RuntimeException {
-}
-class DigitWord implements WordInterface{
-    protected String type;
-    protected int value;
-    public String getType(){
-        return type;
-    }
-    public int getValue(){
-        return value;
-    }
-
-    public DigitWord(String type, int value) {
-        this.type = type;
-        this.value = value;
-    }
-
-    @Override
-    public String toString() {
-        return getType() + " " + getValue();
-    }
-}
-class Word implements WordInterface{
-    protected String type;
-    protected String value;
-    public String getType(){
-        return type;
-    }
-    public String getValue(){
-        return value;
-    }
-
-    public Word(String type, String value) {
-        this.type = type;
-        this.value = value;
-    }
-
-    @Override
-    public String toString() {
-        return getType() + " " + getValue();
-    }
-}
-
-class LexicalAnalyser {
+class Lexer {
     ListIterator<Character> iterator;
-    public LexicalAnalyser(ListIterator<Character> iterator){
+    public Lexer(ListIterator<Character> iterator){
         this.iterator = iterator;
     }
 
@@ -59,10 +11,10 @@ class LexicalAnalyser {
         return Character.isLetter(c) || c == '_';
     }
 
-    public List<WordInterface> analysis(){
-        List<WordInterface> wordList = new ArrayList<>();
+    public List<Terminal> analysis(){
+        List<Terminal> wordList = new ArrayList<>();
         while(true){
-            Optional<WordInterface> optional = analysisOne();
+            Optional<Terminal> optional = analysisOne();
             if (optional.isPresent()){
                 wordList.add(optional.get());
             }else{
@@ -70,10 +22,10 @@ class LexicalAnalyser {
             }
         }
     }
-    public Optional<WordInterface> analysisOne() {
+    public Optional<Terminal> analysisOne() {
         // 先获得字符判断接下来是数字还是标识符还是其他符号
         // 一共两种特殊符号，一种是全英文，一种是符号
-        AtomicReference<Optional<WordInterface>> ret = new AtomicReference<>();
+        AtomicReference<Optional<Terminal>> ret = new AtomicReference<>();
         ret.set(Optional.empty());
         getNextChar().ifPresent((Character c) -> {
             if (isIdentifierNoDigit(c)) {
@@ -99,9 +51,9 @@ class LexicalAnalyser {
                         break;
                     }
                 }
-                ret.set(Optional.of(new DigitWord("INTCON", Integer.parseInt(digits.toString()))));
+                ret.set(Optional.of(new Terminal(Integer.parseInt(digits.toString()))));
             } else if(c == '"') {
-                ret.set(Optional.of(new Word("STRCON" , "\"" + getChars(iterator) +"\"")));
+                ret.set(Optional.of(new Terminal(Terminal.STRCON, "\"" + getChars(iterator) +"\"")));
             }else if(c == '/' && iterator.next() == '/'){
 
             }else{
@@ -145,27 +97,27 @@ class LexicalAnalyser {
         return Optional.empty();
     }
 
-    private Word getByLexeme(String lex) {
+    private Terminal getByLexeme(String lex) {
         Map<String, String> reservedWordMap = new HashMap<>();
 
 
         String type;
         switch (lex){
-            case "main" : type = "MAINTK"; break;
-            case "const" : type = "CONSTTK"; break;
-            case "break" : type = "BREAKTK"; break;
-            case "continue" : type = "CONTINUETK"; break;
-            case "int" : type = "INTTK"; break;
-            case "if" : type = "IFTK"; break;
-            case "else" : type = "ELSETK"; break;
-            case "while" : type = "WHILETK"; break;
-            case "getint" : type = "GETINTTK"; break;
-            case "printf" : type = "PRINTFTK"; break;
-            case "return" : type = "RETURNTK"; break;
-            case "void" : type = "VOIDTK"; break;
-            default: type = "IDENFR"; break;
+            case "main" : type = Terminal.MAINTK; break;
+            case "const" : type = Terminal.CONSTTK; break;
+            case "break" : type = Terminal.BREAKTK; break;
+            case "continue" : type = Terminal.CONTINUETK; break;
+            case "int" : type = Terminal.INTTK; break;
+            case "if" : type = Terminal.IFTK; break;
+            case "else" : type = Terminal.ELSETK; break;
+            case "while" : type = Terminal.WHILETK; break;
+            case "getint" : type = Terminal.GETINTTK; break;
+            case "printf" : type = Terminal.PRINTFTK; break;
+            case "return" : type = Terminal.RETURNTK; break;
+            case "void" : type = Terminal.VOIDTK; break;
+            default: type = Terminal.IDENFR; break;
         }
-        return new Word(type, lex);
+        return new Terminal(type, lex);
     }
     //遇到'"'正常返回，没有则直接报错
     private String getChars(ListIterator<Character> iterator){
@@ -180,7 +132,7 @@ class LexicalAnalyser {
         }
         throw new LexException();
     }
-    private Word getOperator(ListIterator<Character> iterator){
+    private Terminal getOperator(ListIterator<Character> iterator){
         char c = iterator.next();
         String value = Character.toString(c);
         String type = null;
@@ -188,16 +140,16 @@ class LexicalAnalyser {
             case '!':
                 if (iterator.next() == '=') {
                     value += '=';
-                    type = "NEQ";
+                    type = Terminal.NEQ;
                 } else {
                     iterator.previous();
-                    type = "NOT";
+                    type = Terminal.NOT;
                 }
                 break;
             case '&':
                 if (iterator.next() == '&') {
                     value += '&';
-                    type = "AND";
+                    type = Terminal.AND;
                 } else {
                     throw new LexException();
                 }
@@ -205,7 +157,7 @@ class LexicalAnalyser {
             case '|':
                 if (iterator.next() == '|') {
                     value += '|';
-                    type = "OR";
+                    type = Terminal.OR;
                 } else {
                     throw new LexException();
                 }
@@ -213,71 +165,71 @@ class LexicalAnalyser {
             case '<':
                 if (iterator.next() == '=') {
                     value += '=';
-                    type = "LEQ";
+                    type = Terminal.LEQ;
                 } else {
                     iterator.previous();
-                    type = "LSS";
+                    type = Terminal.LSS;
                 }
                 break;
             case '>':
                 if (iterator.next() == '=') {
                     value += '=';
-                    type = "GEQ";
+                    type = Terminal.GEQ;
                 } else {
                     iterator.previous();
-                    type = "GRE";
+                    type = Terminal.GRE;
                 }
                 break;
             case '=':
                 if (iterator.next() == '=') {
                     value += '=';
-                    type = "EQL";
+                    type = Terminal.EQL;
                 } else {
                     iterator.previous();
-                    type = "ASSIGN";
+                    type = Terminal.ASSIGN;
                 }
                 break;
             case '+' :
-                type = "PLUS";
+                type = Terminal.PLUS;
                 break;
             case '-':
-                type = "MINU";
+                type = Terminal.MINU;
                 break;
             case '*':
-                type = "MULT";
+                type = Terminal.MULT;
                 break;
             case '/':
-                type = "DIV";
+                type = Terminal.DIV;
                 break;
             case '%':
-                type = "MOD";
+                type = Terminal.MOD;
                 break;
             case ';':
-                type = "SEMICN";
+                type = Terminal.SEMICN;
                 break;
             case ',':
-                type = "COMMA";
+                type = Terminal.COMMA;
                 break;
             case '(':
-                type = "LPARENT";
+                type = Terminal.LPARENT;
                 break;
             case ')':
-                type = "RPARENT";
+                type = Terminal.RPARENT;
                 break;
             case '[':
-                type = "LBRACK";
+                type = Terminal.LBRACK;
                 break;
             case ']':
-                type = "RBRACK";
+                type = Terminal.RBRACK;
                 break;
             case '{':
-                type = "LBRACE";
+                type = Terminal.LBRACE;
                 break;
             case '}':
-                type = "RBRACE";
+                type = Terminal.RBRACE;
                 break;
         }
-        return new Word(type, value);
+        return new Terminal(type, value);
     }
 }
 

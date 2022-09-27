@@ -1,10 +1,9 @@
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 class Lexer {
-    ListIterator<Character> iterator;
-    public Lexer(ListIterator<Character> iterator){
-        this.iterator = iterator;
+    MyIterator<Character> iterator;
+    public Lexer(Iterator<Character> iterator){
+        this.iterator = new MyIterator<>(iterator);
     }
 
     public boolean isIdentifierNoDigit(char c){
@@ -14,93 +13,97 @@ class Lexer {
     public List<Terminal> analysis(){
         List<Terminal> wordList = new ArrayList<>();
         while(true){
-            Optional<Terminal> optional = analysisOne();
-            if (optional.isPresent()){
-                wordList.add(optional.get());
+            Terminal terminal = analysisOne();
+            if (terminal != null){
+                wordList.add(terminal);
             }else{
                 return wordList;
             }
         }
     }
-    public Optional<Terminal> analysisOne() {
+    // if done, return null
+    public Terminal analysisOne() {
         // 先获得字符判断接下来是数字还是标识符还是其他符号
         // 一共两种特殊符号，一种是全英文，一种是符号
-        AtomicReference<Optional<Terminal>> ret = new AtomicReference<>();
-        ret.set(Optional.empty());
-        getNextChar().ifPresent((Character c) -> {
+        nextChar();
+        if(iterator.now() != null){
+            Character c = iterator.now();
             if (isIdentifierNoDigit(c)) {
                 StringBuilder lexeme = new StringBuilder(c.toString());
-                while (iterator.hasNext()) {
-                    c = iterator.next();
+                while (iterator.now() != null) {
+                    iterator.next();
+                    c = iterator.now();
                     if (isIdentifierNoDigit(c) || Character.isDigit(c)) {
                         lexeme.append(c);
                     }else{
-                        iterator.previous();
                         break;
                     }
                 }
-                ret.set(Optional.of(getByLexeme(lexeme.toString())));
+                return getByLexeme(lexeme.toString());
             } else if (Character.isDigit(c)) {
                 StringBuilder digits = new StringBuilder(c.toString());
-                while (iterator.hasNext()) {
-                    c = iterator.next();
+                while (iterator.now() != null) {
+                    iterator.next();
+                    c = iterator.now();
                     if (Character.isDigit(c)) {
                         digits.append(c);
                     }else{
-                        iterator.previous();
                         break;
                     }
                 }
-                ret.set(Optional.of(new Terminal(Integer.parseInt(digits.toString()))));
+                return new Terminal(Integer.parseInt(digits.toString()));
             } else if(c == '"') {
-                ret.set(Optional.of(new Terminal(Terminal.STRCON, "\"" + getChars(iterator) +"\"")));
-            }else if(c == '/' && iterator.next() == '/'){
-
-            }else{
-                if(c == '/') iterator.previous();
-                iterator.previous();
-                ret.set(Optional.of(getOperator(iterator)));
+                return new Terminal(Terminal.STRCON, getSTRCON());
+            } else{
+                return getOperator();
             }
-        });
-        return ret.get();
+        }
+        return null;
     }
 
-    // 获取非空字符
-    private Optional<Character> getNextChar() {
-        while (iterator.hasNext()) {
-            char c = iterator.next();
+    // 如果iterator.now是字符，则不动;否则找到第一个字符
+    private void nextChar() {
+        while (iterator.now() != null) {
+            char c = iterator.now();
             if(c == '/'){
-                char nextC = iterator.next();
+                char nextC = iterator.pre(1);
                 if(nextC == '/'){
-                    char commentChar = iterator.next();
-                    while(commentChar != '\n' && commentChar != '\r'){
-                        commentChar = iterator.next();
+                    iterator.next();
+                    iterator.next();
+                    Character commentChar = iterator.now();
+                    while(commentChar != '\n' && commentChar != '\r' && commentChar != null){
+                        iterator.next();
+                        commentChar = iterator.now();
                     }
-                    return getNextChar();
+                    iterator.next();
+                    nextChar();
+                    return;
                 }else if(nextC == '*') {
-                    char commentChar1 = iterator.next();
-                    char commentChar2 = iterator.next();
+                    iterator.next();
+                    iterator.next();
+                    char commentChar1 = iterator.now();
+                    iterator.next();
+                    char commentChar2 = iterator.now();
                     while(commentChar1 != '*' || commentChar2 != '/'){
                         commentChar1 = commentChar2;
-                        commentChar2 = iterator.next();
+                        iterator.next();
+                        commentChar2 = iterator.now();
                     }
-                    return getNextChar();
+                    iterator.next();
+                    nextChar();
+                    return;
                 }else{
-                    iterator.previous();
+                    return;
                 }
+            }else if (Character.isSpaceChar(c) || c == '\r' || c == '\n' || c == '\t') {
+                iterator.next();
+            }else {
+                return;
             }
-            if (Character.isSpaceChar(c) || c == '\r' || c == '\n' || c == '\t') {
-                continue;
-            }
-            return Optional.of(c);
         }
-        return Optional.empty();
     }
 
     private Terminal getByLexeme(String lex) {
-        Map<String, String> reservedWordMap = new HashMap<>();
-
-
         String type;
         switch (lex){
             case "main" : type = Terminal.MAINTK; break;
@@ -120,72 +123,80 @@ class Lexer {
         return new Terminal(type, lex);
     }
     //遇到'"'正常返回，没有则直接报错
-    private String getChars(ListIterator<Character> iterator){
-        StringBuilder ret = new StringBuilder();
-
-        while(iterator.hasNext()){
-            char c = iterator.next();
+    private String getSTRCON(){
+        if(iterator.now() != '"'){
+            throw new CompileException();
+        }
+        iterator.next();
+        StringBuilder ret = new StringBuilder("\"");
+        Character c = iterator.now();
+        while(c != null){
+            ret.append(c);
+            iterator.next();
             if(c == '"'){
                 return ret.toString();
             }
-            ret.append(c);
+            c = iterator.now();
         }
-        throw new LexException();
+        throw new CompileException();
     }
-    private Terminal getOperator(ListIterator<Character> iterator){
-        char c = iterator.next();
+    private Terminal getOperator(){
+        char c = iterator.now();
+        iterator.next();
         String value = Character.toString(c);
         String type = null;
         switch (c) {
             case '!':
-                if (iterator.next() == '=') {
+                if (iterator.now() == '=') {
                     value += '=';
+                    iterator.next();
                     type = Terminal.NEQ;
                 } else {
-                    iterator.previous();
                     type = Terminal.NOT;
                 }
                 break;
             case '&':
-                if (iterator.next() == '&') {
+                if (iterator.now() == '&') {
                     value += '&';
+                    iterator.next();
                     type = Terminal.AND;
                 } else {
-                    throw new LexException();
+                    throw new CompileException();
                 }
                 break;
             case '|':
-                if (iterator.next() == '|') {
+                if (iterator.now() == '|') {
                     value += '|';
+                    iterator.next();
                     type = Terminal.OR;
                 } else {
-                    throw new LexException();
+                    throw new CompileException();
                 }
                 break;
             case '<':
-                if (iterator.next() == '=') {
+                if (iterator.now() == '=') {
                     value += '=';
+                    iterator.next();
                     type = Terminal.LEQ;
                 } else {
-                    iterator.previous();
                     type = Terminal.LSS;
                 }
                 break;
             case '>':
-                if (iterator.next() == '=') {
+                if (iterator.now() == '=') {
                     value += '=';
+                    iterator.next();
                     type = Terminal.GEQ;
                 } else {
-                    iterator.previous();
                     type = Terminal.GRE;
                 }
                 break;
             case '=':
-                if (iterator.next() == '=') {
+                if (iterator.now() == '=') {
                     value += '=';
+                    iterator.next();
                     type = Terminal.EQL;
                 } else {
-                    iterator.previous();
                     type = Terminal.ASSIGN;
                 }
                 break;

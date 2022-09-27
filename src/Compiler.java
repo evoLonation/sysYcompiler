@@ -9,48 +9,67 @@ import java.util.ListIterator;
 
 public class Compiler {
     public static void main(String[] args) {
-        String inputFile = "testfile.txt";
+        lab3();
+    }
+    static List<Character> getCharList(String fileName){
         List<Character> charList = new ArrayList<>();
-        try{
-            File file = new File(inputFile);
+        try {
+            File file = new File(fileName);
             FileInputStream is = null;
             is = new FileInputStream(file);
             while (true) {
                 int c = is.read();
-                if(c == -1){
+                if (c == -1) {
                     break;
                 }
                 charList.add((char) c);
             }
-
-            File outFile = new File("output.txt");
-            FileOutputStream os = new FileOutputStream(outFile);
-
-            ListIterator<Character> iterator = charList.listIterator();
-            Lexer analyser = new Lexer(iterator);
-            Iterator<Terminal> terminalIterator = analyser.analysis().iterator();
-//            for (Iterator<Terminal> it = terminalIterator; it.hasNext(); ) {
-//                WordInterface word = it.next();
-//                os.write(word.toString().getBytes());
-//                os.write(new byte[]{'\n', });
-//                System.out.println(word);
-//            }
-            GrammarParser parser = new GrammarParser(new MyIterator<>(terminalIterator));
-            for(Word word: parser.analysis().postorderWalk()){
-                if(word.oneOf(Nonterminal.Decl, Nonterminal.BType, Nonterminal.BlockItem)){
-                    continue;
-                }
-                os.write(word.toString().getBytes());
-                os.write(new byte[]{'\n', });
-                System.out.println(word);
-            }
         }catch (Exception e){
             e.printStackTrace();
         }
-
-
-
-
-
+        return charList;
     }
+    static void printAndWrite(String filename, String str){
+        System.out.println(str);
+        try{
+            File outFile = new File(filename);
+            FileOutputStream os = new FileOutputStream(outFile);
+            os.write(str.getBytes());
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    static void lab3(){
+        String inputFile = "testfile.txt";
+        String outputFile = "output.txt";
+        List<Character> charList = getCharList(inputFile);
+
+        Lexer analyser = new Lexer(charList.iterator());
+        List<Terminal> terminals = analyser.analysis();
+
+        Syntaxer parser = new Syntaxer(terminals.iterator());
+        List<Word> result = parser.analysis().postorderWalk();
+        StringBuilder str = new StringBuilder("");
+        for(Word word: result){
+            if(word.oneOf(Nonterminal.Decl, Nonterminal.BType, Nonterminal.BlockItem)){
+                continue;
+            }
+            str.append(word).append("\n");
+        }
+        printAndWrite(outputFile, str.toString());
+    }
+    static void lab2(){
+        String inputFile = "testfile.txt";
+        String outputFile = "output.txt";
+        List<Character> charList = getCharList(inputFile);
+
+        Lexer analyser = new Lexer(charList.iterator());
+        List<Terminal> result = analyser.analysis();
+        StringBuilder str = new StringBuilder("");
+        for (Terminal terminal : result) {
+            str.append(terminal).append("\n");
+        }
+        printAndWrite(outputFile, str.toString());
+    }
+
 }

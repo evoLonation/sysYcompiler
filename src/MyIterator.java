@@ -7,6 +7,7 @@ public class MyIterator <T>{
     private T now;
     public MyIterator(Iterator<T> iterator) {
         mIt = iterator;
+        next();
     }
     public MyIterator(Iterable<T> iterable) {
         mIt = iterable.iterator();
@@ -16,7 +17,7 @@ public class MyIterator <T>{
     }
 
     private LinkedList<T> preList = new LinkedList<>();
-    void next(){
+    T next(){
         if(!preList.isEmpty()){
             now = preList.removeFirst();
         }else{
@@ -26,6 +27,7 @@ public class MyIterator <T>{
                 now = null;
             }
         }
+        return now();
     }
     T pre(int i){
         while(preList.size() < i){

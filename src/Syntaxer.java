@@ -1,48 +1,50 @@
-import java.util.PrimitiveIterator;
+import java.util.Iterator;
 
-public class GrammarParser {
+public class Syntaxer {
     private final MyIterator<Terminal> iterator;
 
-    public GrammarParser(MyIterator<Terminal> iterator) {
+    public Syntaxer(MyIterator<Terminal> iterator) {
         this.iterator = iterator;
     }
+    public Syntaxer(Iterator<Terminal> iterator) {
+        this(new MyIterator<Terminal>(iterator));
+    }
 
-    GrammarNode analysis(){
-        iterator.next();
+    Node analysis(){
         // 进入识别符号的递归子程序
         return CompUnit();
     }
 
-    private void ConstExp (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.ConstExp));
+    private void ConstExp (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.ConstExp));
         AddExp(node);
         father.addSon(node);
     }
 
-    private void AddExp (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.AddExp));
+    private void AddExp (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.AddExp));
         MulExp(node);
         while(is(Terminal.PLUS, Terminal.MINU)){
-            node = new GrammarNode(new Nonterminal(Nonterminal.AddExp)).addSon(node);
+            node = new Node(new Nonterminal(Nonterminal.AddExp)).addSon(node);
             addTerminal(node);
             MulExp(node);
         }
         father.addSon(node);
     }
 
-    private void MulExp(GrammarNode father){
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.MulExp));
+    private void MulExp(Node father){
+        Node node = new Node(new Nonterminal(Nonterminal.MulExp));
         UnaryExp(node);
         while(is(Terminal.MULT, Terminal.DIV, Terminal.MOD)){
-            node = new GrammarNode(new Nonterminal(Nonterminal.MulExp)).addSon(node);
+            node = new Node(new Nonterminal(Nonterminal.MulExp)).addSon(node);
             addTerminal(node);
             UnaryExp(node);
         }
         father.addSon(node);
     }
 
-    private void UnaryExp(GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.UnaryExp));
+    private void UnaryExp(Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.UnaryExp));
         int enter = 0;
         // first{ LPARENT, Ident, Int }
         // first{ ident }
@@ -80,8 +82,8 @@ public class GrammarParser {
         father.addSon(node);
     }
 
-    private void FuncRParams (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.FuncRParams));
+    private void FuncRParams (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.FuncRParams));
         Exp(node);
         while(is(Terminal.COMMA)){
             addTerminal(node);
@@ -90,17 +92,17 @@ public class GrammarParser {
         father.addSon(node);
     }
 
-    private void UnaryOp(GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.UnaryOp));
+    private void UnaryOp(Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.UnaryOp));
         if(!is(Terminal.PLUS,  Terminal.MINU, Terminal.NOT)) {
-            throw new LexException();
+            throw new CompileException();
         }
         addTerminal(node);
         father.addSon(node);
     }
 
-    private void PrimaryExp(GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.PrimaryExp));
+    private void PrimaryExp(Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.PrimaryExp));
         if(is(Terminal.LPARENT)){
             addTerminal(node);
             Exp(node);
@@ -111,27 +113,27 @@ public class GrammarParser {
         }else if(is(Terminal.INTCON)){
             Number(node);
         }else{
-            throw new LexException();
+            throw new CompileException();
         }
         father.addSon(node);
     }
 
-    private void Exp(GrammarNode father){
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.Exp));
+    private void Exp(Node father){
+        Node node = new Node(new Nonterminal(Nonterminal.Exp));
         AddExp(node);
         father.addSon(node);
     }
 
-    private void Number(GrammarNode father){
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.Number));
+    private void Number(Node father){
+        Node node = new Node(new Nonterminal(Nonterminal.Number));
         if(!is(Terminal.INTCON)){
-            throw new LexException();
+            throw new CompileException();
         }
         addTerminal(node);
         father.addSon(node);
     }
-    private void LVal (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.LVal));
+    private void LVal (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.LVal));
         check(Terminal.IDENFR);
         addTerminal(node);
         while(is(Terminal.LBRACK)){
@@ -143,54 +145,54 @@ public class GrammarParser {
         father.addSon(node);
     }
     
-    private void Cond (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.Cond));
+    private void Cond (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.Cond));
         LOrExp(node);
         father.addSon(node);
     }
-    private void LOrExp(GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.LOrExp));
+    private void LOrExp(Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.LOrExp));
         LAndExp(node);
         while (is(Terminal.OR)){
-            node = new GrammarNode(new Nonterminal(Nonterminal.LOrExp)).addSon(node);
+            node = new Node(new Nonterminal(Nonterminal.LOrExp)).addSon(node);
             addTerminal(node);
             LAndExp(node);
         }
         father.addSon(node);
     }
-    private void LAndExp(GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.LAndExp));
+    private void LAndExp(Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.LAndExp));
         EqExp(node);
         while (is(Terminal.AND)){
-            node = new GrammarNode(new Nonterminal(Nonterminal.LAndExp)).addSon(node);
+            node = new Node(new Nonterminal(Nonterminal.LAndExp)).addSon(node);
             addTerminal(node);
             EqExp(node);
         }
         father.addSon(node);
     }
-    private void EqExp (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.EqExp));
+    private void EqExp (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.EqExp));
         RelExp(node);
         while (is(Terminal.EQL, Terminal.NEQ)){
-            node = new GrammarNode(new Nonterminal(Nonterminal.EqExp)).addSon(node);
+            node = new Node(new Nonterminal(Nonterminal.EqExp)).addSon(node);
             addTerminal(node);
             RelExp(node);
         }
         father.addSon(node);
     }
-    private void RelExp (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.RelExp));
+    private void RelExp (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.RelExp));
         AddExp(node);
         while (is(Terminal.LSS, Terminal.LEQ, Terminal.GRE, Terminal.GEQ)){
-            node = new GrammarNode(new Nonterminal(Nonterminal.RelExp)).addSon(node);
+            node = new Node(new Nonterminal(Nonterminal.RelExp)).addSon(node);
             addTerminal(node);
             AddExp(node);
         }
         father.addSon(node);
     }
 
-    private void Decl (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.Decl));
+    private void Decl (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.Decl));
         if(is(Terminal.CONSTTK)){
             ConstDecl(node);
         }else if(is(Terminal.INTTK)){
@@ -198,8 +200,8 @@ public class GrammarParser {
         }
         father.addSon(node);
     }
-    private void ConstDecl (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.ConstDecl));
+    private void ConstDecl (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.ConstDecl));
         check(Terminal.CONSTTK);
         addTerminal(node);
         BType(node);
@@ -212,8 +214,8 @@ public class GrammarParser {
         addTerminal(node);
         father.addSon(node);
     }
-    private void VarDecl (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.VarDecl));
+    private void VarDecl (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.VarDecl));
         BType(node);
         VarDef(node);
         while(is(Terminal.COMMA)){
@@ -226,8 +228,8 @@ public class GrammarParser {
     }
 
 
-    private void Stmt (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.Stmt));
+    private void Stmt (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.Stmt));
         if(is(Terminal.LBRACE)){
             Block(node);
         }else if(is(Terminal.IFTK)){
@@ -305,7 +307,7 @@ public class GrammarParser {
                 check(Terminal.SEMICN);
                 addTerminal(node);
             }else{
-                throw new LexException();
+                throw new CompileException();
             }
             if(enter == 1){
                 LVal(node);
@@ -345,8 +347,8 @@ public class GrammarParser {
         father.addSon(node);
     }
 
-    private void BlockItem (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.BlockItem));
+    private void BlockItem (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.BlockItem));
         // decl : const, int
         // stmt : ident, ;, (, number, {, if, while, break, return, continue, printf
         if(is(Terminal.CONSTTK, Terminal.INTTK)){
@@ -354,12 +356,12 @@ public class GrammarParser {
         }else if(isStmt()){
             Stmt(node);
         }else{
-            throw new LexException();
+            throw new CompileException();
         }
         father.addSon(node);
     }
-    private void Block (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.Block));
+    private void Block (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.Block));
         check(Terminal.LBRACE);
         addTerminal(node);
         while(isBlockItem()){
@@ -369,8 +371,8 @@ public class GrammarParser {
         addTerminal(node);
         father.addSon(node);
     }
-    private void FuncFParam (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.FuncFParam));
+    private void FuncFParam (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.FuncFParam));
         BType(node);
         check(Terminal.IDENFR);
         addTerminal(node);
@@ -387,8 +389,8 @@ public class GrammarParser {
         }
         father.addSon(node);
     }
-    private void FuncFParams (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.FuncFParams));
+    private void FuncFParams (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.FuncFParams));
         FuncFParam(node);
         while(is(Terminal.COMMA)){
             addTerminal(node);
@@ -397,17 +399,17 @@ public class GrammarParser {
         father.addSon(node);
     }
 
-    private void FuncType (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.FuncType));
+    private void FuncType (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.FuncType));
         if(is(Terminal.VOIDTK, Terminal.INTTK)){
             addTerminal(node);
         }else{
-            throw new LexException();
+            throw new CompileException();
         }
         father.addSon(node);
     }
-    private void MainFuncDef (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.MainFuncDef));
+    private void MainFuncDef (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.MainFuncDef));
         check(Terminal.INTTK);
         addTerminal(node);
         check(Terminal.MAINTK);
@@ -419,8 +421,8 @@ public class GrammarParser {
         Block(node);
         father.addSon(node);
     }
-    private void FuncDef (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.FuncDef));
+    private void FuncDef (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.FuncDef));
         FuncType(node);
         check(Terminal.IDENFR);
         addTerminal(node);
@@ -434,8 +436,8 @@ public class GrammarParser {
         Block(node);
         father.addSon(node);
     }
-    private void InitVal (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.InitVal));
+    private void InitVal (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.InitVal));
         if(isExp()){
             Exp(node);
         }else if(is(Terminal.LBRACE)){
@@ -450,13 +452,13 @@ public class GrammarParser {
             check(Terminal.RBRACE);
             addTerminal(node);
         }else{
-            throw new LexException();
+            throw new CompileException();
         }
         father.addSon(node);
     }
 
-    private void VarDef (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.VarDef));
+    private void VarDef (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.VarDef));
         check(Terminal.IDENFR);
         addTerminal(node);
         while(is(Terminal.LBRACK)){
@@ -472,8 +474,8 @@ public class GrammarParser {
         father.addSon(node);
     }
 
-    private void ConstInitVal (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.ConstInitVal));
+    private void ConstInitVal (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.ConstInitVal));
         if(isConstExp()){
             ConstExp(node);
         }else if(is(Terminal.LBRACE)){
@@ -488,12 +490,12 @@ public class GrammarParser {
             check(Terminal.RBRACE);
             addTerminal(node);
         }else{
-            throw new LexException();
+            throw new CompileException();
         }
         father.addSon(node);
     }
-    private void ConstDef (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.ConstDef));
+    private void ConstDef (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.ConstDef));
         check(Terminal.IDENFR);
         addTerminal(node);
         while(is(Terminal.LBRACK)){
@@ -507,15 +509,15 @@ public class GrammarParser {
         ConstInitVal(node);
         father.addSon(node);
     }
-    private void BType (GrammarNode father) {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.BType));
+    private void BType (Node father) {
+        Node node = new Node(new Nonterminal(Nonterminal.BType));
         check(Terminal.INTTK);
         addTerminal(node);
         father.addSon(node);
     }
 
-    private GrammarNode CompUnit () {
-        GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.CompUnit));
+    private Node CompUnit () {
+        Node node = new Node(new Nonterminal(Nonterminal.CompUnit));
         // decl : int, const
         // funcdef : int, void
         // mainfuncdef : int
@@ -543,13 +545,13 @@ public class GrammarParser {
                     }else if(isPre(2, Terminal.LBRACK, Terminal.SEMICN, Terminal.COMMA, Terminal.ASSIGN)){
                         enter = 1;
                     }else {
-                        throw new LexException();
+                        throw new CompileException();
                     }
                 }else{
-                    throw new LexException();
+                    throw new CompileException();
                 }
             }else{
-                throw new LexException();
+                throw new CompileException();
             }
             if(enter == 1){
                 Decl(node);
@@ -558,12 +560,13 @@ public class GrammarParser {
             }else if(enter == 3){
                 break;
             }else{
-                throw new LexException();
+                throw new CompileException();
             }
         }
         MainFuncDef(node);
         return node;
     }
+
     private boolean isFuncRParams() {
         return isExp();
     }
@@ -601,7 +604,7 @@ public class GrammarParser {
 
     private void check(String terminal){
         if(!iterator.now().typeOf(terminal)){
-            throw new LexException();
+            throw new CompileException();
         }
     }
     private boolean is(String terminal){
@@ -634,8 +637,8 @@ public class GrammarParser {
         }
         return false;
     }
-    private void addTerminal(GrammarNode node){
-        node.addSon(new GrammarNode(iterator.now()));
+    private void addTerminal(Node node){
+        node.addSon(iterator.now());
         iterator.next();
     }
 

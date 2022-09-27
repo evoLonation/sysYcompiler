@@ -9,7 +9,7 @@ import java.util.ListIterator;
 
 public class Compiler {
     public static void main(String[] args) {
-        String inputFile = "testfile.java";
+        String inputFile = "testfile.txt";
         List<Character> charList = new ArrayList<>();
         try{
             File file = new File(inputFile);

@@ -1,7 +1,7 @@
 import java.util.PrimitiveIterator;
 
 public class GrammarParser {
-    private MyIterator<Terminal> iterator;
+    private final MyIterator<Terminal> iterator;
 
     public GrammarParser(MyIterator<Terminal> iterator) {
         this.iterator = iterator;
@@ -49,7 +49,7 @@ public class GrammarParser {
         // first{ +, -, !}
         if(is(Terminal.LPARENT, Terminal.INTCON)){
             enter = 1;
-        }else if(is(Terminal.PLUS, Terminal.MINU, Terminal.NOT)){
+        }else if(isUnaryOp()){
             enter = 3;
         }else if(is(Terminal.IDENFR)){
             //pre read if ( then 2
@@ -65,15 +65,12 @@ public class GrammarParser {
                 break;
             case 2 :
                 addTerminal(node);
-                if(!is(Terminal.LPARENT)) {
-                    throw new LexException();
-                }
                 addTerminal(node);
-                if(is(Terminal.RPARENT)){
-                    addTerminal(node);
-                }else{
+                if(isFuncRParams()){
                     FuncRParams(node);
                 }
+                check(Terminal.RPARENT);
+                addTerminal(node);
                 break;
             case 3 :
                 UnaryOp(node);
@@ -82,6 +79,7 @@ public class GrammarParser {
         }
         father.addSon(node);
     }
+
     private void FuncRParams (GrammarNode father) {
         GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.FuncRParams));
         Exp(node);
@@ -137,6 +135,7 @@ public class GrammarParser {
         check(Terminal.IDENFR);
         addTerminal(node);
         while(is(Terminal.LBRACK)){
+            addTerminal(node);
             Exp(node);
             check(Terminal.RBRACK);
             addTerminal(node);
@@ -189,8 +188,6 @@ public class GrammarParser {
         }
         father.addSon(node);
     }
-
-
 
     private void Decl (GrammarNode father) {
         GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.Decl));
@@ -303,7 +300,7 @@ public class GrammarParser {
                     }
                     i++;
                 }
-            }else if(is(Terminal.LPARENT, Terminal.INTCON)) {
+            }else if(isExp()) {
                 Exp(node);
                 check(Terminal.SEMICN);
                 addTerminal(node);
@@ -376,6 +373,7 @@ public class GrammarParser {
         GrammarNode node = new GrammarNode(new Nonterminal(Nonterminal.FuncFParam));
         BType(node);
         check(Terminal.IDENFR);
+        addTerminal(node);
         if(is(Terminal.LBRACK)){
             addTerminal(node);
             check(Terminal.RBRACK);
@@ -429,7 +427,7 @@ public class GrammarParser {
         check(Terminal.LPARENT);
         addTerminal(node);
         if(is(Terminal.INTTK)){
-            FuncRParams(node);
+            FuncFParams(node);
         }
         check(Terminal.RPARENT);
         addTerminal(node);
@@ -479,6 +477,7 @@ public class GrammarParser {
         if(isConstExp()){
             ConstExp(node);
         }else if(is(Terminal.LBRACE)){
+            addTerminal(node);
             if(isConstInitVal()){
                 ConstInitVal(node);
                 while(is(Terminal.COMMA)){
@@ -486,7 +485,7 @@ public class GrammarParser {
                     ConstInitVal(node);
                 }
             }
-            is(Terminal.RBRACE);
+            check(Terminal.RBRACE);
             addTerminal(node);
         }else{
             throw new LexException();
@@ -498,6 +497,7 @@ public class GrammarParser {
         check(Terminal.IDENFR);
         addTerminal(node);
         while(is(Terminal.LBRACK)){
+            addTerminal(node);
             ConstExp(node);
             check(Terminal.RBRACK);
             addTerminal(node);
@@ -564,6 +564,12 @@ public class GrammarParser {
         MainFuncDef(node);
         return node;
     }
+    private boolean isFuncRParams() {
+        return isExp();
+    }
+    private boolean isUnaryOp() {
+        return is(Terminal.PLUS, Terminal.MINU, Terminal.NOT);
+    }
 
     private boolean isBlockItem(){
         return isDecl() || isStmt();
@@ -573,7 +579,7 @@ public class GrammarParser {
     }
     private boolean isStmt(){
         return is(Terminal.IDENFR, Terminal.SEMICN, Terminal.LPARENT, Terminal.LBRACE, Terminal.IFTK,
-                Terminal.WHILETK, Terminal.BREAKTK, Terminal.CONTINUETK, Terminal.RETURNTK, Terminal.PRINTFTK);
+                Terminal.WHILETK, Terminal.BREAKTK, Terminal.CONTINUETK, Terminal.RETURNTK, Terminal.PRINTFTK) || isExp();
     }
     private boolean isConstInitVal(){
         return isConstExp() || is(Terminal.LBRACE);
@@ -585,7 +591,7 @@ public class GrammarParser {
         return isExp() || is(Terminal.LBRACE);
     }
     private boolean isAddExp(){
-        return is(Terminal.LPARENT, Terminal.IDENFR, Terminal.INTCON);
+        return is(Terminal.LPARENT, Terminal.IDENFR, Terminal.INTCON, Terminal.PLUS, Terminal.MINU, Terminal.NOT);
     }
     private boolean isExp(){
         return isAddExp();

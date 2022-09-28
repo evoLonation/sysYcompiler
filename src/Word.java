@@ -10,7 +10,7 @@ abstract class Word {
     boolean typeOf(String type){
         return getType().equals(type);
     }
-    boolean oneOf(String... types){
+    boolean typeOf(String... types){
         for(String type : types){
             if(typeOf(type))return true;
         }

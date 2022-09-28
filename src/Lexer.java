@@ -1,9 +1,9 @@
 import java.util.*;
 
 class Lexer {
-    MyIterator<Character> iterator;
+    SourceIterator iterator;
     public Lexer(Iterator<Character> iterator){
-        this.iterator = new MyIterator<>(iterator);
+        this.iterator = new SourceIterator(iterator);
     }
 
     public boolean isIdentifierNoDigit(char c){
@@ -28,6 +28,7 @@ class Lexer {
         nextChar();
         if(iterator.now() != null){
             Character c = iterator.now();
+            int nowLine = iterator.line();
             if (isIdentifierNoDigit(c)) {
                 StringBuilder lexeme = new StringBuilder(c.toString());
                 while (iterator.now() != null) {
@@ -39,7 +40,7 @@ class Lexer {
                         break;
                     }
                 }
-                return getByLexeme(lexeme.toString());
+                return getByLexeme(lexeme.toString(), nowLine);
             } else if (Character.isDigit(c)) {
                 StringBuilder digits = new StringBuilder(c.toString());
                 while (iterator.now() != null) {
@@ -51,9 +52,9 @@ class Lexer {
                         break;
                     }
                 }
-                return new Terminal(Integer.parseInt(digits.toString()));
+                return new Terminal(Integer.parseInt(digits.toString()), nowLine);
             } else if(c == '"') {
-                return new Terminal(Terminal.STRCON, getSTRCON());
+                return new Terminal(Terminal.STRCON, getSTRCON(), nowLine);
             } else{
                 return getOperator();
             }
@@ -103,7 +104,7 @@ class Lexer {
         }
     }
 
-    private Terminal getByLexeme(String lex) {
+    private Terminal getByLexeme(String lex, int nowLine) {
         String type;
         switch (lex){
             case "main" : type = Terminal.MAINTK; break;
@@ -120,7 +121,7 @@ class Lexer {
             case "void" : type = Terminal.VOIDTK; break;
             default: type = Terminal.IDENFR; break;
         }
-        return new Terminal(type, lex);
+        return new Terminal(type, lex, nowLine);
     }
     //遇到'"'正常返回，没有则直接报错
     private String getSTRCON(){
@@ -142,6 +143,7 @@ class Lexer {
     }
     private Terminal getOperator(){
         char c = iterator.now();
+        int nowLine = iterator.line();
         iterator.next();
         String value = Character.toString(c);
         String type = null;
@@ -240,7 +242,7 @@ class Lexer {
                 type = Terminal.RBRACE;
                 break;
         }
-        return new Terminal(type, value);
+        return new Terminal(type, value, nowLine);
     }
 }
 

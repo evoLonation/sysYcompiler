@@ -40,6 +40,7 @@ class Terminal extends Word {
 
     protected String value;
     protected int digitValue;
+    protected int line;
     public String getValue() {
         return value;
     }
@@ -48,18 +49,26 @@ class Terminal extends Word {
         return digitValue;
     }
 
-    Terminal(String type, String value) {
+    public int getLine() {
+        return line;
+    }
+
+    Terminal(String type, String value, int lineno) {
         this.type = type;
         this.value = value;
+        this.line = lineno;
     }
-    Terminal(int value) {
+    Terminal(int value, int lineno) {
         this.type = INTCON;
         this.value = Integer.toString(value);
         this.digitValue = value;
+        this.line = lineno;
     }
 
     @Override
     public String toString() {
         return getType() + " " + getValue();
+//        return getLine() + " : " + getType() + " " + getValue();
     }
+
 }

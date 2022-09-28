@@ -3,13 +3,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 
 public class Compiler {
     public static void main(String[] args) {
-        lab3();
+        lab2();
     }
     static List<Character> getCharList(String fileName){
         List<Character> charList = new ArrayList<>();
@@ -51,7 +49,7 @@ public class Compiler {
         List<Word> result = parser.analysis().postorderWalk();
         StringBuilder str = new StringBuilder("");
         for(Word word: result){
-            if(word.oneOf(Nonterminal.Decl, Nonterminal.BType, Nonterminal.BlockItem)){
+            if(word.typeOf(Nonterminal.Decl, Nonterminal.BType, Nonterminal.BlockItem)){
                 continue;
             }
             str.append(word).append("\n");

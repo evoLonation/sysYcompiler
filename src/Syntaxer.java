@@ -632,7 +632,7 @@ public class Syntaxer {
     }
     private boolean is(String... terminals){
         if(iterator.now() == null)return false;
-        if(iterator.now().oneOf(terminals)){
+        if(iterator.now().typeOf(terminals)){
             return true;
         }
         return false;

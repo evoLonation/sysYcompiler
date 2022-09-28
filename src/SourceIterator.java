@@ -24,4 +24,46 @@ public class SourceIterator extends MyIterator<Character>{
         }
         return ret;
     }
+
+    // 跳过注释和空白字符，如果都不是则不动
+    public void skip() {
+        while (now() != null) {
+            char c = now();
+            if(c == '/'){
+                char nextC = pre(1);
+                if(nextC == '/'){
+                    next();
+                    next();
+                    Character commentChar = now();
+                    while(commentChar != '\n' && commentChar != '\r' && commentChar != null){
+                        next();
+                        commentChar = now();
+                    }
+                    next();
+                    skip();
+                    return;
+                }else if(nextC == '*') {
+                    next();
+                    next();
+                    char commentChar1 = now();
+                    next();
+                    char commentChar2 = now();
+                    while(commentChar1 != '*' || commentChar2 != '/'){
+                        commentChar1 = commentChar2;
+                        next();
+                        commentChar2 = now();
+                    }
+                    next();
+                    skip();
+                    return;
+                }else{
+                    return;
+                }
+            }else if (Character.isSpaceChar(c) || c == '\r' || c == '\n' || c == '\t') {
+                next();
+            }else {
+                return;
+            }
+        }
+    }
 }

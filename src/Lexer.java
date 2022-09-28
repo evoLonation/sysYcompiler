@@ -25,7 +25,7 @@ class Lexer {
     public Terminal analysisOne() {
         // 先获得字符判断接下来是数字还是标识符还是其他符号
         // 一共两种特殊符号，一种是全英文，一种是符号
-        nextChar();
+        iterator.skip();
         if(iterator.now() != null){
             Character c = iterator.now();
             int nowLine = iterator.line();
@@ -52,56 +52,14 @@ class Lexer {
                         break;
                     }
                 }
-                return new Terminal(Integer.parseInt(digits.toString()), nowLine);
+                return new IntConst(Integer.parseInt(digits.toString()), nowLine);
             } else if(c == '"') {
-                return new Terminal(Terminal.STRCON, getSTRCON(), nowLine);
+                return getSTRCON();
             } else{
                 return getOperator();
             }
         }
         return null;
-    }
-
-    // 如果iterator.now是字符，则不动;否则找到第一个字符
-    private void nextChar() {
-        while (iterator.now() != null) {
-            char c = iterator.now();
-            if(c == '/'){
-                char nextC = iterator.pre(1);
-                if(nextC == '/'){
-                    iterator.next();
-                    iterator.next();
-                    Character commentChar = iterator.now();
-                    while(commentChar != '\n' && commentChar != '\r' && commentChar != null){
-                        iterator.next();
-                        commentChar = iterator.now();
-                    }
-                    iterator.next();
-                    nextChar();
-                    return;
-                }else if(nextC == '*') {
-                    iterator.next();
-                    iterator.next();
-                    char commentChar1 = iterator.now();
-                    iterator.next();
-                    char commentChar2 = iterator.now();
-                    while(commentChar1 != '*' || commentChar2 != '/'){
-                        commentChar1 = commentChar2;
-                        iterator.next();
-                        commentChar2 = iterator.now();
-                    }
-                    iterator.next();
-                    nextChar();
-                    return;
-                }else{
-                    return;
-                }
-            }else if (Character.isSpaceChar(c) || c == '\r' || c == '\n' || c == '\t') {
-                iterator.next();
-            }else {
-                return;
-            }
-        }
     }
 
     private Terminal getByLexeme(String lex, int nowLine) {
@@ -124,23 +82,50 @@ class Lexer {
         return new Terminal(type, lex, nowLine);
     }
     //遇到'"'正常返回，没有则直接报错
-    private String getSTRCON(){
+    private FormatString getSTRCON(){
         if(iterator.now() != '"'){
             throw new CompileException();
         }
+        int line = iterator.line();
         iterator.next();
-        StringBuilder ret = new StringBuilder("\"");
-        Character c = iterator.now();
-        while(c != null){
-            ret.append(c);
-            iterator.next();
-            if(c == '"'){
-                return ret.toString();
+        List<Char> charList = new ArrayList<>();
+        while(true){
+            if(isNormalChar()){
+                if(iterator.now() == '\\'){
+                    iterator.next();
+                    if(iterator.now() == 'n'){
+                        charList.add(new NormalChar('\n'));
+                        iterator.next();
+                    }else{
+                        throw new CompileException();
+                    }
+                }else{
+                    charList.add(new NormalChar(iterator.now()));
+                    iterator.next();
+                }
+            }else if(iterator.now() == '%'){
+                iterator.next();
+                if(iterator.now() == 'd'){
+                    charList.add(new FormatChar());
+                    iterator.next();
+                }else{
+                    throw new CompileException();
+                }
+            }else if(iterator.now() == '"') {
+                iterator.next();
+                break;
+            }else {
+                throw new CompileException();
             }
-            c = iterator.now();
         }
-        throw new CompileException();
+        return new FormatString(charList, line);
     }
+
+    private boolean isNormalChar(){
+        Character c = iterator.now();
+        return c == 32 || c == 33 || c >= 40 && c <= 126;
+    }
+
     private Terminal getOperator(){
         char c = iterator.now();
         int nowLine = iterator.line();

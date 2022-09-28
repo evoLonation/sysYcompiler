@@ -1,12 +1,12 @@
 import java.util.Iterator;
 
-public class Syntaxer {
+public class Parser {
     private final MyIterator<Terminal> iterator;
 
-    public Syntaxer(MyIterator<Terminal> iterator) {
+    public Parser(MyIterator<Terminal> iterator) {
         this.iterator = iterator;
     }
-    public Syntaxer(Iterator<Terminal> iterator) {
+    public Parser(Iterator<Terminal> iterator) {
         this(new MyIterator<Terminal>(iterator));
     }
 

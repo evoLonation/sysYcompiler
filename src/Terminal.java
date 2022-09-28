@@ -1,7 +1,7 @@
 class Terminal extends Word {
     public static final String IDENFR = "IDENFR";
-    public static final String INTCON = "INTCON";
-    public static final String STRCON = "STRCON";
+    protected static final String INTCON = "INTCON";
+    protected static final String STRCON = "STRCON";
     public static final String MAINTK = "MAINTK";
     public static final String CONSTTK = "CONSTTK";
     public static final String INTTK = "INTTK";
@@ -39,15 +39,11 @@ class Terminal extends Word {
     public static final String RBRACE = "RBRACE";
 
     protected String value;
-    protected int digitValue;
     protected int line;
     public String getValue() {
         return value;
     }
 
-    public int getDigitValue() {
-        return digitValue;
-    }
 
     public int getLine() {
         return line;
@@ -56,12 +52,6 @@ class Terminal extends Word {
     Terminal(String type, String value, int lineno) {
         this.type = type;
         this.value = value;
-        this.line = lineno;
-    }
-    Terminal(int value, int lineno) {
-        this.type = INTCON;
-        this.value = Integer.toString(value);
-        this.digitValue = value;
         this.line = lineno;
     }
 

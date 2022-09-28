@@ -45,7 +45,7 @@ public class Compiler {
         Lexer analyser = new Lexer(charList.iterator());
         List<Terminal> terminals = analyser.analysis();
 
-        Syntaxer parser = new Syntaxer(terminals.iterator());
+        Parser parser = new Parser(terminals.iterator());
         List<Word> result = parser.analysis().postorderWalk();
         StringBuilder str = new StringBuilder("");
         for(Word word: result){

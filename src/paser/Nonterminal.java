@@ -1,3 +1,7 @@
+package paser;
+
+import common.Word;
+
 public class Nonterminal extends Word {
     public static final String CompUnit = "CompUnit";
     public static final String Decl = "Decl";

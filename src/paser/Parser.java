@@ -1,21 +1,23 @@
+package paser;
+
+import common.CompileException;
+import common.MyIterator;
+import lexer.Terminal;
+
 import java.util.Iterator;
 
 public class Parser {
     private final MyIterator<Terminal> iterator;
 
-    private final SymbolTable rootSymbolTable;
-    private SymbolTable nowSymbolTable;
 
     public Parser(MyIterator<Terminal> iterator) {
         this.iterator = iterator;
-        rootSymbolTable = new SymbolTable();
-        nowSymbolTable = rootSymbolTable;
     }
     public Parser(Iterator<Terminal> iterator) {
         this(new MyIterator<Terminal>(iterator));
     }
 
-    Node analysis(){
+    public Node analysis(){
         // 进入识别符号的递归子程序
         return CompUnit();
     }

@@ -1,6 +1,10 @@
+package lexer;
+
+import common.CompileException;
+
 import java.util.*;
 
-class Lexer {
+public class Lexer {
     SourceIterator iterator;
     public Lexer(Iterator<Character> iterator){
         this.iterator = new SourceIterator(iterator);

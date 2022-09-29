@@ -1,3 +1,11 @@
+package semantic;
+
+import common.CompileException;
+import lexer.IntConst;
+import lexer.Terminal;
+import paser.Node;
+import paser.Nonterminal;
+
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,3 +1,5 @@
+package common;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
@@ -12,12 +14,12 @@ public class MyIterator <T>{
     public MyIterator(Iterable<T> iterable) {
         mIt = iterable.iterator();
     }
-    T now(){
+    public T now(){
         return now;
     }
 
     private LinkedList<T> preList = new LinkedList<>();
-    T next(){
+    public T next(){
         if(!preList.isEmpty()){
             now = preList.removeFirst();
         }else{
@@ -29,7 +31,7 @@ public class MyIterator <T>{
         }
         return now();
     }
-    T pre(int i){
+    public T pre(int i){
         while(preList.size() < i){
             try{
                 preList.addLast(mIt.next());

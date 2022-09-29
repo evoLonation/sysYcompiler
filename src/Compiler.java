@@ -1,3 +1,10 @@
+import common.Word;
+import lexer.Lexer;
+import lexer.Terminal;
+import paser.Node;
+import paser.Nonterminal;
+import paser.Parser;
+import semantic.SemanticChecker;
 
 import java.io.File;
 import java.io.FileInputStream;

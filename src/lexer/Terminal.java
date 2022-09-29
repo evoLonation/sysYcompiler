@@ -1,7 +1,11 @@
-class Terminal extends Word {
+package lexer;
+
+import common.Word;
+
+public class Terminal extends Word {
     public static final String IDENFR = "IDENFR";
-    protected static final String INTCON = "INTCON";
-    protected static final String STRCON = "STRCON";
+    public static final String INTCON = "INTCON";
+    public static final String STRCON = "STRCON";
     public static final String MAINTK = "MAINTK";
     public static final String CONSTTK = "CONSTTK";
     public static final String INTTK = "INTTK";
@@ -49,7 +53,7 @@ class Terminal extends Word {
         return line;
     }
 
-    Terminal(String type, String value, int lineno) {
+    public Terminal(String type, String value, int lineno) {
         this.type = type;
         this.value = value;
         this.line = lineno;

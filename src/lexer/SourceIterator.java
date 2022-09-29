@@ -1,6 +1,10 @@
+package lexer;
+
+import common.MyIterator;
+
 import java.util.Iterator;
 
-public class SourceIterator extends MyIterator<Character>{
+public class SourceIterator extends MyIterator<Character> {
 
     public SourceIterator(Iterator<Character> iterator) {
         super(iterator);
@@ -13,7 +17,7 @@ public class SourceIterator extends MyIterator<Character>{
     private boolean nowIsEnter = false;
 
     @Override
-    Character next() {
+    public Character next() {
         if(nowIsEnter) {
             nowIsEnter = false;
             line ++;

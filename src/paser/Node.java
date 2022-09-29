@@ -1,8 +1,13 @@
+package paser;
+
+import common.Word;
+import lexer.Terminal;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class Node {
-    List<Word> postorderWalk(){
+    public List<Word> postorderWalk(){
         List<Word> list = new ArrayList<>();
         for(Node son : sons){
             list.addAll(son.postorderWalk());

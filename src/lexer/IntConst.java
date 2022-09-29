@@ -1,3 +1,5 @@
+package lexer;
+
 public class IntConst extends Terminal{
     protected int digitValue;
     public int getDigitValue() {

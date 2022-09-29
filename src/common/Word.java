@@ -1,16 +1,18 @@
-abstract class Word {
+package common;
+
+public abstract class Word {
     protected String type;
-    String getType(){
+    public String getType(){
         return type;
     }
 
-    boolean typeEqual(Word word) {
+    public boolean typeEqual(Word word) {
         return getType().equals(word.getType());
     }
-    boolean typeOf(String type){
+    public boolean typeOf(String type){
         return getType().equals(type);
     }
-    boolean typeOf(String... types){
+    public boolean typeOf(String... types){
         for(String type : types){
             if(typeOf(type))return true;
         }

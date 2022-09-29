@@ -7,7 +7,7 @@ import java.util.List;
 
 public class Compiler {
     public static void main(String[] args) {
-        lab2();
+        lab4();
     }
     static List<Character> getCharList(String fileName){
         List<Character> charList = new ArrayList<>();
@@ -37,16 +37,27 @@ public class Compiler {
             e.printStackTrace();
         }
     }
+
+    static List<Terminal> lexer(String inputFile){
+        List<Character> charList = getCharList(inputFile);
+        Lexer analyser = new Lexer(charList.iterator());
+        return analyser.analysis();
+    }
+    static Node parser(List<Terminal> terminals){
+        Parser parser = new Parser(terminals.iterator());
+        return parser.analysis();
+    }
+    static void lab4(){
+        String inputFile = "testfile.txt";
+        String outputFile = "output.txt";
+        Node result = parser(lexer(inputFile));
+        SemanticChecker checker = new SemanticChecker(result);
+        checker.check();
+    }
     static void lab3(){
         String inputFile = "testfile.txt";
         String outputFile = "output.txt";
-        List<Character> charList = getCharList(inputFile);
-
-        Lexer analyser = new Lexer(charList.iterator());
-        List<Terminal> terminals = analyser.analysis();
-
-        Parser parser = new Parser(terminals.iterator());
-        List<Word> result = parser.analysis().postorderWalk();
+        List<Word> result = parser(lexer(inputFile)).postorderWalk();
         StringBuilder str = new StringBuilder("");
         for(Word word: result){
             if(word.typeOf(Nonterminal.Decl, Nonterminal.BType, Nonterminal.BlockItem)){
@@ -59,10 +70,7 @@ public class Compiler {
     static void lab2(){
         String inputFile = "testfile.txt";
         String outputFile = "output.txt";
-        List<Character> charList = getCharList(inputFile);
-
-        Lexer analyser = new Lexer(charList.iterator());
-        List<Terminal> result = analyser.analysis();
+        List<Terminal> result = lexer(inputFile);
         StringBuilder str = new StringBuilder("");
         for (Terminal terminal : result) {
             str.append(terminal).append("\n");

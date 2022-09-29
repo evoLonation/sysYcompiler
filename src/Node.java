@@ -10,16 +10,39 @@ public class Node {
         list.add(word);
         return list;
     }
+    List<Word> preorderWalk() {
+        List<Word> list = new ArrayList<>();
+        list.add(word);
+        for(Node son : sons){
+            list.addAll(son.postorderWalk());
+        }
+        return list;
+    }
     Node addSon(Node node){
         sons.add(node);
+        node.father = this;
         return this;
     }
     Node addSon(Terminal word){
-        sons.add(new Node(word));
-        return this;
+        return addSon(new Node(word));
     }
-    public List<Node> sons = new ArrayList<>();
-    public Word word;
+    public List<Node> listSons(){
+        return sons;
+    }
+    public Node son(int i){
+        return sons.get(i);
+    }
+    private List<Node> sons = new ArrayList<>();
+    private Node father;
+    private Word word;
+
+    public Word word() {
+        return word;
+    }
+    public Node father(){
+        return father;
+    }
+
     public Node(Word word) {
         this.word = word;
     }

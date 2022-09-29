@@ -3,8 +3,13 @@ import java.util.Iterator;
 public class Parser {
     private final MyIterator<Terminal> iterator;
 
+    private final SymbolTable rootSymbolTable;
+    private SymbolTable nowSymbolTable;
+
     public Parser(MyIterator<Terminal> iterator) {
         this.iterator = iterator;
+        rootSymbolTable = new SymbolTable();
+        nowSymbolTable = rootSymbolTable;
     }
     public Parser(Iterator<Terminal> iterator) {
         this(new MyIterator<Terminal>(iterator));

@@ -45,7 +45,7 @@ class Terminal extends Word {
     }
 
 
-    public int getLine() {
+    public int line() {
         return line;
     }
 

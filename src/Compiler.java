@@ -7,7 +7,7 @@ import java.util.List;
 
 public class Compiler {
     public static void main(String[] args) {
-        lab4();
+        lab3();
     }
     static List<Character> getCharList(String fileName){
         List<Character> charList = new ArrayList<>();
@@ -52,7 +52,7 @@ public class Compiler {
         String outputFile = "output.txt";
         Node result = parser(lexer(inputFile));
         SemanticChecker checker = new SemanticChecker(result);
-        checker.check();
+        checker.exec();
     }
     static void lab3(){
         String inputFile = "testfile.txt";

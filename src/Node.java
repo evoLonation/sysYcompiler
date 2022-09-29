@@ -46,4 +46,11 @@ public class Node {
     public Node(Word word) {
         this.word = word;
     }
+    public int line(){
+        if(sons.size() == 0){
+            return ((Terminal)word).line();
+        }else{
+            return sons.get(0).line();
+        }
+    }
 }

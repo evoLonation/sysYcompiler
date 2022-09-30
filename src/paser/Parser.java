@@ -1,20 +1,20 @@
 package paser;
 
 import common.CompileException;
-import common.MyIterator;
+import common.PreIterator;
 import lexer.Terminal;
 
 import java.util.Iterator;
 
 public class Parser {
-    private final MyIterator<Terminal> iterator;
+    private final PreIterator<Terminal> iterator;
 
 
-    public Parser(MyIterator<Terminal> iterator) {
+    public Parser(PreIterator<Terminal> iterator) {
         this.iterator = iterator;
     }
     public Parser(Iterator<Terminal> iterator) {
-        this(new MyIterator<Terminal>(iterator));
+        this(new PreIterator<Terminal>(iterator));
     }
 
     public Node analysis(){

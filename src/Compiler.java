@@ -62,7 +62,7 @@ public class Compiler {
         checker.exec();
     }
     static void lab3(){
-        String inputFile = "testfile.txt";
+        String inputFile = "test.txt";
         String outputFile = "output.txt";
         List<Word> result = parser(lexer(inputFile)).postorderWalk();
         StringBuilder str = new StringBuilder("");

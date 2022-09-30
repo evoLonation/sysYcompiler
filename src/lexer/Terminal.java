@@ -44,24 +44,33 @@ public class Terminal extends Word {
 
     protected String value;
     protected int line;
+    protected TerminalType type;
     public String getValue() {
         return value;
     }
 
+    public TerminalType getTerminalType() {
+        return type;
+    }
 
     public int line() {
         return line;
     }
 
     public Terminal(String type, String value, int lineno) {
-        this.type = type;
         this.value = value;
         this.line = lineno;
     }
 
+    public Terminal(TerminalType type, String value, int line) {
+        this.type = type;
+        this.value = value;
+        this.line = line;
+    }
+
     @Override
     public String toString() {
-        return getType() + " " + getValue();
+        return getTerminalType() + " " + getValue();
 //        return getLine() + " : " + getType() + " " + getValue();
     }
 

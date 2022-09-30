@@ -1,10 +1,10 @@
 package lexer;
 
-import common.MyIterator;
+import common.PreIterator;
 
 import java.util.Iterator;
 
-public class SourceIterator extends MyIterator<Character> {
+public class SourceIterator extends PreIterator<Character> {
 
     public SourceIterator(Iterator<Character> iterator) {
         super(iterator);

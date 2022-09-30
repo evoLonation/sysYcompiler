@@ -6,7 +6,7 @@ public class IntConst extends Terminal{
         return digitValue;
     }
     IntConst(int value, int lineno) {
-        super(Terminal.INTCON, Integer.toString(value), lineno);
+        super(TerminalType.INTCON, Integer.toString(value), lineno);
         this.digitValue = value;
     }
 }

@@ -4,14 +4,14 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 
-public class MyIterator <T>{
+public class PreIterator<T>{
     private Iterator<T> mIt;
     private T now;
-    public MyIterator(Iterator<T> iterator) {
+    public PreIterator(Iterator<T> iterator) {
         mIt = iterator;
         next();
     }
-    public MyIterator(Iterable<T> iterable) {
+    public PreIterator(Iterable<T> iterable) {
         mIt = iterable.iterator();
     }
     public T now(){

@@ -7,7 +7,7 @@ public class FormatString extends Terminal{
 
     private List<Char> charList = new ArrayList<>();
     public FormatString(List<Char> charList, int lineno) {
-        super(Terminal.STRCON, "" , lineno);
+        super(TerminalType.STRCON, "" , lineno);
         StringBuilder builder = new StringBuilder("\"");
         for(Char c: charList){
             builder.append(c);

@@ -67,21 +67,21 @@ public class Lexer {
     }
 
     private Terminal getByLexeme(String lex, int nowLine) {
-        String type;
+        TerminalType type;
         switch (lex){
-            case "main" : type = Terminal.MAINTK; break;
-            case "const" : type = Terminal.CONSTTK; break;
-            case "break" : type = Terminal.BREAKTK; break;
-            case "continue" : type = Terminal.CONTINUETK; break;
-            case "int" : type = Terminal.INTTK; break;
-            case "if" : type = Terminal.IFTK; break;
-            case "else" : type = Terminal.ELSETK; break;
-            case "while" : type = Terminal.WHILETK; break;
-            case "getint" : type = Terminal.GETINTTK; break;
-            case "printf" : type = Terminal.PRINTFTK; break;
-            case "return" : type = Terminal.RETURNTK; break;
-            case "void" : type = Terminal.VOIDTK; break;
-            default: type = Terminal.IDENFR; break;
+            case "main" : type = TerminalType.MAINTK; break;
+            case "const" : type = TerminalType.CONSTTK; break;
+            case "break" : type = TerminalType.BREAKTK; break;
+            case "continue" : type = TerminalType.CONTINUETK; break;
+            case "int" : type = TerminalType.INTTK; break;
+            case "if" : type = TerminalType.IFTK; break;
+            case "else" : type = TerminalType.ELSETK; break;
+            case "while" : type = TerminalType.WHILETK; break;
+            case "getint" : type = TerminalType.GETINTTK; break;
+            case "printf" : type = TerminalType.PRINTFTK; break;
+            case "return" : type = TerminalType.RETURNTK; break;
+            case "void" : type = TerminalType.VOIDTK; break;
+            default: type = TerminalType.IDENFR; break;
         }
         return new Terminal(type, lex, nowLine);
     }
@@ -135,22 +135,22 @@ public class Lexer {
         int nowLine = iterator.line();
         iterator.next();
         String value = Character.toString(c);
-        String type = null;
+        TerminalType type = null;
         switch (c) {
             case '!':
                 if (iterator.now() == '=') {
                     value += '=';
                     iterator.next();
-                    type = Terminal.NEQ;
+                    type = TerminalType.NEQ;
                 } else {
-                    type = Terminal.NOT;
+                    type = TerminalType.NOT;
                 }
                 break;
             case '&':
                 if (iterator.now() == '&') {
                     value += '&';
                     iterator.next();
-                    type = Terminal.AND;
+                    type = TerminalType.AND;
                 } else {
                     throw new CompileException();
                 }
@@ -159,7 +159,7 @@ public class Lexer {
                 if (iterator.now() == '|') {
                     value += '|';
                     iterator.next();
-                    type = Terminal.OR;
+                    type = TerminalType.OR;
                 } else {
                     throw new CompileException();
                 }
@@ -168,67 +168,67 @@ public class Lexer {
                 if (iterator.now() == '=') {
                     value += '=';
                     iterator.next();
-                    type = Terminal.LEQ;
+                    type = TerminalType.LEQ;
                 } else {
-                    type = Terminal.LSS;
+                    type = TerminalType.LSS;
                 }
                 break;
             case '>':
                 if (iterator.now() == '=') {
                     value += '=';
                     iterator.next();
-                    type = Terminal.GEQ;
+                    type = TerminalType.GEQ;
                 } else {
-                    type = Terminal.GRE;
+                    type = TerminalType.GRE;
                 }
                 break;
             case '=':
                 if (iterator.now() == '=') {
                     value += '=';
                     iterator.next();
-                    type = Terminal.EQL;
+                    type = TerminalType.EQL;
                 } else {
-                    type = Terminal.ASSIGN;
+                    type = TerminalType.ASSIGN;
                 }
                 break;
             case '+' :
-                type = Terminal.PLUS;
+                type = TerminalType.PLUS;
                 break;
             case '-':
-                type = Terminal.MINU;
+                type = TerminalType.MINU;
                 break;
             case '*':
-                type = Terminal.MULT;
+                type = TerminalType.MULT;
                 break;
             case '/':
-                type = Terminal.DIV;
+                type = TerminalType.DIV;
                 break;
             case '%':
-                type = Terminal.MOD;
+                type = TerminalType.MOD;
                 break;
             case ';':
-                type = Terminal.SEMICN;
+                type = TerminalType.SEMICN;
                 break;
             case ',':
-                type = Terminal.COMMA;
+                type = TerminalType.COMMA;
                 break;
             case '(':
-                type = Terminal.LPARENT;
+                type = TerminalType.LPARENT;
                 break;
             case ')':
-                type = Terminal.RPARENT;
+                type = TerminalType.RPARENT;
                 break;
             case '[':
-                type = Terminal.LBRACK;
+                type = TerminalType.LBRACK;
                 break;
             case ']':
-                type = Terminal.RBRACK;
+                type = TerminalType.RBRACK;
                 break;
             case '{':
-                type = Terminal.LBRACE;
+                type = TerminalType.LBRACE;
                 break;
             case '}':
-                type = Terminal.RBRACE;
+                type = TerminalType.RBRACE;
                 break;
         }
         return new Terminal(type, value, nowLine);

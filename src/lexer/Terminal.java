@@ -2,7 +2,7 @@ package lexer;
 
 import common.Word;
 
-public class Terminal extends Word {
+public class Terminal{
     public static final String IDENFR = "IDENFR";
     public static final String INTCON = "INTCON";
     public static final String STRCON = "STRCON";
@@ -55,11 +55,6 @@ public class Terminal extends Word {
 
     public int line() {
         return line;
-    }
-
-    public Terminal(String type, String value, int lineno) {
-        this.value = value;
-        this.line = lineno;
     }
 
     public Terminal(TerminalType type, String value, int line) {

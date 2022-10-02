@@ -18,32 +18,34 @@ public class FormatString extends Terminal{
     public List<Char> getCharList() {
         return charList;
     }
-}
-interface Char{
 
-}
-class FormatChar implements Char{
-    @Override
-    public String toString() {
-        return "%d";
+    interface Char{
+
     }
-}
-class NormalChar implements Char{
-    private final char value;
-
-    public char getValue() {
-        return value;
-    }
-
-    public NormalChar(char value) {
-        this.value = value;
-    }
-
-    @Override
-    public String toString() {
-        if(value == '\n'){
-            return "\\n";
+    static class FormatChar implements Char{
+        @Override
+        public String toString() {
+            return "%d";
         }
-        return Character.toString(value);
     }
+    static class NormalChar implements Char{
+        private final char value;
+
+        public char getValue() {
+            return value;
+        }
+
+        public NormalChar(char value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            if(value == '\n'){
+                return "\\n";
+            }
+            return Character.toString(value);
+        }
+    }
+
 }

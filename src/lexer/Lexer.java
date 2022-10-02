@@ -81,7 +81,7 @@ public class Lexer {
             case "printf" : type = TerminalType.PRINTFTK; break;
             case "return" : type = TerminalType.RETURNTK; break;
             case "void" : type = TerminalType.VOIDTK; break;
-            default: type = TerminalType.IDENFR; break;
+            default: return new Ident(lex, nowLine);
         }
         return new Terminal(type, lex, nowLine);
     }
@@ -92,25 +92,25 @@ public class Lexer {
         }
         int line = iterator.line();
         iterator.next();
-        List<Char> charList = new ArrayList<>();
+        List<FormatString.Char> charList = new ArrayList<>();
         while(true){
             if(isNormalChar()){
                 if(iterator.now() == '\\'){
                     iterator.next();
                     if(iterator.now() == 'n'){
-                        charList.add(new NormalChar('\n'));
+                        charList.add(new FormatString.NormalChar('\n'));
                         iterator.next();
                     }else{
                         throw new CompileException();
                     }
                 }else{
-                    charList.add(new NormalChar(iterator.now()));
+                    charList.add(new FormatString.NormalChar(iterator.now()));
                     iterator.next();
                 }
             }else if(iterator.now() == '%'){
                 iterator.next();
                 if(iterator.now() == 'd'){
-                    charList.add(new FormatChar());
+                    charList.add(new FormatString.FormatChar());
                     iterator.next();
                 }else{
                     throw new CompileException();

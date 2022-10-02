@@ -1,10 +1,8 @@
 import common.Word;
 import lexer.Lexer;
 import lexer.Terminal;
-import paser.Node;
-import paser.Nonterminal;
-import paser.Parser;
-import semantic.SemanticChecker;
+import parser.Parser;
+import parser.nonterminal.CompUnit;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,24 +48,27 @@ public class Compiler {
         Lexer analyser = new Lexer(charList.iterator());
         return analyser.analysis();
     }
-    static Node parser(List<Terminal> terminals){
+
+    static CompUnit parser(List<Terminal> terminals){
         Parser parser = new Parser(terminals.iterator());
         return parser.analysis();
     }
     static void lab4(){
         String inputFile = "testfile.txt";
         String outputFile = "output.txt";
-        Node result = parser(lexer(inputFile));
-        SemanticChecker checker = new SemanticChecker(result);
-        checker.exec();
+        CompUnit result = parser(lexer(inputFile));
+//        SemanticChecker checker = new SemanticChecker(result);
+//        checker.exec();
     }
     static void lab3(){
-        String inputFile = "test.txt";
+        String inputFile = "testfile.txt";
         String outputFile = "output.txt";
-        List<Word> result = parser(lexer(inputFile)).postorderWalk();
+        Parser parser = new Parser(lexer(inputFile).iterator());
+        CompUnit compUnit = parser.analysis();
+        List<String> result = parser.getPostOrderList();
         StringBuilder str = new StringBuilder("");
-        for(Word word: result){
-            if(word.typeOf(Nonterminal.Decl, Nonterminal.BType, Nonterminal.BlockItem)){
+        for(String word: result){
+            if(word.equals("<Decl>") || word.equals("<BType>") || word.equals("<BlockItem>")){
                 continue;
             }
             str.append(word).append("\n");

@@ -7,12 +7,13 @@ import java.util.NoSuchElementException;
 public class PreIterator<T>{
     private Iterator<T> mIt;
     private T now;
+    private T previous;
     public PreIterator(Iterator<T> iterator) {
         mIt = iterator;
         next();
     }
     public PreIterator(Iterable<T> iterable) {
-        mIt = iterable.iterator();
+        this(iterable.iterator());
     }
     public T now(){
         return now;
@@ -20,6 +21,7 @@ public class PreIterator<T>{
 
     private LinkedList<T> preList = new LinkedList<>();
     public T next(){
+        previous = now;
         if(!preList.isEmpty()){
             now = preList.removeFirst();
         }else{
@@ -40,5 +42,8 @@ public class PreIterator<T>{
             }
         }
         return preList.get(i - 1);
+    }
+    public T previous(){
+        return previous;
     }
 }

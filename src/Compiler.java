@@ -62,7 +62,7 @@ public class Compiler {
     }
 
     static ParserResult parser(List<Terminal> terminals){
-        Parser parser = new Parser(terminals.iterator(), errorRecorder);
+        Parser parser = new Parser(terminals, errorRecorder);
         return new ParserResult(parser.analysis(), parser.getPostOrderList());
     }
 

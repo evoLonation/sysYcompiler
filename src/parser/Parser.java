@@ -2,6 +2,7 @@ package parser;
 
 import common.CompileException;
 import common.PreIterator;
+import error.ErrorRecorder;
 import lexer.*;
 import parser.nonterminal.*;
 import parser.nonterminal.decl.ConstDecl;
@@ -21,12 +22,15 @@ public class Parser {
 
     private final List<String> postOrderList = new ArrayList<>();
 
+    private final ErrorRecorder errorRecorder;
 
-    public Parser(PreIterator<Terminal> iterator) {
+    public Parser(PreIterator<Terminal> iterator, ErrorRecorder errorRecorder) {
         this.iterator = iterator;
+        this.errorRecorder = errorRecorder;
     }
-    public Parser(Iterator<Terminal> iterator) {
-        this(new PreIterator<Terminal>(iterator));
+
+    public Parser(List<Terminal> list, ErrorRecorder errorRecorder) {
+        this(new PreIterator<Terminal>(list), errorRecorder);
     }
 
     public CompUnit analysis(){
@@ -117,7 +121,7 @@ public class Parser {
             addTerminal();
             defs.add(Def(isConst));
         }
-        check(TerminalType.SEMICN);
+        checkSemicolon();
         if(isConst){
             ret = new ConstDecl(defs);
             postOrderList.add("<ConstDecl>");
@@ -125,7 +129,6 @@ public class Parser {
             ret = new VarDecl(defs);
             postOrderList.add("<VarDecl>");
         }
-
         return ret;
     }
 
@@ -139,8 +142,8 @@ public class Parser {
         List<Exp> exps = new ArrayList<>();
         while(is(TerminalType.LBRACK)){
             addTerminal();
-            exps.add(Exp(isConst));
-            check(TerminalType.RBRACK);
+            exps.add(ConstExp());
+            checkRBracket();
         }
         Def.InitVal initVal = null;
         if(isConst){
@@ -152,7 +155,7 @@ public class Parser {
                 addTerminal();
                 initVal = InitVal(false);
             }
-            postOrderList.add("<Def>");
+            postOrderList.add("<VarDef>");
         }
         return new Def(ident, exps, initVal);
     }
@@ -186,7 +189,7 @@ public class Parser {
         check(TerminalType.INTTK);
         check(TerminalType.MAINTK);
         check(TerminalType.LPARENT);
-        check(TerminalType.RPARENT);
+        checkRParent();
         ret = new MainFuncDef(Block());
         postOrderList.add("<MainFuncDef>");
         return ret;
@@ -212,7 +215,7 @@ public class Parser {
         if(is(TerminalType.INTTK)){
             funcFParams = FuncFParams();
         }
-        check(TerminalType.RPARENT);
+        checkRParent();
         Block block = Block();
         ret = new FuncDef(isInt, ident, funcFParams, block);
         postOrderList.add("<FuncDef>");
@@ -237,12 +240,12 @@ public class Parser {
         Exp exp = null;
         if(is(TerminalType.LBRACK)){
             addTerminal();
-            check(TerminalType.RBRACK);
+            checkRBracket();
             dimension ++;
             if(is(TerminalType.LBRACK)){
                 addTerminal();
-                exp = Exp();
-                check(TerminalType.RBRACK);
+                exp = ConstExp();
+                checkRBracket();
             }
         }
         ret = new FuncDef.FuncFParam(ident, dimension, exp);
@@ -288,7 +291,7 @@ public class Parser {
             addTerminal();
             check(TerminalType.LPARENT);
             Exp exp = Cond();
-            check(TerminalType.RPARENT);
+            checkRParent();
             Stmt ifstmt = Stmt();
             Stmt elsestmt = null;
             if(is(TerminalType.ELSETK)){
@@ -300,16 +303,16 @@ public class Parser {
             addTerminal();
             check(TerminalType.LPARENT);
             Exp exp = Cond();
-            check(TerminalType.RPARENT);
+            checkRParent();
             Stmt stmt = Stmt();
             ret = new While(exp, stmt);
         }else if(is(TerminalType.BREAKTK)){
             addTerminal();
-            check(TerminalType.SEMICN);
+            checkSemicolon();
             ret = new Break();
         }else if(is(TerminalType.CONTINUETK)){
             addTerminal();
-            check(TerminalType.SEMICN);
+            checkSemicolon();
             ret = new Continue();
         }else if(is(TerminalType.PRINTFTK)){
             addTerminal();
@@ -320,8 +323,8 @@ public class Parser {
                 addTerminal();
                 exps.add(Exp());
             }
-            check(TerminalType.RPARENT);
-            check(TerminalType.SEMICN);
+            checkRParent();
+            checkSemicolon();
             ret = new Printf(formatString, exps);
         }else if(is(TerminalType.RETURNTK)){
             addTerminal();
@@ -329,7 +332,7 @@ public class Parser {
             if(isExp()){
                 exp = Exp();
             }
-            check(TerminalType.SEMICN);
+            checkSemicolon();
             ret = new Return(exp);
         }else if(is(TerminalType.LBRACE)){
             ret = Block();
@@ -345,7 +348,7 @@ public class Parser {
             if(isPre(1, TerminalType.LPARENT)){
                 // exp
                 ret = Exp();
-                check(TerminalType.SEMICN);
+                checkSemicolon();
             }else {
                 // maybe exp or lval
                 // find assign
@@ -357,13 +360,13 @@ public class Parser {
                             addTerminal();
                             addTerminal();
                             check(TerminalType.LPARENT);
-                            check(TerminalType.RPARENT);
-                            check(TerminalType.SEMICN);
+                            checkRParent();
+                            checkSemicolon();
                         }else if(isExp(i + 1)){
                             LVal lVal = LVal();
                             addTerminal();
                             Exp exp = Exp();
-                            check(TerminalType.SEMICN);
+                            checkSemicolon();
                             ret = new Assign(lVal, exp);
                         }else {
                             throw new CompileException();
@@ -371,8 +374,7 @@ public class Parser {
                         break;
                     }else if(isPre(i, TerminalType.SEMICN)){
                         ret = Exp();
-                        check(TerminalType.RPARENT);
-                        check(TerminalType.SEMICN);
+                        checkSemicolon();
                         break;
                     }else if(now() == null){
                         throw new CompileException();
@@ -382,7 +384,7 @@ public class Parser {
             }
         }else if(isExp()){
             ret = Exp();
-            check(TerminalType.SEMICN);
+            checkSemicolon();
         }else if(is(TerminalType.SEMICN)) {
             addTerminal();
             ret = null;
@@ -400,18 +402,21 @@ public class Parser {
         if(is(TerminalType.LBRACK)){
             addTerminal();
             exps.add(Exp());
-            check(TerminalType.RBRACK);
+            checkRBracket();
         }
         if(is(TerminalType.LBRACK)){
             addTerminal();
             exps.add(Exp());
-            check(TerminalType.RBRACK);
+            checkRBracket();
         }
         ret = new LVal(ident, exps);
         postOrderList.add("<LVal>");
         return ret;
     }
 
+    private Exp ConstExp() {
+        return Exp(true);
+    }
     private Exp Exp(){
         return Exp(false);
     }
@@ -421,7 +426,7 @@ public class Parser {
         if(isConst){
             postOrderList.add("<ConstExp>");
         }else {
-            postOrderList.add("<AddExp>");
+            postOrderList.add("<Exp>");
         }
         return ret;
     }
@@ -432,7 +437,7 @@ public class Parser {
         return ret;
     }
 
-    static enum Layer{
+    private enum Layer{
         ADD,
         MUL,
         REL,
@@ -518,12 +523,14 @@ public class Parser {
                 }
                 postOrderList.add("<FuncRParams>");
             }
-            check(TerminalType.RPARENT);
+            checkRParent();
             primaryExp = new FuncCall(ident, exps);
         }else{
             throw new CompileException();
         }
-        postOrderList.add("<UnaryExp>");
+        while(time-- != 0){
+            postOrderList.add("<UnaryExp>");
+        }
         ret = new UnaryExp(unaryOps, primaryExp);
         return ret;
     }
@@ -533,7 +540,7 @@ public class Parser {
         if(is(TerminalType.LPARENT)){
             addTerminal();
             ret = Exp();
-            check(TerminalType.RPARENT);
+            checkRParent();
         }else if(is(TerminalType.IDENFR)){
             ret = LVal();
         }else if(is(TerminalType.INTCON)){
@@ -614,10 +621,33 @@ public class Parser {
 
     private void check(TerminalType terminal){
         if(!is(terminal)){
-            throw new CompileException();
+            throw new CompileException(iterator.now().line());
         }
         addTerminal();
     }
+
+    private void checkRBracket(){
+        if(!is(TerminalType.RBRACK)){
+            errorRecorder.rBracketLack(iterator.previous().line());
+            return;
+        }
+        addTerminal();
+    }
+    private void checkRParent(){
+        if(!is(TerminalType.RPARENT)){
+            errorRecorder.rParentLack(iterator.previous().line());
+            return;
+        }
+        addTerminal();
+    }
+    private void checkSemicolon(){
+        if(!is(TerminalType.SEMICN)){
+            errorRecorder.semicolonLack(iterator.previous().line());
+            return;
+        }
+        addTerminal();
+    }
+
     private Terminal checkAndGet(TerminalType terminal){
         if(!is(terminal)){
             throw new CompileException();
@@ -632,6 +662,7 @@ public class Parser {
         iterator.next();
     }
     private Terminal get(){
+        postOrderList.add(iterator.now().toString());
         Terminal now = iterator.now();
         iterator.next();
         return now;
@@ -656,6 +687,8 @@ public class Parser {
         }
         return false;
     }
+
+
 
 
 }

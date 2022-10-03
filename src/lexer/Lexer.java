@@ -1,13 +1,16 @@
 package lexer;
 
 import common.CompileException;
+import error.ErrorRecorder;
 
 import java.util.*;
 
 public class Lexer {
-    SourceIterator iterator;
-    public Lexer(Iterator<Character> iterator){
+    private final SourceIterator iterator;
+    private final ErrorRecorder errorRecorder;
+    public Lexer(Iterator<Character> iterator, ErrorRecorder errorRecorder){
         this.iterator = new SourceIterator(iterator);
+        this.errorRecorder = errorRecorder;
     }
 
     public boolean isIdentifierNoDigit(char c){
@@ -101,7 +104,7 @@ public class Lexer {
                         charList.add(new FormatString.NormalChar('\n'));
                         iterator.next();
                     }else{
-                        throw new CompileException();
+                        errorRecorder.illegalChar(iterator.line(), '\\');
                     }
                 }else{
                     charList.add(new FormatString.NormalChar(iterator.now()));
@@ -113,12 +116,14 @@ public class Lexer {
                     charList.add(new FormatString.FormatChar());
                     iterator.next();
                 }else{
-                    throw new CompileException();
+                    errorRecorder.illegalChar(iterator.line(), '%');
                 }
             }else if(iterator.now() == '"') {
                 iterator.next();
                 break;
-            }else {
+            }else if(iterator.now() != null){
+                errorRecorder.illegalChar(iterator.line(), iterator.now());
+            }else{
                 throw new CompileException();
             }
         }

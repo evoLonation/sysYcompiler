@@ -1,4 +1,5 @@
-import common.Word;
+import error.Error;
+import error.ErrorRecorder;
 import lexer.Lexer;
 import lexer.Terminal;
 import parser.Parser;
@@ -11,8 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Compiler {
+    static ErrorRecorder errorRecorder = new ErrorRecorder();
+
     public static void main(String[] args) {
-        lab3();
+        lab4();
     }
     static List<Character> getCharList(String fileName){
         List<Character> charList = new ArrayList<>();
@@ -45,29 +48,42 @@ public class Compiler {
 
     static List<Terminal> lexer(String inputFile){
         List<Character> charList = getCharList(inputFile);
-        Lexer analyser = new Lexer(charList.iterator());
+        Lexer analyser = new Lexer(charList.iterator(), errorRecorder);
         return analyser.analysis();
     }
 
-    static CompUnit parser(List<Terminal> terminals){
-        Parser parser = new Parser(terminals.iterator());
-        return parser.analysis();
+    static class ParserResult{
+        CompUnit compUnit;
+        List<String> postOrderList;
+        public ParserResult(CompUnit compUnit, List<String> strings) {
+            this.compUnit = compUnit;
+            this.postOrderList = strings;
+        }
     }
+
+    static ParserResult parser(List<Terminal> terminals){
+        Parser parser = new Parser(terminals.iterator(), errorRecorder);
+        return new ParserResult(parser.analysis(), parser.getPostOrderList());
+    }
+
     static void lab4(){
         String inputFile = "testfile.txt";
-        String outputFile = "output.txt";
-        CompUnit result = parser(lexer(inputFile));
+        String outputFile = "error.txt";
+        ParserResult result = parser(lexer(inputFile));
 //        SemanticChecker checker = new SemanticChecker(result);
 //        checker.exec();
+        StringBuilder str = new StringBuilder("");
+        for(Error error : errorRecorder.getErrorList()){
+            str.append(error.detail()).append("\n");
+        }
+        printAndWrite(outputFile, str.toString());
     }
     static void lab3(){
         String inputFile = "testfile.txt";
         String outputFile = "output.txt";
-        Parser parser = new Parser(lexer(inputFile).iterator());
-        CompUnit compUnit = parser.analysis();
-        List<String> result = parser.getPostOrderList();
+        ParserResult result = parser(lexer(inputFile));
         StringBuilder str = new StringBuilder("");
-        for(String word: result){
+        for(String word: result.postOrderList){
             if(word.equals("<Decl>") || word.equals("<BType>") || word.equals("<BlockItem>")){
                 continue;
             }

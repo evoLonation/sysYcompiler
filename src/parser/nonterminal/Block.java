@@ -4,10 +4,15 @@ import parser.nonterminal.stmt.Stmt;
 
 import java.util.List;
 
-public class Block implements Stmt {
-    List<BlockItem> blockItems;
+public class Block extends ASDDefault implements Stmt {
+    private final List<BlockItem> blockItems;
+
+    public List<BlockItem> getBlockItems() {
+        return blockItems;
+    }
 
     public Block(List<BlockItem> blockItems) {
         this.blockItems = blockItems;
+        addSon(blockItems);
     }
 }

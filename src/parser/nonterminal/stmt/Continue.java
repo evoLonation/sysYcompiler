@@ -1,4 +1,6 @@
 package parser.nonterminal.stmt;
 
-public class Continue implements Stmt {
+import parser.nonterminal.ASDDefault;
+
+public class Continue extends ASDDefault implements Stmt {
 }

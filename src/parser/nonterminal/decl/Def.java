@@ -1,30 +1,29 @@
 package parser.nonterminal.decl;
 
 import lexer.Ident;
+import parser.nonterminal.ASD;
+import parser.nonterminal.ASDDefault;
 import parser.nonterminal.exp.Exp;
+import type.Type;
 
 import java.util.List;
 
-public class Def {
+public abstract class Def extends ASDDefault {
     Ident ident;
     List<Exp> constExps;
-    InitVal initVal;
 
+    public Ident getIdent() {
+        return ident;
+    }
 
-    public Def(Ident ident, List<Exp> constExps, InitVal initVal) {
+    public List<Exp> getConstExps() {
+        return constExps;
+    }
+
+    public Def(Ident ident, List<Exp> constExps) {
         this.ident = ident;
         this.constExps = constExps;
-        this.initVal = initVal;
+        addSon(constExps);
     }
 
-    static public interface InitVal{
-    }
-
-    static public class ArrayInitVal implements InitVal {
-        private List<InitVal> initVals;
-
-        public ArrayInitVal(List<InitVal> initVals) {
-            this.initVals = initVals;
-        }
-    }
 }

@@ -1,4 +1,6 @@
 package parser.nonterminal.stmt;
 
-public class Break implements Stmt {
+import parser.nonterminal.ASDDefault;
+
+public class Break extends ASDDefault implements Stmt {
 }

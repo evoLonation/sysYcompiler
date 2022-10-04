@@ -1,4 +1,4 @@
 package parser.nonterminal;
 
-public interface BlockItem {
+public interface BlockItem extends ASD {
 }

@@ -1,8 +1,9 @@
 package parser.nonterminal.stmt;
 
+import parser.nonterminal.ASDDefault;
 import parser.nonterminal.exp.Exp;
 
-public class If implements Stmt {
+public class If extends ASDDefault implements Stmt {
     private Exp cond;
     private Stmt ifStmt;
     private Stmt elseStmt;
@@ -11,6 +12,7 @@ public class If implements Stmt {
         this.cond = cond;
         this.ifStmt = ifStmt;
         this.elseStmt = elseStmt;
+        addSon(cond, ifStmt, elseStmt);
     }
 }
 

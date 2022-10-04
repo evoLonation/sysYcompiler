@@ -4,6 +4,7 @@ import lexer.Lexer;
 import lexer.Terminal;
 import parser.Parser;
 import parser.nonterminal.CompUnit;
+import semantic.Semantic;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,7 +16,7 @@ public class Compiler {
     static ErrorRecorder errorRecorder = new ErrorRecorder();
 
     public static void main(String[] args) {
-        lab4();
+        lab3();
     }
     static List<Character> getCharList(String fileName){
         List<Character> charList = new ArrayList<>();
@@ -70,8 +71,8 @@ public class Compiler {
         String inputFile = "testfile.txt";
         String outputFile = "error.txt";
         ParserResult result = parser(lexer(inputFile));
-//        SemanticChecker checker = new SemanticChecker(result);
-//        checker.exec();
+        Semantic checker = new Semantic(result.compUnit, errorRecorder);
+        checker.analysis();
         StringBuilder str = new StringBuilder("");
         for(Error error : errorRecorder.getErrorList()){
             str.append(error.detail()).append("\n");
@@ -82,6 +83,8 @@ public class Compiler {
         String inputFile = "testfile.txt";
         String outputFile = "output.txt";
         ParserResult result = parser(lexer(inputFile));
+        Semantic checker = new Semantic(result.compUnit, errorRecorder);
+        checker.analysis();
         StringBuilder str = new StringBuilder("");
         for(String word: result.postOrderList){
             if(word.equals("<Decl>") || word.equals("<BType>") || word.equals("<BlockItem>")){

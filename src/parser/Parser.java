@@ -5,16 +5,12 @@ import common.PreIterator;
 import error.ErrorRecorder;
 import lexer.*;
 import parser.nonterminal.*;
-import parser.nonterminal.decl.ConstDecl;
-import parser.nonterminal.decl.Decl;
-import parser.nonterminal.decl.Def;
-import parser.nonterminal.decl.VarDecl;
+import parser.nonterminal.decl.*;
 import parser.nonterminal.exp.*;
 import parser.nonterminal.exp.Number;
 import parser.nonterminal.stmt.*;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class Parser {
@@ -122,11 +118,10 @@ public class Parser {
             defs.add(Def(isConst));
         }
         checkSemicolon();
+        ret = new Decl(defs);
         if(isConst){
-            ret = new ConstDecl(defs);
             postOrderList.add("<ConstDecl>");
         }else {
-            ret = new VarDecl(defs);
             postOrderList.add("<VarDecl>");
         }
         return ret;
@@ -145,34 +140,38 @@ public class Parser {
             exps.add(ConstExp());
             checkRBracket();
         }
-        Def.InitVal initVal = null;
+        InitVal initVal;
         if(isConst){
             check(TerminalType.ASSIGN);
             initVal = InitVal(true);
             postOrderList.add("<ConstDef>");
+            return new ConstDef(ident, exps, initVal);
         }else{
             if(is(TerminalType.ASSIGN)){
                 addTerminal();
                 initVal = InitVal(false);
+                postOrderList.add("<VarDef>");
+                return new VarDef(ident, exps, initVal);
+            } else {
+                postOrderList.add("<VarDef>");
+                return new VarDef(ident, exps);
             }
-            postOrderList.add("<VarDef>");
         }
-        return new Def(ident, exps, initVal);
     }
-    private Def.InitVal InitVal (boolean isConst) {
-        Def.InitVal ret;
+    private InitVal InitVal (boolean isConst) {
+        InitVal ret;
         if(isExp()){
-            ret = Exp(isConst);
+            ret = new IntInitVal(Exp(isConst));
         }else if(is(TerminalType.LBRACE)){
             addTerminal();
-            List<Def.InitVal> initVals = new ArrayList<>();
+            List<InitVal> initVals = new ArrayList<>();
             initVals.add(InitVal(isConst));
             while(is(TerminalType.COMMA)){
                 addTerminal();
                 initVals.add(InitVal(isConst));
             }
             check(TerminalType.RBRACE);
-            ret = new Def.ArrayInitVal(initVals);
+            ret = new ArrayInitVal(initVals);
         }else {
             throw new CompileException();
         }
@@ -214,10 +213,12 @@ public class Parser {
         List<FuncDef.FuncFParam> funcFParams = null;
         if(is(TerminalType.INTTK)){
             funcFParams = FuncFParams();
+        }else{
+            funcFParams = new ArrayList<>();
         }
         checkRParent();
         Block block = Block();
-        ret = new FuncDef(isInt, ident, funcFParams, block);
+        ret = new FuncDef(isInt, ident, funcFParams, block.getBlockItems());
         postOrderList.add("<FuncDef>");
         return ret;
     }
@@ -246,9 +247,14 @@ public class Parser {
                 addTerminal();
                 exp = ConstExp();
                 checkRBracket();
+                dimension ++;
             }
         }
-        ret = new FuncDef.FuncFParam(ident, dimension, exp);
+        if(exp == null){
+            ret = new FuncDef.FuncFParam(ident, dimension);
+        }else{
+            ret = new FuncDef.FuncFParam(ident, dimension, exp);
+        }
         postOrderList.add("<FuncFParam>");
         return ret;
     }
@@ -437,29 +443,30 @@ public class Parser {
         return ret;
     }
 
-    private enum Layer{
-        ADD,
-        MUL,
-        REL,
-        EQ,
-        LAND,
-        LOR,
-        UNARY,
-    }
 
-    private Exp LayerExp(Layer layer){
-        if(layer == Layer.UNARY){
-            return UnaryExp();
+    private Exp LayerExp(ExpLayer layer){
+        if(layer == ExpLayer.MUL){
+            Exp ret;
+            Exp first = UnaryExp();
+            List<Exp> exps = new ArrayList<>();
+            List<TerminalType> ops = new ArrayList<>();
+            while(isOp(layer)){
+                postOrderList.add("<MulExp>");
+                ops.add(get().getTerminalType());
+                exps.add(UnaryExp());
+            }
+            ret = new BinaryExp(first, exps, ops, layer);
+            postOrderList.add("<MulExp>");
+            return ret;
         }
-        Layer nextLayer;
+        ExpLayer nextLayer;
         String wordName;
         switch (layer){
-            case REL: nextLayer = Layer.ADD; wordName = "<RelExp>"; break;
-            case MUL: nextLayer = Layer.UNARY; wordName = "<MulExp>";break;
-            case LAND: nextLayer = Layer.EQ; wordName = "<LAndExp>";break;
-            case LOR: nextLayer = Layer.LAND; wordName = "<LOrExp>";break;
-            case ADD: nextLayer = Layer.MUL; wordName = "<AddExp>";break;
-            case EQ: nextLayer = Layer.REL; wordName = "<EqExp>";break;
+            case REL: nextLayer = ExpLayer.ADD; wordName = "<RelExp>"; break;
+            case LAND: nextLayer = ExpLayer.EQ; wordName = "<LAndExp>";break;
+            case LOR: nextLayer = ExpLayer.LAND; wordName = "<LOrExp>";break;
+            case ADD: nextLayer = ExpLayer.MUL; wordName = "<AddExp>";break;
+            case EQ: nextLayer = ExpLayer.REL; wordName = "<EqExp>";break;
             default: throw new CompileException();
         }
         Exp ret;
@@ -471,32 +478,32 @@ public class Parser {
             ops.add(get().getTerminalType());
             exps.add(LayerExp(nextLayer));
         }
-        ret = new BinaryExp(first, exps, ops);
+        ret = new BinaryExp(first, exps, ops, layer);
         postOrderList.add(wordName);
         return ret;
     }
 
     private Exp AddExp () {
-        return LayerExp(Layer.ADD);
+        return LayerExp(ExpLayer.ADD);
     }
     private Exp MulExp () {
-        return LayerExp(Layer.MUL);
+        return LayerExp(ExpLayer.MUL);
     }
     
     private Exp RelExp () {
-        return LayerExp(Layer.REL);
+        return LayerExp(ExpLayer.REL);
     }
     
     private Exp EqExp () {
-        return LayerExp(Layer.EQ);
+        return LayerExp(ExpLayer.EQ);
     }
     
     private Exp LAndExp () {
-        return LayerExp(Layer.LAND);
+        return LayerExp(ExpLayer.LAND);
     }
     
     private Exp LOrExp () {
-        return LayerExp(Layer.LOR);
+        return LayerExp(ExpLayer.LOR);
     }
     
     private UnaryExp UnaryExp () {
@@ -560,7 +567,7 @@ public class Parser {
         return is(TerminalType.PLUS, TerminalType.MINU, TerminalType.NOT);
     }
 
-    private boolean isOp(Layer layer){
+    private boolean isOp(ExpLayer layer){
         switch (layer){
             case EQ: return is(TerminalType.EQL, TerminalType.NEQ);
             case ADD: return is(TerminalType.PLUS, TerminalType.MINU);

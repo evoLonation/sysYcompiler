@@ -1,4 +1,6 @@
 package parser.nonterminal.exp;
 
-public interface PrimaryExp {
+import parser.nonterminal.ASD;
+
+public interface PrimaryExp extends ASD, ExpTyper {
 }

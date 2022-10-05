@@ -1,5 +1,7 @@
 package semantic;
 
+import error.ErrorRecorder;
+import lexer.Ident;
 import type.FuncType;
 import type.Type;
 import type.VarType;
@@ -11,30 +13,34 @@ public class SymbolTable {
     private SymbolTable father;
     private final Map<String, VarType> variableSymbols = new HashMap<>();
     private final Map<String, FuncType> funcSymbols = new HashMap<>();
+    private final ErrorRecorder errorRecorder;
     public SymbolTable(SymbolTable father) {
         this.father = father;
         father.sons.add(this);
+        this.errorRecorder = father.errorRecorder;
     }
 
-    public SymbolTable() {
-
+    public SymbolTable(ErrorRecorder errorRecorder) {
+        this.errorRecorder = errorRecorder;
     }
 
-    public Optional<VarType> getVariableSymbol(String ident){
-        if(isSymbolExist(ident)){
-            return Optional.of(variableSymbols.get(ident));
+    public Optional<VarType> getVariableSymbol(Ident ident){
+        if(isSymbolExist(ident.getValue())){
+            return Optional.of(variableSymbols.get(ident.getValue()));
         }else if(father != null){
             return father.getVariableSymbol(ident);
         }else{
+            errorRecorder.undefined(ident.line(), ident.getValue());
             return Optional.empty();
         }
     }
-    public Optional<FuncType> getFuncSymbol(String ident) {
-        if(isSymbolExist(ident)){
-            return Optional.of(funcSymbols.get(ident));
+    public Optional<FuncType> getFuncSymbol(Ident ident) {
+        if(isSymbolExist(ident.getValue())){
+            return Optional.of(funcSymbols.get(ident.getValue()));
         }else if(father != null){
             return father.getFuncSymbol(ident);
         }else{
+            errorRecorder.undefined(ident.line(), ident.getValue());
             return Optional.empty();
         }
     }
@@ -52,11 +58,19 @@ public class SymbolTable {
         return father;
     }
 
-    public void addVariableSymbol(String ident, VarType type){
-        variableSymbols.put(ident, type);
+    public void addVariableSymbol(Ident ident, VarType type){
+        if(isSymbolExist(ident.getValue())){
+            errorRecorder.redefined(ident.line(), ident.getValue());
+        }else{
+            variableSymbols.put(ident.getValue(), type);
+        }
     }
-    public void addFuncSymbol(String ident, FuncType type){
-        funcSymbols.put(ident, type);
+    public void addFuncSymbol(Ident ident, FuncType type){
+        if(isSymbolExist(ident.getValue())){
+            errorRecorder.redefined(ident.line(), ident.getValue());
+        }else {
+            funcSymbols.put(ident.getValue(), type);
+        }
     }
 
 

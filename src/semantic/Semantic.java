@@ -2,6 +2,7 @@ package semantic;
 
 import common.CompileException;
 import error.ErrorRecorder;
+import lexer.Ident;
 import lexer.TerminalType;
 import parser.nonterminal.*;
 import parser.nonterminal.decl.*;
@@ -21,7 +22,7 @@ public class Semantic {
 
     ErrorRecorder errorRecorder;
 
-    SymbolTable symbolTable = new SymbolTable();
+    SymbolTable symbolTable;
 
     Map<Class<?>, Exec<? extends ASD>> map = new HashMap<>();
 
@@ -30,6 +31,7 @@ public class Semantic {
     public Semantic(CompUnit compUnit, ErrorRecorder errorRecorder) {
         this.compUnit = compUnit;
         this.errorRecorder = errorRecorder;
+        symbolTable = new SymbolTable(errorRecorder);
         inject();
     }
 
@@ -116,7 +118,7 @@ public class Semantic {
             }else{
                 type = new IntType(initVal.getType().getConstValue());
             }
-            symbolTable.addVariableSymbol(asd.getIdent().getValue(), type);
+            symbolTable.addVariableSymbol(asd.getIdent(), type);
         }
     }
     private class VarDefExec extends Exec<VarDef> {
@@ -155,7 +157,7 @@ public class Semantic {
                     default: throw new CompileException();
                 }
             }
-            symbolTable.addVariableSymbol(asd.getIdent().getValue(), type);
+            symbolTable.addVariableSymbol(asd.getIdent(), type);
         }
     }
 
@@ -309,8 +311,11 @@ public class Semantic {
         @Override
         void exec(LVal asd) {
             execSons(asd);
-            Optional<VarType> ret = symbolTable.getVariableSymbol(asd.getIdent().getValue());
-            check(ret.isPresent());
+            Optional<VarType> ret = symbolTable.getVariableSymbol(asd.getIdent());
+            if(!ret.isPresent()){
+                asd.setType(new IntType());
+                return;
+            }
             VarType identType = ret.get();
             int dimension = identType.getDimension();
             List<Exp> exps = asd.getExps();
@@ -368,8 +373,8 @@ public class Semantic {
         @Override
         void exec(FuncCall asd) {
             execSons(asd);
-            Optional<FuncType> ret = symbolTable.getFuncSymbol(asd.getIdent().getValue());
-            check(ret.isPresent());
+            Optional<FuncType> ret = symbolTable.getFuncSymbol(asd.getIdent());
+            if(!ret.isPresent()) return;
             FuncType identType = ret.get();
             List<Exp> exps = asd.getExps();
             for(Exp exp : exps){
@@ -406,10 +411,10 @@ public class Semantic {
                 getExec(funcFParam).exec(funcFParam);
                 types.add(funcFParam.getType());
             }
-            symbolTable.addFuncSymbol(asd.getIdent().getValue(), new FuncType(asd.isInt(), types));
+            symbolTable.addFuncSymbol(asd.getIdent(), new FuncType(asd.isInt(), types));
             symbolTable = new SymbolTable(symbolTable);
             for(FuncDef.FuncFParam funcFParam : asd.getFuncFParams()){
-                symbolTable.addVariableSymbol(funcFParam.getIdent().getValue(), funcFParam.getType());
+                symbolTable.addVariableSymbol(funcFParam.getIdent(), funcFParam.getType());
             }
             for(BlockItem blockItem : asd.getBlockItems()){
                 getExec(blockItem).exec(blockItem);

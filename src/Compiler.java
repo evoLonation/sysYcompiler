@@ -16,7 +16,7 @@ public class Compiler {
     static ErrorRecorder errorRecorder = new ErrorRecorder();
 
     public static void main(String[] args) {
-        lab3();
+        lab4();
     }
     static List<Character> getCharList(String fileName){
         List<Character> charList = new ArrayList<>();

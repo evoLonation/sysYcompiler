@@ -380,12 +380,14 @@ public class Semantic {
             for(Exp exp : exps){
                 check(exp.getType().isPresent());
             }
-            if(!(identType.getParamNumber() == exps.size())){
+            if(identType.getParamNumber() != exps.size()){
                 errorRecorder.paramNumNotMatch(asd.getIdent().line(), asd.getIdent().getValue(), identType.getParamNumber(), asd.getExps().size());
-            }
-            for(int i = 0; i < exps.size(); i++){
-                if(!identType.getParams().get(i).match(exps.get(i).getType().get())){
-                    errorRecorder.paramTypeNotMatch(asd.getIdent().line(), asd.getIdent().getValue(), identType.getParams().get(i).getDimension(), exps.get(i).getType().get().getDimension());
+
+            }else{
+                for(int i = 0; i < exps.size(); i++){
+                    if(!identType.getParams().get(i).match(exps.get(i).getType().get())){
+                        errorRecorder.paramTypeNotMatch(asd.getIdent().line(), asd.getIdent().getValue(), identType.getParams().get(i).getDimension(), exps.get(i).getType().get().getDimension());
+                    }
                 }
             }
             if(identType.isReturn()){

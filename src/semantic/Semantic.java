@@ -2,12 +2,12 @@ package semantic;
 
 import common.CompileException;
 import error.ErrorRecorder;
+import lexer.FormatString;
 import lexer.TerminalType;
 import parser.nonterminal.*;
 import parser.nonterminal.decl.*;
 import parser.nonterminal.exp.*;
-import parser.nonterminal.stmt.Assign;
-import parser.nonterminal.stmt.Return;
+import parser.nonterminal.stmt.*;
 import type.*;
 
 import java.util.*;
@@ -49,6 +49,8 @@ public class Semantic {
         map.put(FuncDef.class, new FuncDefExec());
         map.put(FuncDef.FuncFParam.class, new FuncFParamExec());
         map.put(Assign.class, new AssignExec());
+        map.put(Printf.class, new PrintfExec());
+        map.put(MainFuncDef.class, new MainFuncDefExec());
     }
     private final Exec<ASD> exec = new Exec<>();
 
@@ -420,7 +422,9 @@ public class Semantic {
             for(FuncDef.FuncFParam funcFParam : asd.getFuncFParams()){
                 symbolTable.addVariableSymbol(funcFParam.getIdent(), funcFParam.getType());
             }
-            for(BlockItem blockItem : asd.getBlockItems()){
+            checkWhileBreak(asd.getBlock());
+            List<BlockItem> blockItems = asd.getBlock().getBlockItems();
+            for(BlockItem blockItem : blockItems){
                 getExec(blockItem).exec(blockItem);
                 if(blockItem instanceof Return){
                     if(!asd.isInt() && ((Return) blockItem).getExp().isPresent()){
@@ -428,8 +432,8 @@ public class Semantic {
                     }
                 }
             }
-            if(asd.isInt() && (asd.getBlockItems().size() == 0 || !(asd.getBlockItems().get(asd.getBlockItems().size() - 1) instanceof Return) || !((Return) asd.getBlockItems().get(asd.getBlockItems().size() - 1)).getExp().isPresent()) ){
-                errorRecorder.returnLack(asd.endLine());
+            if(asd.isInt() && (blockItems.size() == 0 || !(blockItems.get(blockItems.size() - 1) instanceof Return) || !((Return) blockItems.get(blockItems.size() - 1)).getExp().isPresent()) ){
+                errorRecorder.returnLack(asd.getBlock().endLine());
             }
             symbolTable = symbolTable.father();
         }
@@ -455,6 +459,26 @@ public class Semantic {
             }
         }
     }
+    private class MainFuncDefExec extends Exec<MainFuncDef>{
+        @Override
+        void exec(MainFuncDef asd) {
+            symbolTable = new SymbolTable(symbolTable);
+            checkWhileBreak(asd.getBlock());
+            List<BlockItem> blockItems = asd.getBlock().getBlockItems();
+            for(BlockItem blockItem : blockItems){
+                getExec(blockItem).exec(blockItem);
+                if(blockItem instanceof Return){
+                    if(!((Return) blockItem).getExp().isPresent()){
+                        errorRecorder.voidFuncReturnValue(((Return) blockItem).line());
+                    }
+                }
+            }
+            if((blockItems.size() == 0 || !(blockItems.get(blockItems.size() - 1) instanceof Return) || !((Return) blockItems.get(blockItems.size() - 1)).getExp().isPresent()) ){
+                errorRecorder.returnLack(asd.getBlock().endLine());
+            }
+            symbolTable = symbolTable.father();
+        }
+    }
 
     private class AssignExec extends Exec<Assign> {
         @Override
@@ -463,6 +487,37 @@ public class Semantic {
             LVal lVal = asd.getLVal();
             if(lVal.getType().isConst()){
                 errorRecorder.changeConst(lVal.getIdent().line(), lVal.getIdent().getValue());
+            }
+        }
+    }
+    private class PrintfExec extends Exec<Printf>{
+        @Override
+        void exec(Printf asd) {
+            execSons(asd);
+            List<Exp> exps = asd.getExps();
+            FormatString formatString = asd.getFormatString();
+            if(formatString.getFormatCharNumber() != exps.size()){
+                errorRecorder.printfParamNotMatch(asd.getLine(), formatString.getFormatCharNumber(), exps.size());
+            }
+        }
+    }
+
+    private void checkWhileBreak(Stmt stmt){
+        if(stmt instanceof Block){
+            for(BlockItem blockItem : ((Block) stmt).getBlockItems()){
+                if(blockItem instanceof Stmt){
+                    checkWhileBreak((Stmt) blockItem);
+                }
+            }
+        }else if(stmt instanceof Continue){
+            errorRecorder.wrongContinue(((Continue) stmt).line());
+        }else if(stmt instanceof Break){
+            errorRecorder.wrongBreak(((Break) stmt).line());
+        }else if(stmt instanceof If){
+            If ifstmt = (If) stmt;
+            checkWhileBreak(ifstmt.getIfStmt());
+            if(ifstmt.getElseStmt().isPresent()){
+                checkWhileBreak(ifstmt.getElseStmt().get());
             }
         }
     }

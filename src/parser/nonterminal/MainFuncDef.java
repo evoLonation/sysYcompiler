@@ -8,4 +8,8 @@ public class MainFuncDef extends ASDDefault implements ASD {
         this.block = block;
         addSon(block);
     }
+
+    public Block getBlock() {
+        return block;
+    }
 }

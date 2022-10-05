@@ -218,7 +218,7 @@ public class Parser {
         }
         checkRParent();
         Block block = Block();
-        ret = new FuncDef(isInt, ident, funcFParams, block.getBlockItems(), block.endLine());
+        ret = new FuncDef(isInt, ident, funcFParams, block);
         postOrderList.add("<FuncDef>");
         return ret;
     }
@@ -314,14 +314,15 @@ public class Parser {
             Stmt stmt = Stmt();
             ret = new While(exp, stmt);
         }else if(is(TerminalType.BREAKTK)){
+            ret = new Break(now().line());
             addTerminal();
             checkSemicolon();
-            ret = new Break();
         }else if(is(TerminalType.CONTINUETK)){
+            ret = new Continue(now().line());
             addTerminal();
             checkSemicolon();
-            ret = new Continue();
         }else if(is(TerminalType.PRINTFTK)){
+            int line = now().line();
             addTerminal();
             check(TerminalType.LPARENT);
             FormatString formatString = (FormatString)checkAndGet(TerminalType.STRCON);
@@ -332,7 +333,7 @@ public class Parser {
             }
             checkRParent();
             checkSemicolon();
-            ret = new Printf(formatString, exps);
+            ret = new Printf(formatString, exps, line);
         }else if(is(TerminalType.RETURNTK)){
             int line = now().line();
             addTerminal();

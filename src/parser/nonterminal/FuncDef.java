@@ -8,25 +8,20 @@ import java.util.List;
 import java.util.Optional;
 
 public class FuncDef extends ASDDefault implements ASD{
-    private boolean isInt;
-    private Ident ident;
-    private List<FuncFParam> funcFParams;
-    private List<BlockItem> blockItems;
-    private final int endLine;
+    private final boolean isInt;
+    private final Ident ident;
+    private final List<FuncFParam> funcFParams;
+    private final Block block;
 
-    public FuncDef(boolean isInt, Ident ident, List<FuncFParam> funcFParams, List<BlockItem> blockItems, int endLine) {
+    public FuncDef(boolean isInt, Ident ident, List<FuncFParam> funcFParams, Block block) {
         this.isInt = isInt;
         this.ident = ident;
         this.funcFParams = funcFParams;
-        this.blockItems = blockItems;
-        this.endLine = endLine;
+        this.block = block;
         addSon(funcFParams);
-        addSon(blockItems);
+        addSon(block);
     }
 
-    public int endLine() {
-        return endLine;
-    }
 
     public boolean isInt() {
         return isInt;
@@ -40,8 +35,8 @@ public class FuncDef extends ASDDefault implements ASD{
         return funcFParams;
     }
 
-    public List<BlockItem> getBlockItems() {
-        return blockItems;
+    public Block getBlock() {
+        return block;
     }
 
     static public class FuncFParam extends ASDDefault {

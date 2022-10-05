@@ -7,6 +7,7 @@ import lexer.TerminalType;
 import parser.nonterminal.*;
 import parser.nonterminal.decl.*;
 import parser.nonterminal.exp.*;
+import parser.nonterminal.stmt.Return;
 import type.*;
 
 import java.util.*;
@@ -420,6 +421,14 @@ public class Semantic {
             }
             for(BlockItem blockItem : asd.getBlockItems()){
                 getExec(blockItem).exec(blockItem);
+                if(blockItem instanceof Return){
+                    if(!asd.isInt() && ((Return) blockItem).getExp().isPresent()){
+                        errorRecorder.voidFuncReturnValue(((Return) blockItem).line());
+                    }
+                }
+            }
+            if(asd.isInt() && (asd.getBlockItems().size() == 0 || !(asd.getBlockItems().get(asd.getBlockItems().size() - 1) instanceof Return) || !((Return) asd.getBlockItems().get(asd.getBlockItems().size() - 1)).getExp().isPresent()) ){
+                errorRecorder.returnLack(asd.endLine());
             }
             symbolTable = symbolTable.father();
         }

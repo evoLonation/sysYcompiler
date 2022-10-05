@@ -218,7 +218,7 @@ public class Parser {
         }
         checkRParent();
         Block block = Block();
-        ret = new FuncDef(isInt, ident, funcFParams, block.getBlockItems());
+        ret = new FuncDef(isInt, ident, funcFParams, block.getBlockItems(), block.endLine());
         postOrderList.add("<FuncDef>");
         return ret;
     }
@@ -269,8 +269,9 @@ public class Parser {
                 blockItems.add(blockItem);
             }
         }
+        int endLine = now().line();
         check(TerminalType.RBRACE);
-        ret = new Block(blockItems);
+        ret = new Block(blockItems, endLine);
         postOrderList.add("<Block>");
         return ret;
     }
@@ -333,13 +334,14 @@ public class Parser {
             checkSemicolon();
             ret = new Printf(formatString, exps);
         }else if(is(TerminalType.RETURNTK)){
+            int line = now().line();
             addTerminal();
-            Exp exp = null;
             if(isExp()){
-                exp = Exp();
+                ret = new Return(Exp(), line);
+            }else{
+                ret = new Return(line);
             }
             checkSemicolon();
-            ret = new Return(exp);
         }else if(is(TerminalType.LBRACE)){
             ret = Block();
         }else if(is(TerminalType.IDENFR)){

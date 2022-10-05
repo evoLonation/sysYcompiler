@@ -12,14 +12,20 @@ public class FuncDef extends ASDDefault implements ASD{
     private Ident ident;
     private List<FuncFParam> funcFParams;
     private List<BlockItem> blockItems;
+    private final int endLine;
 
-    public FuncDef(boolean isInt, Ident ident, List<FuncFParam> funcFParams, List<BlockItem> blockItems) {
+    public FuncDef(boolean isInt, Ident ident, List<FuncFParam> funcFParams, List<BlockItem> blockItems, int endLine) {
         this.isInt = isInt;
         this.ident = ident;
         this.funcFParams = funcFParams;
         this.blockItems = blockItems;
+        this.endLine = endLine;
         addSon(funcFParams);
         addSon(blockItems);
+    }
+
+    public int endLine() {
+        return endLine;
     }
 
     public boolean isInt() {

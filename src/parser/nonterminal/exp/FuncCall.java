@@ -33,7 +33,7 @@ public class FuncCall extends ASDDefault implements PrimaryExp {
     }
 
     @Override
-    public Optional<VarType> getType() {
+    public Optional<VarType> getOptionType() {
         return type;
     }
 }

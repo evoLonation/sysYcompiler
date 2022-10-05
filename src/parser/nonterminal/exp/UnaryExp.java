@@ -32,7 +32,7 @@ public class UnaryExp extends ASDDefault implements Exp{
         this.type = Optional.of(type);
     }
     @Override
-    public Optional<VarType> getType() {
+    public Optional<VarType> getOptionType() {
         return type;
     }
 

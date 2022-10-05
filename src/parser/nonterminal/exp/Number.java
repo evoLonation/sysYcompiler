@@ -19,9 +19,11 @@ public class Number extends ASDDefault implements PrimaryExp {
     private final VarType type;
 
     @Override
-    public Optional<VarType> getType() {
+    public Optional<VarType> getOptionType() {
         return Optional.of(type);
     }
 
-
+    public VarType getType() {
+        return type;
+    }
 }

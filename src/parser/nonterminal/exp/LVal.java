@@ -18,6 +18,10 @@ public class LVal extends ASDDefault implements PrimaryExp {
         addSon(exps);
     }
 
+    public VarType getType() {
+        return type;
+    }
+
     public Ident getIdent() {
         return ident;
     }
@@ -32,7 +36,7 @@ public class LVal extends ASDDefault implements PrimaryExp {
         this.type = type;
     }
     @Override
-    public Optional<VarType> getType() {
+    public Optional<VarType> getOptionType() {
         return Optional.of(type);
     }
 }

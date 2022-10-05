@@ -47,7 +47,7 @@ public class BinaryExp extends ASDDefault implements Exp{
     }
 
     @Override
-    public Optional<VarType> getType() {
+    public Optional<VarType> getOptionType() {
         return type;
     }
 

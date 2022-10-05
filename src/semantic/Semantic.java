@@ -2,11 +2,11 @@ package semantic;
 
 import common.CompileException;
 import error.ErrorRecorder;
-import lexer.Ident;
 import lexer.TerminalType;
 import parser.nonterminal.*;
 import parser.nonterminal.decl.*;
 import parser.nonterminal.exp.*;
+import parser.nonterminal.stmt.Assign;
 import parser.nonterminal.stmt.Return;
 import type.*;
 
@@ -48,6 +48,7 @@ public class Semantic {
         map.put(Block.class, new BlockExec());
         map.put(FuncDef.class, new FuncDefExec());
         map.put(FuncDef.FuncFParam.class, new FuncFParamExec());
+        map.put(Assign.class, new AssignExec());
     }
     private final Exec<ASD> exec = new Exec<>();
 
@@ -74,8 +75,8 @@ public class Semantic {
 
     private boolean isAllConst(List<? extends ExpTyper> exps){
         for(ExpTyper exp : exps){
-            if(!exp.getType().isPresent())return false;
-            if(!(exp.getType().get().isConst())){
+            if(!exp.getOptionType().isPresent())return false;
+            if(!(exp.getOptionType().get().isConst())){
                 return false;
             }
         }
@@ -107,10 +108,10 @@ public class Semantic {
             VarType type;
             // number must equal
             if(dimension >= 1){
-                int number1 = asd.getConstExps().get(0).getType().get().getConstValue();
+                int number1 = asd.getConstExps().get(0).getOptionType().get().getConstValue();
                 check(number1 == initVal.getNumber());
                 if(dimension == 2){
-                    int number2 = asd.getConstExps().get(1).getType().get().getConstValue();
+                    int number2 = asd.getConstExps().get(1).getOptionType().get().getConstValue();
                     check(number2 == initVal.getType().getSecondLen());
                     type = new Array2Type(number2,initVal.getType().getConstValue2());
                 }else{
@@ -138,10 +139,10 @@ public class Semantic {
                 InitVal initVal = asd.getInitVal().get();
                 check(dimension == initVal.getType().getDimension());
                 if(dimension >= 1){
-                    int number1 = asd.getConstExps().get(0).getType().get().getConstValue();
+                    int number1 = asd.getConstExps().get(0).getOptionType().get().getConstValue();
                     check(number1 == initVal.getNumber());
                     if(dimension == 2){
-                        int number2 = asd.getConstExps().get(1).getType().get().getConstValue();
+                        int number2 = asd.getConstExps().get(1).getOptionType().get().getConstValue();
                         check(number2 == initVal.getType().getSecondLen());
                         type = new Array2Type(number2);
                     }else{
@@ -154,7 +155,7 @@ public class Semantic {
                 switch (dimension){
                     case 0 : type = new IntType();break;
                     case 1 : type = new ArrayType(); break;
-                    case 2 : type = new Array2Type(asd.getConstExps().get(1).getType().get().getConstValue()); break;
+                    case 2 : type = new Array2Type(asd.getConstExps().get(1).getOptionType().get().getConstValue()); break;
                     default: throw new CompileException();
                 }
             }
@@ -220,8 +221,8 @@ public class Semantic {
         @Override
         void exec(IntInitVal asd) {
             execSons(asd);
-            check(asd.getExp().getType().isPresent());
-            asd.setType(asd.getExp().getType().get());
+            check(asd.getExp().getOptionType().isPresent());
+            asd.setType(asd.getExp().getOptionType().get());
         }
     }
 
@@ -235,16 +236,16 @@ public class Semantic {
             List<Exp> exps = asd.getExps();
             if(exps.size() == 0){
                 // 如果只有first，则直接继承即可
-                if(first.getType().isPresent()){
-                    asd.setType(first.getType().get());
+                if(first.getOptionType().isPresent()){
+                    asd.setType(first.getOptionType().get());
                 }
             }else{
                 // 如果有exps，则所有exp参与了运算，所有exp包括first必须为int
                 boolean isConst = checkIsConstInt(first) && checkIsConstInt(exps);
                 if(isConst){
-                    int value = first.getType().get().getConstValue();
+                    int value = first.getOptionType().get().getConstValue();
                     for(int i = 0; i < exps.size(); i ++){
-                        value = compute(value, asd.getOps().get(i), exps.get(i).getType().get().getConstValue());
+                        value = compute(value, asd.getOps().get(i), exps.get(i).getOptionType().get().getConstValue());
                     }
                     asd.setType(new IntType(value));
                 }else{
@@ -285,13 +286,13 @@ public class Semantic {
             PrimaryExp primaryExp = asd.getPrimaryExp();
             List<TerminalType> ops = asd.getUnaryOps();
             if(ops.size() == 0){
-                if(primaryExp.getType().isPresent()){
-                    asd.setType(primaryExp.getType().get());
+                if(primaryExp.getOptionType().isPresent()){
+                    asd.setType(primaryExp.getOptionType().get());
                 }
             }else{
                 boolean isConst = checkIsConstInt(primaryExp);
                 if(isConst){
-                    int value = primaryExp.getType().get().getConstValue();
+                    int value = primaryExp.getOptionType().get().getConstValue();
                     for(int i = ops.size() - 1; i >= 0; i--){
                         switch (ops.get(i)){
                             case MINU: value = - value; break;
@@ -329,8 +330,8 @@ public class Semantic {
                 if(isAllConst(exps)){
                     switch (dimension){
                         case 0 : type = new IntType(identType.getConstValue()); break;
-                        case 1 : type = new IntType(identType.getConstValue1()[exps.get(0).getType().get().getConstValue()]); break;
-                        case 2 : type = new IntType(identType.getConstValue2()[exps.get(0).getType().get().getConstValue()][exps.get(0).getType().get().getConstValue()]); break;
+                        case 1 : type = new IntType(identType.getConstValue1()[exps.get(0).getOptionType().get().getConstValue()]); break;
+                        case 2 : type = new IntType(identType.getConstValue2()[exps.get(0).getOptionType().get().getConstValue()][exps.get(0).getOptionType().get().getConstValue()]); break;
                         default: throw new CompileException();
                     }
                 }else {
@@ -366,8 +367,8 @@ public class Semantic {
     }
     // if is const, return true; if one of is not int, error
     private boolean checkIsConstInt(ExpTyper exp){
-        check(exp.getType().isPresent() && exp.getType().get().getDimension() == 0);
-        return exp.getType().get().isConst();
+        check(exp.getOptionType().isPresent() && exp.getOptionType().get().getDimension() == 0);
+        return exp.getOptionType().get().isConst();
     }
 
     private class FuncCallExec extends Exec<FuncCall>{
@@ -379,15 +380,15 @@ public class Semantic {
             FuncType identType = ret.get();
             List<Exp> exps = asd.getExps();
             for(Exp exp : exps){
-                check(exp.getType().isPresent());
+                check(exp.getOptionType().isPresent());
             }
             if(identType.getParamNumber() != exps.size()){
                 errorRecorder.paramNumNotMatch(asd.getIdent().line(), asd.getIdent().getValue(), identType.getParamNumber(), asd.getExps().size());
 
             }else{
                 for(int i = 0; i < exps.size(); i++){
-                    if(!identType.getParams().get(i).match(exps.get(i).getType().get())){
-                        errorRecorder.paramTypeNotMatch(asd.getIdent().line(), asd.getIdent().getValue(), identType.getParams().get(i).getDimension(), exps.get(i).getType().get().getDimension());
+                    if(!identType.getParams().get(i).match(exps.get(i).getOptionType().get())){
+                        errorRecorder.paramTypeNotMatch(asd.getIdent().line(), asd.getIdent().getValue(), identType.getParams().get(i).getDimension(), exps.get(i).getOptionType().get().getDimension());
                     }
                 }
             }
@@ -448,9 +449,20 @@ public class Semantic {
                 if(!checkIsConstInt(asd.getConstExp().get())){
                     throw new CompileException();
                 }
-                asd.setType(new Array2Type(asd.getConstExp().get().getType().get().getConstValue()));
+                asd.setType(new Array2Type(asd.getConstExp().get().getOptionType().get().getConstValue()));
             }else{
                 throw new CompileException();
+            }
+        }
+    }
+
+    private class AssignExec extends Exec<Assign> {
+        @Override
+        void exec(Assign asd) {
+            execSons(asd);
+            LVal lVal = asd.getLVal();
+            if(lVal.getType().isConst()){
+                errorRecorder.changeConst(lVal.getIdent().line(), lVal.getIdent().getValue());
             }
         }
     }

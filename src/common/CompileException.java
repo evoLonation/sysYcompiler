@@ -1,20 +1,16 @@
 package common;
 
-public class CompileException extends RuntimeException {
+public abstract class CompileException extends RuntimeException {
     protected char errorId;
     protected String information;
     protected int lineno;
-    public CompileException(int lineno) {
-        this.lineno = lineno;
-        this.errorId = 'o';
-        this.information = "other error";
-    }
 
-    public CompileException() {
+
+    protected CompileException() {
     }
 
     @Override
     public String toString() {
-        return Integer.toString(lineno) + " " + errorId;
+        return Integer.toString(lineno) + " " + errorId + " : " + information;
     }
 }

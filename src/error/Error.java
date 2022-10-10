@@ -1,6 +1,6 @@
 package error;
 
-public class Error {
+public class Error implements Comparable<Object>{
     private int lineno;
     private char id;
     private String detail;
@@ -16,6 +16,13 @@ public class Error {
     }
     public String detail(){
         return simple() + " : " + detail;
+    }
+
+
+    // 前提：每一行中至多只有一个错误
+    @Override
+    public int compareTo(Object o) {
+        return lineno - ((Error)o).lineno;
     }
 }
 

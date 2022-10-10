@@ -1,6 +1,7 @@
 package lexer;
 
 import common.CompileException;
+import common.LexerException;
 import error.ErrorRecorder;
 
 import java.util.*;
@@ -91,7 +92,7 @@ public class Lexer {
     //遇到'"'正常返回，没有则直接报错
     private FormatString getSTRCON(){
         if(iterator.now() != '"'){
-            throw new CompileException();
+            throw new LexerException();
         }
         int line = iterator.line();
         iterator.next();
@@ -123,8 +124,9 @@ public class Lexer {
                 break;
             }else if(iterator.now() != null){
                 errorRecorder.illegalChar(iterator.line(), iterator.now());
+                iterator.next();
             }else{
-                throw new CompileException();
+                throw new LexerException();
             }
         }
         return new FormatString(charList, line);
@@ -157,7 +159,7 @@ public class Lexer {
                     iterator.next();
                     type = TerminalType.AND;
                 } else {
-                    throw new CompileException();
+                    throw new LexerException();
                 }
                 break;
             case '|':
@@ -166,7 +168,7 @@ public class Lexer {
                     iterator.next();
                     type = TerminalType.OR;
                 } else {
-                    throw new CompileException();
+                    throw new LexerException();
                 }
                 break;
             case '<':

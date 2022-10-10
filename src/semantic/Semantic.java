@@ -1,6 +1,7 @@
 package semantic;
 
 import common.CompileException;
+import common.SemanticException;
 import error.ErrorRecorder;
 import lexer.FormatString;
 import lexer.TerminalType;
@@ -51,6 +52,7 @@ public class Semantic {
         map.put(Assign.class, new AssignExec());
         map.put(Printf.class, new PrintfExec());
         map.put(MainFuncDef.class, new MainFuncDefExec());
+        map.put(SubExp.class, new SubExpExec());
     }
     private final Exec<ASD> exec = new Exec<>();
 
@@ -86,7 +88,7 @@ public class Semantic {
     }
     private void check(boolean cond){
         if(!cond){
-            throw new CompileException();
+            errorRecorder.other(0);
         }
     }
 
@@ -158,7 +160,7 @@ public class Semantic {
                     case 0 : type = new IntType();break;
                     case 1 : type = new ArrayType(); break;
                     case 2 : type = new Array2Type(asd.getConstExps().get(1).getOptionType().get().getConstValue()); break;
-                    default: throw new CompileException();
+                    default: throw new SemanticException();
                 }
             }
             symbolTable.addVariableSymbol(asd.getIdent(), type);
@@ -242,6 +244,20 @@ public class Semantic {
                     asd.setType(first.getOptionType().get());
                 }
             }else{
+                //考虑非常数数组的直接加减，后面的exps必须全部是int
+                if(first.getOptionType().isPresent()){
+                    VarType firstType = first.getOptionType().get();
+                    if(!firstType.isConst() && firstType.is(GenericType.ARRAY, GenericType.ARRAY2)){
+                        for(Exp exp : exps){
+                            check(exp.getOptionType().isPresent() && exp.getOptionType().get().is(GenericType.INT));
+                        }
+                        for(TerminalType op : asd.getOps()){
+                            check(op == TerminalType.PLUS || op == TerminalType.MINU);
+                        }
+                        asd.setType(firstType);
+                        return;
+                    }
+                }
                 // 如果有exps，则所有exp参与了运算，所有exp包括first必须为int
                 boolean isConst = checkIsConstInt(first) && checkIsConstInt(exps);
                 if(isConst){
@@ -270,7 +286,7 @@ public class Semantic {
                 case MULT: return a * b;
                 case DIV: return  a / b;
                 case MOD: return a % b;
-                default:throw new CompileException();
+                default: throw new SemanticException();
             }
         }
         boolean toBool(int a){
@@ -300,7 +316,7 @@ public class Semantic {
                             case MINU: value = - value; break;
                             case NOT: value = value != 0 ? 0 : 1; break;
                             case PLUS: break;
-                            default: throw new CompileException();
+                            default: errorRecorder.other(0);
                         }
                     }
                     asd.setType(new IntType(value));
@@ -334,7 +350,7 @@ public class Semantic {
                         case 0 : type = new IntType(identType.getConstValue()); break;
                         case 1 : type = new IntType(identType.getConstValue1()[exps.get(0).getOptionType().get().getConstValue()]); break;
                         case 2 : type = new IntType(identType.getConstValue2()[exps.get(0).getOptionType().get().getConstValue()][exps.get(0).getOptionType().get().getConstValue()]); break;
-                        default: throw new CompileException();
+                        default: throw new SemanticException();
                     }
                 }else {
                     type = new IntType();
@@ -351,7 +367,7 @@ public class Semantic {
                         type = identType;
                         break;
                     default:
-                        throw new CompileException();
+                        throw new SemanticException();
                 }
             }
             asd.setType(type);
@@ -381,21 +397,28 @@ public class Semantic {
             if(!ret.isPresent()) return;
             FuncType identType = ret.get();
             List<Exp> exps = asd.getExps();
-            for(Exp exp : exps){
-                check(exp.getOptionType().isPresent());
-            }
             if(identType.getParamNumber() != exps.size()){
                 errorRecorder.paramNumNotMatch(asd.getIdent().line(), asd.getIdent().getValue(), identType.getParamNumber(), asd.getExps().size());
-
             }else{
                 for(int i = 0; i < exps.size(); i++){
-                    if(!identType.getParams().get(i).match(exps.get(i).getOptionType().get())){
+                    if(!exps.get(i).getOptionType().isPresent()){
+                        errorRecorder.paramTypeNotMatch(asd.getIdent().line(), asd.getIdent().getValue(), identType.getParams().get(i).getDimension(), -1);
+                    }else if(!identType.getParams().get(i).match(exps.get(i).getOptionType().get())){
                         errorRecorder.paramTypeNotMatch(asd.getIdent().line(), asd.getIdent().getValue(), identType.getParams().get(i).getDimension(), exps.get(i).getOptionType().get().getDimension());
                     }
                 }
             }
             if(identType.isReturn()){
                 asd.setType(new IntType());
+            }
+        }
+    }
+    private class SubExpExec extends Exec<SubExp>{
+        @Override
+        void exec(SubExp asd) {
+            execSons(asd);
+            if(asd.getExp().getOptionType().isPresent()){
+                asd.setType(asd.getExp().getOptionType().get());
             }
         }
     }
@@ -451,11 +474,11 @@ public class Semantic {
             }else if(asd.getDimension() == 2){
                 check(asd.getConstExp().isPresent());
                 if(!checkIsConstInt(asd.getConstExp().get())){
-                    throw new CompileException();
+                    errorRecorder.other(0);
                 }
                 asd.setType(new Array2Type(asd.getConstExp().get().getOptionType().get().getConstValue()));
             }else{
-                throw new CompileException();
+                errorRecorder.other(0);
             }
         }
     }

@@ -1,3 +1,6 @@
+import common.CompileException;
+import common.ParserException;
+import common.SemanticException;
 import error.Error;
 import error.ErrorRecorder;
 import lexer.Lexer;
@@ -16,7 +19,11 @@ public class Compiler {
     static ErrorRecorder errorRecorder = new ErrorRecorder();
 
     public static void main(String[] args) {
-        lab4();
+        try{
+            lab4();
+        }catch (ParserException | SemanticException e){
+            e.printStackTrace();
+        }
     }
     static List<Character> getCharList(String fileName){
         List<Character> charList = new ArrayList<>();
@@ -74,8 +81,9 @@ public class Compiler {
         Semantic checker = new Semantic(result.compUnit, errorRecorder);
         checker.analysis();
         StringBuilder str = new StringBuilder("");
-        for(Error error : errorRecorder.getErrorList()){
-            str.append(error.detail()).append("\n");
+        for(Error error : errorRecorder.getErrorSet()){
+            str.append(error.simple()).append("\n");
+//            str.append(error.detail()).append("\n");
         }
         printAndWrite(outputFile, str.toString());
     }

@@ -20,8 +20,9 @@ public class Compiler {
     static ErrorRecorder errorRecorder = new ErrorRecorder();
 
     public static void main(String[] args) {
-        lab3();
+        lab4();
     }
+
     static List<Character> getCharList(String fileName){
         List<Character> charList = new ArrayList<>();
         try {
@@ -40,6 +41,7 @@ public class Compiler {
         }
         return charList;
     }
+
     static void printAndWrite(String filename, String str){
         System.out.println(str);
         try{
@@ -84,6 +86,7 @@ public class Compiler {
         }
         printAndWrite(outputFile, str.toString());
     }
+
     static void lab3(){
         String inputFile = "testfile.txt";
         String outputFile = "output.txt";
@@ -99,6 +102,7 @@ public class Compiler {
         }
         printAndWrite(outputFile, str.toString());
     }
+
     static void lab2(){
         String inputFile = "testfile.txt";
         String outputFile = "output.txt";

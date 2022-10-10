@@ -88,7 +88,7 @@ public class Semantic {
     }
     private void check(boolean cond){
         if(!cond){
-            errorRecorder.other(0);
+            throw new SemanticException();
         }
     }
 
@@ -349,7 +349,7 @@ public class Semantic {
                     switch (dimension){
                         case 0 : type = new IntType(identType.getConstValue()); break;
                         case 1 : type = new IntType(identType.getConstValue1()[exps.get(0).getOptionType().get().getConstValue()]); break;
-                        case 2 : type = new IntType(identType.getConstValue2()[exps.get(0).getOptionType().get().getConstValue()][exps.get(0).getOptionType().get().getConstValue()]); break;
+                        case 2 : type = new IntType(identType.getConstValue2()[exps.get(0).getOptionType().get().getConstValue()][exps.get(1).getOptionType().get().getConstValue()]); break;
                         default: throw new SemanticException();
                     }
                 }else {

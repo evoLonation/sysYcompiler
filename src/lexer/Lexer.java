@@ -20,54 +20,48 @@ public class Lexer {
 
     public List<Terminal> analysis(){
         List<Terminal> wordList = new ArrayList<>();
-        while(true){
+        iterator.skip();
+        while(iterator.hasNow()){
             Terminal terminal = analysisOne();
-            if (terminal != null){
-                wordList.add(terminal);
-            }else{
-                return wordList;
-            }
+            wordList.add(terminal);
+            iterator.skip();
         }
+        return wordList;
     }
-    // if done, return null
-    public Terminal analysisOne() {
+    public Terminal analysisOne(){
         // 先获得字符判断接下来是数字还是标识符还是其他符号
         // 一共两种特殊符号，一种是全英文，一种是符号
-        iterator.skip();
-        if(iterator.now() != null){
-            Character c = iterator.now();
-            int nowLine = iterator.line();
-            if (isIdentifierNoDigit(c)) {
-                StringBuilder lexeme = new StringBuilder(c.toString());
-                while (iterator.now() != null) {
-                    iterator.next();
-                    c = iterator.now();
-                    if (isIdentifierNoDigit(c) || Character.isDigit(c)) {
-                        lexeme.append(c);
-                    }else{
-                        break;
-                    }
+        char nowChar = iterator.now();
+        int nowLine = iterator.line();
+        if (isIdentifierNoDigit(nowChar)) {
+            StringBuilder lexeme = new StringBuilder(Character.toString(nowChar));
+            while (iterator.hasNow()) {
+                iterator.next();
+                nowChar = iterator.now();
+                if (isIdentifierNoDigit(nowChar) || Character.isDigit(nowChar)) {
+                    lexeme.append(nowChar);
+                }else{
+                    break;
                 }
-                return getByLexeme(lexeme.toString(), nowLine);
-            } else if (Character.isDigit(c)) {
-                StringBuilder digits = new StringBuilder(c.toString());
-                while (iterator.now() != null) {
-                    iterator.next();
-                    c = iterator.now();
-                    if (Character.isDigit(c)) {
-                        digits.append(c);
-                    }else{
-                        break;
-                    }
-                }
-                return new IntConst(Integer.parseInt(digits.toString()), nowLine);
-            } else if(c == '"') {
-                return getSTRCON();
-            } else{
-                return getOperator();
             }
+            return getByLexeme(lexeme.toString(), nowLine);
+        } else if (Character.isDigit(nowChar)) {
+            StringBuilder digits = new StringBuilder(Character.toString(nowChar));
+            while (iterator.hasNow()) {
+                iterator.next();
+                nowChar = iterator.now();
+                if (Character.isDigit(nowChar)) {
+                    digits.append(nowChar);
+                }else{
+                    break;
+                }
+            }
+            return new IntConst(Integer.parseInt(digits.toString()), nowLine);
+        } else if(nowChar == '"') {
+            return getSTRCON();
+        } else{
+            return getOperator();
         }
-        return null;
     }
 
     private Terminal getByLexeme(String lex, int nowLine) {
@@ -98,42 +92,37 @@ public class Lexer {
         iterator.next();
         List<FormatString.Char> charList = new ArrayList<>();
         while(true){
-            if(isNormalChar()){
-                if(iterator.now() == '\\'){
-                    iterator.next();
-                    if(iterator.now() == 'n'){
-                        charList.add(new FormatString.NormalChar('\n'));
+            char nowChar = iterator.now();
+            if(isNormalChar(nowChar)){
+                if(nowChar == '\\'){
+                    if(iterator.pre(1) == 'n'){
                         iterator.next();
+                        charList.add(new FormatString.NormalChar('\n'));
                     }else{
                         errorRecorder.illegalChar(iterator.line(), '\\');
                     }
                 }else{
                     charList.add(new FormatString.NormalChar(iterator.now()));
-                    iterator.next();
                 }
-            }else if(iterator.now() == '%'){
-                iterator.next();
-                if(iterator.now() == 'd'){
-                    charList.add(new FormatString.FormatChar());
+            }else if(nowChar == '%'){
+                if(iterator.pre(1) == 'd'){
                     iterator.next();
+                    charList.add(new FormatString.FormatChar());
                 }else{
                     errorRecorder.illegalChar(iterator.line(), '%');
                 }
-            }else if(iterator.now() == '"') {
+            }else if(nowChar == '"') {
                 iterator.next();
                 break;
-            }else if(iterator.now() != null){
-                errorRecorder.illegalChar(iterator.line(), iterator.now());
-                iterator.next();
             }else{
-                throw new LexerException();
+                errorRecorder.illegalChar(iterator.line(), iterator.now());
             }
+            iterator.next();
         }
         return new FormatString(charList, line);
     }
 
-    private boolean isNormalChar(){
-        Character c = iterator.now();
+    private boolean isNormalChar(char c){
         return c == 32 || c == 33 || c >= 40 && c <= 126;
     }
 
@@ -145,7 +134,7 @@ public class Lexer {
         TerminalType type = null;
         switch (c) {
             case '!':
-                if (iterator.now() == '=') {
+                if (iterator.hasNow() && iterator.now() == '=') {
                     value += '=';
                     iterator.next();
                     type = TerminalType.NEQ;
@@ -154,7 +143,7 @@ public class Lexer {
                 }
                 break;
             case '&':
-                if (iterator.now() == '&') {
+                if (iterator.hasNow() &&iterator.now() == '&') {
                     value += '&';
                     iterator.next();
                     type = TerminalType.AND;
@@ -163,7 +152,7 @@ public class Lexer {
                 }
                 break;
             case '|':
-                if (iterator.now() == '|') {
+                if (iterator.hasNow() &&iterator.now() == '|') {
                     value += '|';
                     iterator.next();
                     type = TerminalType.OR;
@@ -172,7 +161,7 @@ public class Lexer {
                 }
                 break;
             case '<':
-                if (iterator.now() == '=') {
+                if (iterator.hasNow() &&iterator.now() == '=') {
                     value += '=';
                     iterator.next();
                     type = TerminalType.LEQ;
@@ -181,7 +170,7 @@ public class Lexer {
                 }
                 break;
             case '>':
-                if (iterator.now() == '=') {
+                if (iterator.hasNow() &&iterator.now() == '=') {
                     value += '=';
                     iterator.next();
                     type = TerminalType.GEQ;
@@ -190,7 +179,7 @@ public class Lexer {
                 }
                 break;
             case '=':
-                if (iterator.now() == '=') {
+                if (iterator.hasNow() &&iterator.now() == '=') {
                     value += '=';
                     iterator.next();
                     type = TerminalType.EQL;

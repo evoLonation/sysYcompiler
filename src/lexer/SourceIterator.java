@@ -1,8 +1,10 @@
 package lexer;
 
+import common.LexerException;
 import common.PreIterator;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 public class SourceIterator extends PreIterator<Character> {
 
@@ -17,57 +19,58 @@ public class SourceIterator extends PreIterator<Character> {
     private boolean nowIsEnter = false;
 
     @Override
-    public Character next() {
+    public void next() {
         if(nowIsEnter) {
             nowIsEnter = false;
             line ++;
         }
-        Character ret = super.next();
-        if(ret != null && ret == '\n'){
+        super.next();
+        if(hasNow() && now() == '\n'){
             nowIsEnter = true;
         }
-        return ret;
     }
 
-    // 跳过注释和空白字符，如果都不是则不动
-    public void skip() {
-        while (now() != null) {
-            char c = now();
-            if(c == '/'){
-                char nextC = pre(1);
-                if(nextC == '/'){
-                    next();
-                    next();
-                    Character commentChar = now();
-                    while(commentChar != '\n' && commentChar != '\r' && commentChar != null){
-                        next();
-                        commentChar = now();
-                    }
-                    next();
-                    skip();
-                    return;
-                }else if(nextC == '*') {
-                    next();
-                    next();
-                    char commentChar1 = now();
-                    next();
-                    char commentChar2 = now();
-                    while(commentChar1 != '*' || commentChar2 != '/'){
-                        commentChar1 = commentChar2;
-                        next();
-                        commentChar2 = now();
-                    }
-                    next();
-                    skip();
-                    return;
-                }else{
-                    return;
-                }
-            }else if (Character.isSpaceChar(c) || c == '\r' || c == '\n' || c == '\t') {
-                next();
-            }else {
+    /**
+     * 跳过注释和空白字符，如果都不是则不动
+     */
+    public void skip(){
+        if(!hasNow())return;
+        char nowChar = now();
+        if(nowChar == '/'){
+            if(!hasPre(1)){
                 return;
             }
+            char nextChar = pre(1);
+            if(nextChar == '/'){
+                // find wrapping char or finish
+                next();
+                next();
+                while (hasNow()){
+                    char commentChar = now();
+                    if(commentChar == '\n' || commentChar == '\r'){
+                        skip();
+                        return;
+                    }
+                    next();
+                }
+            }else if(nextChar == '*') {
+                next();
+                next();
+                // must find a "*/", so catch exception
+                char commentChar1 = now();
+                next();
+                char commentChar2 = now();
+                while(commentChar1 != '*' || commentChar2 != '/'){
+                    next();
+                    commentChar1 = commentChar2;
+                    commentChar2 = now();
+                }
+                next();
+                skip();
+            }
+        }else if (Character.isSpaceChar(nowChar) || nowChar == '\r' || nowChar == '\n' || nowChar == '\t') {
+            next();
+            skip();
         }
     }
 }

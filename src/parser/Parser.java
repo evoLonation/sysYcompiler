@@ -359,7 +359,7 @@ public class Parser {
                 LVal lVal = LVal();
                 if(isBinaryOp()){
                     // must be exp
-                    ret = Exp();
+                    ret = Exp(lVal);
                     checkSemicolon();
                 }else if(is(TerminalType.ASSIGN)){
                     // must be lval
@@ -625,7 +625,7 @@ public class Parser {
         iterator.next();
     }
 
-    private <T extends Terminal>  T getTerminal(){
+    private <T extends Terminal> T getTerminal(){
         postOrderList.add(iterator.now().toString());
         Terminal now = iterator.now();
         iterator.next();
@@ -633,7 +633,6 @@ public class Parser {
     }
 
     private boolean is(int pre, TerminalType... terminals){
-        if(iterator.pre(pre) == null)return false;
         for(TerminalType terminal : terminals){
             if(iterator.pre(pre).getTerminalType() == terminal){
                 return true;
@@ -643,7 +642,6 @@ public class Parser {
     }
 
     private boolean is(TerminalType... terminals) {
-        if(iterator.now() == null)return false;
         for(TerminalType terminal : terminals){
             if(iterator.now().getTerminalType() == terminal){
                 return true;

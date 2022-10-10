@@ -3,43 +3,51 @@ package common;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 public class PreIterator<T>{
-    private Iterator<T> mIt;
+    private final Iterator<T> iterator;
     private T now;
     private T previous;
     public PreIterator(Iterator<T> iterator) {
-        mIt = iterator;
+        this.iterator = iterator;
         next();
     }
     public PreIterator(Iterable<T> iterable) {
         this(iterable.iterator());
     }
-    public T now(){
+    public T now() throws NoSuchElementException{
+        if(now == null)throw new NoSuchElementException();
         return now;
     }
+    public boolean hasNow(){
+        return now != null;
+    }
+    public boolean hasPre(int i){
+        while(preList.size() < i){
+            if(!iterator.hasNext())return false;
+            preList.addLast(iterator.next());
+        }
+        return true;
+    }
 
-    private LinkedList<T> preList = new LinkedList<>();
-    public T next(){
+    private final LinkedList<T> preList = new LinkedList<>();
+    public void next(){
         previous = now;
         if(!preList.isEmpty()){
             now = preList.removeFirst();
         }else{
             try{
-                now = mIt.next();
+                now = iterator.next();
             }catch (NoSuchElementException e){
                 now = null;
             }
         }
-        return now();
     }
-    public T pre(int i){
+
+    public T pre(int i) throws NoSuchElementException{
         while(preList.size() < i){
-            try{
-                preList.addLast(mIt.next());
-            }catch (NoSuchElementException e){
-                return null;
-            }
+            preList.addLast(iterator.next());
         }
         return preList.get(i - 1);
     }

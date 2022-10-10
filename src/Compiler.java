@@ -20,11 +20,7 @@ public class Compiler {
     static ErrorRecorder errorRecorder = new ErrorRecorder();
 
     public static void main(String[] args) {
-        try{
-            lab3();
-        }catch (ParserException | SemanticException | LexerException e){
-            e.printStackTrace();
-        }
+        lab3();
     }
     static List<Character> getCharList(String fileName){
         List<Character> charList = new ArrayList<>();
@@ -78,13 +74,7 @@ public class Compiler {
     static void lab4(){
         String inputFile = "testfile.txt";
         String outputFile = "error.txt";
-        ParserResult result;
-        try{
-            result = parser(lexer(inputFile));
-        }catch (Exception e){
-            e.printStackTrace();
-            return;
-        }
+        ParserResult result = parser(lexer(inputFile));
         Semantic checker = new Semantic(result.compUnit, errorRecorder);
         checker.analysis();
         StringBuilder str = new StringBuilder("");

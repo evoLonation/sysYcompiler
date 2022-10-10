@@ -307,8 +307,7 @@ public class Parser {
             check(TerminalType.LPARENT);
             Exp exp = Cond();
             checkRParent();
-            Optional<Stmt> stmt = Stmt();
-            ret = new While(exp, stmt);
+            ret = new While(exp, Stmt());
         }else if(is(TerminalType.BREAKTK)){
             ret = new Break(now().line());
             skipTerminal();
@@ -351,29 +350,38 @@ public class Parser {
             // exp : lval,   ident(
             // if just lval : get lval , add a assign, and find if is getint
             // if exp : add semic.
-            LValOrExp tmp = checkIsLValOrExp();
-            if(tmp.isExp){
-                ret = tmp.exp;
+            if(is(1, TerminalType.LPARENT)){
+                // must be exp
+                ret = Exp();
                 checkSemicolon();
-            }else if(is(TerminalType.ASSIGN)){
-                skipTerminal();
-                LVal lVal = tmp.lVal;
-                if(is(TerminalType.GETINTTK)){
-                    skipTerminal();
-                    check(TerminalType.LPARENT);
-                    checkRParent();
-                    checkSemicolon();
-                    ret = new GetInt(lVal);
-                }else if(isExp()){
-                    Exp exp = Exp();
-                    checkSemicolon();
-                    ret = new Assign(lVal, exp);
-                }else{
-                    throw new ParserException();
-                }
             }else{
-                ret = Exp(tmp.lVal);
-                checkSemicolon();
+                // must be lval, maybe exp
+                LVal lVal = LVal();
+                if(isBinaryOp()){
+                    // must be exp
+                    ret = Exp();
+                    checkSemicolon();
+                }else if(is(TerminalType.ASSIGN)){
+                    // must be lval
+                    skipTerminal();
+                    if(is(TerminalType.GETINTTK)){
+                        skipTerminal();
+                        check(TerminalType.LPARENT);
+                        checkRParent();
+                        checkSemicolon();
+                        ret = new GetInt(lVal);
+                    }else if(isExp()){
+                        Exp exp = Exp();
+                        checkSemicolon();
+                        ret = new Assign(lVal, exp);
+                    }else{
+                        throw new ParserException();
+                    }
+                }else{
+                    // must be exp
+                    ret = Exp(lVal);
+                    checkSemicolon();
+                }
             }
         }else if(isExp()){
             ret = Exp();
@@ -387,38 +395,7 @@ public class Parser {
         postOrderList.add("<Stmt>");
         return Optional.ofNullable(ret);
     }
-    private class LValOrExp{
-        boolean isExp;
-        Exp exp;
-        LVal lVal;
-        private LValOrExp(boolean isExp, Exp exp, LVal lVal) {
-            this.isExp = isExp;
-            this.exp = exp;
-            this.lVal = lVal;
-        }
-        public LValOrExp(Exp exp) {
-            this(true, exp, null);
-        }
-        public LValOrExp(LVal lVal) {
-            this(false, null, lVal);
-        }
-    }
-    // precondition : now must is ident
-    // precondition : if is lval return false, else return true
-    private LValOrExp checkIsLValOrExp(){
-        if(is(1, TerminalType.LPARENT)){
-            return new LValOrExp(Exp());
-        }else{
-            // must be lval, maybe exp
-            LVal lVal = LVal();
-            if(isBinaryOp()){
-                return new LValOrExp(Exp(lVal));
-            }else{
-                return new LValOrExp(lVal);
-            }
-        }
-    }
-    
+
     private LVal LVal () {
         LVal ret;
         Ident ident = getTerminal();

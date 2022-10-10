@@ -6,27 +6,24 @@ import parser.nonterminal.exp.Exp;
 import java.util.Optional;
 
 public class If extends ASDDefault implements Stmt {
-    private Exp cond;
-    private Stmt ifStmt;
-    private Optional<Stmt> elseStmt;
+    private final Exp cond;
+    private final Optional<Stmt> ifStmt;
+    private final Optional<Stmt> elseStmt;
 
-    public If(Exp cond, Stmt ifStmt, Stmt elseStmt) {
+    public If(Exp cond, Optional<Stmt> ifStmt, Optional<Stmt> elseStmt) {
         this.cond = cond;
         this.ifStmt = ifStmt;
-        this.elseStmt = Optional.of(elseStmt);
-        addSon(cond, ifStmt, elseStmt);
-    }
-    public If(Exp cond, Stmt ifStmt) {
-        this.cond = cond;
-        this.ifStmt = ifStmt;
-        addSon(cond, ifStmt);
+        this.elseStmt = elseStmt;
+        addSon(cond);
+        ifStmt.ifPresent(this::addSon);
+        elseStmt.ifPresent(this::addSon);
     }
 
     public Exp getCond() {
         return cond;
     }
 
-    public Stmt getIfStmt() {
+    public Optional<Stmt> getIfStmt() {
         return ifStmt;
     }
 

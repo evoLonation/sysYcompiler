@@ -538,7 +538,7 @@ public class Semantic {
             errorRecorder.wrongBreak(((Break) stmt).line());
         }else if(stmt instanceof If){
             If ifstmt = (If) stmt;
-            checkWhileBreak(ifstmt.getIfStmt());
+            ifstmt.getIfStmt().ifPresent(this::checkWhileBreak);
             if(ifstmt.getElseStmt().isPresent()){
                 checkWhileBreak(ifstmt.getElseStmt().get());
             }

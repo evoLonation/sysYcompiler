@@ -266,10 +266,7 @@ public class Parser {
         List<BlockItem> blockItems = new ArrayList<>();
         check(TerminalType.LBRACE);
         while(isBlockItem()){
-            BlockItem blockItem = BlockItem();
-            if(blockItem != null){
-                blockItems.add(blockItem);
-            }
+            BlockItem().ifPresent(blockItems::add);
         }
         int endLine = now().line();
         check(TerminalType.RBRACE);
@@ -279,41 +276,41 @@ public class Parser {
     }
 
     // maybe null
-    private BlockItem BlockItem () {
+    private Optional<BlockItem> BlockItem () {
         BlockItem ret;
         if(isDecl()){
             ret = Decl();
         }else if(isStmt()){
-            ret = Stmt();
+            ret = Stmt().orElse(null);
         }else {
             throw new ParserException();
         }
         postOrderList.add("<BlockItem>");
-        return ret;
+        return Optional.ofNullable(ret);
     }
 
 
-    // maybe null when just semicolon
-    private Stmt Stmt () {
+    // maybe  just semicolon, so optional
+    private Optional<Stmt> Stmt () {
         Stmt ret;
         if(is(TerminalType.IFTK)){
             addTerminal();
             check(TerminalType.LPARENT);
             Exp exp = Cond();
             checkRParent();
-            Stmt ifstmt = Stmt();
-            Stmt elsestmt = null;
+            Optional<Stmt> ifStmt = Stmt();
             if(is(TerminalType.ELSETK)){
                 addTerminal();
-                elsestmt = Stmt();
+                ret = new If(exp, ifStmt, Stmt());
+            }else{
+                ret = new If(exp, ifStmt, Optional.empty());
             }
-            ret = new If(exp, ifstmt, elsestmt);
         }else if(is(TerminalType.WHILETK)){
             addTerminal();
             check(TerminalType.LPARENT);
             Exp exp = Cond();
             checkRParent();
-            Stmt stmt = Stmt();
+            Optional<Stmt> stmt = Stmt();
             ret = new While(exp, stmt);
         }else if(is(TerminalType.BREAKTK)){
             ret = new Break(now().line());
@@ -378,7 +375,7 @@ public class Parser {
                     throw new ParserException();
                 }
             }else{
-                ret = LayerExp(ExpLayer.ADD, Optional.of(tmp.lVal));
+                ret = Exp(tmp.lVal);
                 checkSemicolon();
             }
         }else if(isExp()){
@@ -391,7 +388,7 @@ public class Parser {
             throw new ParserException();
         }
         postOrderList.add("<Stmt>");
-        return ret;
+        return Optional.ofNullable(ret);
     }
     private class LValOrExp{
         boolean isExp;
@@ -418,7 +415,7 @@ public class Parser {
             // must be lval, maybe exp
             LVal lVal = LVal();
             if(isOp()){
-                return new LValOrExp(LayerExp(ExpLayer.ADD, Optional.of(lVal)));
+                return new LValOrExp(Exp(lVal));
             }else{
                 return new LValOrExp(lVal);
             }
@@ -467,6 +464,11 @@ public class Parser {
         return ret;
     }
 
+    private Exp Exp(LVal lVal){
+        Exp ret = LayerExp(ExpLayer.ADD, Optional.of(lVal));
+        postOrderList.add("<Exp>");
+        return ret;
+    }
 
     private Exp LayerExp(ExpLayer layer, Optional<LVal> firstLVal){
         if(layer == ExpLayer.MUL){
@@ -516,6 +518,8 @@ public class Parser {
     
     private UnaryExp UnaryExp (Optional<LVal> firstLVal) {
         if(firstLVal.isPresent()){
+            postOrderList.add("<PrimaryExp>");
+            postOrderList.add("<UnaryExp>");
             return new UnaryExp(new ArrayList<>(), firstLVal.get());
         }
         UnaryExp ret;

@@ -1,4 +1,5 @@
 import common.CompileException;
+import common.LexerException;
 import common.ParserException;
 import common.SemanticException;
 import error.Error;
@@ -20,8 +21,8 @@ public class Compiler {
 
     public static void main(String[] args) {
         try{
-            lab4();
-        }catch (ParserException | SemanticException e){
+            lab3();
+        }catch (ParserException | SemanticException | LexerException e){
             e.printStackTrace();
         }
     }
@@ -77,7 +78,13 @@ public class Compiler {
     static void lab4(){
         String inputFile = "testfile.txt";
         String outputFile = "error.txt";
-        ParserResult result = parser(lexer(inputFile));
+        ParserResult result;
+        try{
+            result = parser(lexer(inputFile));
+        }catch (Exception e){
+            e.printStackTrace();
+            return;
+        }
         Semantic checker = new Semantic(result.compUnit, errorRecorder);
         checker.analysis();
         StringBuilder str = new StringBuilder("");

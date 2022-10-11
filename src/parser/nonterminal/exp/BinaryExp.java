@@ -2,11 +2,11 @@ package parser.nonterminal.exp;
 
 import lexer.TerminalType;
 import parser.nonterminal.ASDDefault;
-import type.Type;
 import type.VarType;
 
 import java.util.List;
 import java.util.Optional;
+
 
 public class BinaryExp extends ASDDefault implements Exp{
     private final Exp first;
@@ -40,15 +40,15 @@ public class BinaryExp extends ASDDefault implements Exp{
         return ops;
     }
 
-    private Optional<VarType> type = Optional.empty();
+    private VarType type;
 
     public void setType(VarType type) {
-        this.type = Optional.of(type);
+        this.type = type;
     }
 
     @Override
     public Optional<VarType> getOptionType() {
-        return type;
+        return Optional.ofNullable(type);
     }
 
 }

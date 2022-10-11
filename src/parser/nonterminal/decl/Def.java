@@ -1,16 +1,15 @@
 package parser.nonterminal.decl;
 
 import lexer.Ident;
-import parser.nonterminal.ASD;
 import parser.nonterminal.ASDDefault;
 import parser.nonterminal.exp.Exp;
-import type.Type;
 
 import java.util.List;
 
 public abstract class Def extends ASDDefault {
-    Ident ident;
-    List<Exp> constExps;
+    protected final Ident ident;
+    protected final List<Exp> constExps;
+    protected final InitVal initVal;
 
     public Ident getIdent() {
         return ident;
@@ -20,10 +19,12 @@ public abstract class Def extends ASDDefault {
         return constExps;
     }
 
-    public Def(Ident ident, List<Exp> constExps) {
+    protected Def(Ident ident, List<Exp> constExps, InitVal initVal) {
         this.ident = ident;
         this.constExps = constExps;
+        this.initVal = initVal;
         addSon(constExps);
+        addSon(initVal);
     }
 
 }

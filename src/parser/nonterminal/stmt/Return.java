@@ -6,21 +6,20 @@ import parser.nonterminal.exp.Exp;
 import java.util.Optional;
 
 public class Return extends ASDDefault implements Stmt {
-    private final Optional<Exp> exp;
+    private final Exp exp;
     private final int line;
 
     public Return(Exp exp, int line) {
         this.line = line;
-        this.exp = Optional.of(exp);
+        this.exp = exp;
         addSon(exp);
     }
     public Return(int line) {
-        this.line = line;
-        this.exp = Optional.empty();
+        this(null, line);
     }
 
     public Optional<Exp> getExp() {
-        return exp;
+        return Optional.ofNullable(exp);
     }
 
     public int line() {

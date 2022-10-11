@@ -9,10 +9,8 @@ import type.VarType;
 import java.util.Optional;
 
 public class Number extends ASDDefault implements PrimaryExp {
-    private final IntConst intConst;
 
     public Number(IntConst intConst) {
-        this.intConst = intConst;
         type = new IntType(intConst.getDigitValue());
     }
 

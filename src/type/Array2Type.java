@@ -1,8 +1,8 @@
 package type;
 
 public class Array2Type extends VarType{
-    private int secondLen;
-    private int[][] constValue;
+    private final int secondLen;
+    private final int[][] constValue;
     private Array2Type(boolean isConst, int[][] constValue, int secondLen) {
         super(isConst);
         this.secondLen = secondLen;

@@ -1,7 +1,3 @@
-import common.CompileException;
-import common.LexerException;
-import common.ParserException;
-import common.SemanticException;
 import error.Error;
 import error.ErrorRecorder;
 import lexer.Lexer;
@@ -20,15 +16,14 @@ public class Compiler {
     static ErrorRecorder errorRecorder = new ErrorRecorder();
 
     public static void main(String[] args) {
-        lab4();
+        lab3();
     }
 
     static List<Character> getCharList(String fileName){
         List<Character> charList = new ArrayList<>();
         try {
             File file = new File(fileName);
-            FileInputStream is = null;
-            is = new FileInputStream(file);
+            FileInputStream is = new FileInputStream(file);
             while (true) {
                 int c = is.read();
                 if (c == -1) {
@@ -79,7 +74,7 @@ public class Compiler {
         ParserResult result = parser(lexer(inputFile));
         Semantic checker = new Semantic(result.compUnit, errorRecorder);
         checker.analysis();
-        StringBuilder str = new StringBuilder("");
+        StringBuilder str = new StringBuilder();
         for(Error error : errorRecorder.getErrorSet()){
             str.append(error.simple()).append("\n");
 //            str.append(error.detail()).append("\n");
@@ -93,7 +88,7 @@ public class Compiler {
         ParserResult result = parser(lexer(inputFile));
         Semantic checker = new Semantic(result.compUnit, errorRecorder);
         checker.analysis();
-        StringBuilder str = new StringBuilder("");
+        StringBuilder str = new StringBuilder();
         for(String word: result.postOrderList){
             if(word.equals("<Decl>") || word.equals("<BType>") || word.equals("<BlockItem>")){
                 continue;
@@ -107,7 +102,7 @@ public class Compiler {
         String inputFile = "testfile.txt";
         String outputFile = "output.txt";
         List<Terminal> result = lexer(inputFile);
-        StringBuilder str = new StringBuilder("");
+        StringBuilder str = new StringBuilder();
         for (Terminal terminal : result) {
             str.append(terminal).append("\n");
         }

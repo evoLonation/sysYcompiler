@@ -26,14 +26,14 @@ public class FuncCall extends ASDDefault implements PrimaryExp {
         return exps;
     }
 
-    private Optional<VarType> type = Optional.empty();
+    private VarType type;
 
     public void setType(VarType type) {
-        this.type = Optional.of(type);
+        this.type = type;
     }
 
     @Override
     public Optional<VarType> getOptionType() {
-        return type;
+        return Optional.ofNullable(type);
     }
 }

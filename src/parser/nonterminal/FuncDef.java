@@ -42,17 +42,16 @@ public class FuncDef extends ASDDefault implements ASD{
     static public class FuncFParam extends ASDDefault {
         private final Ident ident;
         private final int dimension;
-        private Optional<Exp> constExp;
+        private Exp constExp;
 
         public FuncFParam(Ident ident, int dimension, Exp constExp) {
             this.ident = ident;
             this.dimension = dimension;
-            this.constExp = Optional.of(constExp);
+            this.constExp = constExp;
             addSon(constExp);
         }
         public FuncFParam(Ident ident, int dimension) {
-            this.ident = ident;
-            this.dimension = dimension;
+            this(ident, dimension, null);
         }
 
         public Ident getIdent() {
@@ -64,7 +63,7 @@ public class FuncDef extends ASDDefault implements ASD{
         }
 
         public Optional<Exp> getConstExp() {
-            return constExp;
+            return Optional.ofNullable(constExp);
         }
 
         private VarType type;

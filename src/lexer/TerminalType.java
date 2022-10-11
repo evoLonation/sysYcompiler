@@ -39,17 +39,13 @@ public enum TerminalType {
     RBRACK("RBRACK"),
     LBRACE("LBRACE"),
     RBRACE("RBRACE");
-    private String typeName;
+    private final String typeName;
     TerminalType(String typeName) {
         this.typeName = typeName;
     }
 
-    public String getTypeName() {
+    public String getName() {
         return typeName;
     }
 
-    @Override
-    public String toString() {
-        return typeName.toString();
-    }
 }

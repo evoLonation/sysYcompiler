@@ -1,6 +1,5 @@
 package lexer;
 
-import common.CompileException;
 import common.LexerException;
 import error.ErrorRecorder;
 

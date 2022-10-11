@@ -7,22 +7,16 @@ import java.util.List;
 import java.util.Optional;
 
 public class VarDef extends Def{
-    private final Optional<InitVal> initVal;
 
     public VarDef(Ident ident, List<Exp> constExps, InitVal initVal) {
-        super(ident, constExps);
-        this.initVal = Optional.of(initVal);
-        addSon(initVal);
-        addSon(constExps);
+        super(ident, constExps, initVal);
     }
 
     public VarDef(Ident ident, List<Exp> constExps) {
-        super(ident, constExps);
-        this.initVal = Optional.empty();
-        addSon(constExps);
+        super(ident, constExps, null);
     }
 
     public Optional<InitVal> getInitVal() {
-        return initVal;
+        return Optional.ofNullable(initVal);
     }
 }

@@ -27,7 +27,7 @@ public class Parser {
     }
 
     public Parser(List<Terminal> list, ErrorRecorder errorRecorder) {
-        this(new PreIterator<Terminal>(list), errorRecorder);
+        this(new PreIterator<>(list), errorRecorder);
     }
 
     public CompUnit analysis(){
@@ -48,7 +48,7 @@ public class Parser {
         // decl : int, const
         // funcdef : int, void
         // mainfuncdef : int
-        int enter = 0;
+        int enter;
         while(true){
             if(is(TerminalType.CONSTTK)){
                 enter = 1;
@@ -296,18 +296,28 @@ public class Parser {
             Exp exp = Cond();
             checkRParent();
             Optional<Stmt> ifStmt = Stmt();
+            Optional<Stmt> elseStmt;
             if(is(TerminalType.ELSETK)){
                 skipTerminal();
-                ret = new If(exp, ifStmt, Stmt());
+                elseStmt = Stmt();
             }else{
-                ret = new If(exp, ifStmt, Optional.empty());
+                elseStmt = Optional.empty();
             }
+            ret = ifStmt.map(
+                            i -> elseStmt
+                            .map(e -> new If(exp, i, e))
+                            .orElseGet(() -> new If(exp, i, true)))
+                        .orElseGet(
+                            () -> elseStmt
+                            .map(e -> new If(exp, e, false))
+                            .orElseGet(() -> new If(exp)));
         }else if(is(TerminalType.WHILETK)){
             skipTerminal();
             check(TerminalType.LPARENT);
             Exp exp = Cond();
             checkRParent();
-            ret = new While(exp, Stmt());
+            Optional<Stmt> stmt = Stmt();
+            ret = stmt.map(value -> new While(exp, value)).orElseGet(() -> new While(exp));
         }else if(is(TerminalType.BREAKTK)){
             ret = new Break(now().line());
             skipTerminal();
@@ -439,12 +449,20 @@ public class Parser {
     }
 
     private Exp Exp(LVal lVal){
-        Exp ret = LayerExp(ExpLayer.ADD, Optional.of(lVal));
+        Exp ret = LayerExp(ExpLayer.ADD, lVal);
         postOrderList.add("<Exp>");
         return ret;
     }
 
-    private Exp LayerExp(ExpLayer layer, Optional<LVal> firstLVal){
+
+    private Exp LayerExp(ExpLayer layer){
+        return LayerExp(layer, null);
+    }
+
+    /**
+     * @param firstLVal nullable
+     */
+    private Exp LayerExp(ExpLayer layer, LVal firstLVal){
         if(layer == ExpLayer.MUL){
             Exp ret;
             Exp first = UnaryExp(firstLVal);
@@ -453,7 +471,7 @@ public class Parser {
             while(isBinaryOp(layer)){
                 postOrderList.add("<MulExp>");
                 ops.add(getTerminal().getTerminalType());
-                exps.add(UnaryExp(Optional.empty()));
+                exps.add(UnaryExp());
             }
             ret = new BinaryExp(first, exps, ops, layer);
             postOrderList.add("<MulExp>");
@@ -476,7 +494,7 @@ public class Parser {
         while(isBinaryOp(layer)){
             postOrderList.add(wordName);
             ops.add(getTerminal().getTerminalType());
-            exps.add(LayerExp(nextLayer, Optional.empty()));
+            exps.add(LayerExp(nextLayer));
         }
         ret = new BinaryExp(first, exps, ops, layer);
         postOrderList.add(wordName);
@@ -484,17 +502,24 @@ public class Parser {
     }
 
     private Exp AddExp () {
-        return LayerExp(ExpLayer.ADD, Optional.empty());
+        return LayerExp(ExpLayer.ADD);
     }
     private Exp LOrExp () {
-        return LayerExp(ExpLayer.LOR, Optional.empty());
+        return LayerExp(ExpLayer.LOR);
     }
-    
-    private UnaryExp UnaryExp (Optional<LVal> firstLVal) {
-        if(firstLVal.isPresent()){
+
+
+    private UnaryExp UnaryExp(){
+        return UnaryExp(null);
+    }
+    /**
+     * @param firstLVal nullable
+     */
+    private UnaryExp UnaryExp (LVal firstLVal) {
+        if(firstLVal != null){
             postOrderList.add("<PrimaryExp>");
             postOrderList.add("<UnaryExp>");
-            return new UnaryExp(new ArrayList<>(), firstLVal.get());
+            return new UnaryExp(new ArrayList<>(), firstLVal);
         }
         UnaryExp ret;
         PrimaryExp primaryExp;
@@ -624,12 +649,17 @@ public class Parser {
         postOrderList.add(iterator.now().toString());
         iterator.next();
     }
-
+    @SuppressWarnings("unchecked")
     private <T extends Terminal> T getTerminal(){
-        postOrderList.add(iterator.now().toString());
-        Terminal now = iterator.now();
-        iterator.next();
-        return (T) now;
+        try{
+            postOrderList.add(iterator.now().toString());
+            Terminal now = iterator.now();
+            iterator.next();
+            return (T) now;
+        }catch (ClassCastException e){
+            throw new ParserException();
+        }
+
     }
 
     private boolean is(int pre, TerminalType... terminals){

@@ -1,10 +1,8 @@
 package lexer;
 
-import common.LexerException;
 import common.PreIterator;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 public class SourceIterator extends PreIterator<Character> {
 

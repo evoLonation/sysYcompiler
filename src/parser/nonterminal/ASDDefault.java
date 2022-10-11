@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+
 public abstract class ASDDefault implements ASD {
     private final List<ASD> sons = new ArrayList<>();
     @Override
@@ -11,6 +12,7 @@ public abstract class ASDDefault implements ASD {
         return sons;
     }
 
+    @SafeVarargs
     protected final void addSon(List<? extends ASD>... candidates){
         for(List<? extends ASD> list : candidates){
             sons.addAll(list);
@@ -23,5 +25,4 @@ public abstract class ASDDefault implements ASD {
             }
         }
     }
-
 }

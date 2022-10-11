@@ -3,7 +3,6 @@ package semantic;
 import error.ErrorRecorder;
 import lexer.Ident;
 import type.FuncType;
-import type.Type;
 import type.VarType;
 
 import java.util.*;
@@ -47,8 +46,6 @@ public class SymbolTable {
 
     /**
      * 只会检查本层是否有
-     * @param ident
-     * @return
      */
     public boolean isSymbolExist(String ident){
         return variableSymbols.containsKey(ident) || funcSymbols.containsKey(ident);

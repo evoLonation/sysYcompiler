@@ -1,9 +1,9 @@
 package error;
 
 public class Error implements Comparable<Object>{
-    private int lineno;
-    private char id;
-    private String detail;
+    private final int lineno;
+    private final char id;
+    private final String detail;
 
     Error(int lineno, char id, String detail) {
         this.lineno = lineno;
@@ -12,7 +12,7 @@ public class Error implements Comparable<Object>{
     }
 
     public String simple(){
-        return Integer.toString(lineno) + " " + id;
+        return lineno + " " + id;
     }
     public String detail(){
         return simple() + " : " + detail;

@@ -1,11 +1,9 @@
 package parser.nonterminal.decl;
 
-import parser.nonterminal.ASD;
 import parser.nonterminal.ASDDefault;
 import parser.nonterminal.exp.Exp;
 import type.VarType;
 
-import java.util.List;
 
 public class IntInitVal extends ASDDefault implements InitVal{
     private final Exp exp;
@@ -19,10 +17,6 @@ public class IntInitVal extends ASDDefault implements InitVal{
         return exp;
     }
 
-    @Override
-    public int getNumber() {
-        return 1;
-    }
 
     private VarType type;
 

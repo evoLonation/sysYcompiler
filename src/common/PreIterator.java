@@ -3,7 +3,6 @@ package common;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 public class PreIterator<T>{
     private final Iterator<T> iterator;

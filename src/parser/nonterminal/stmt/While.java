@@ -7,13 +7,15 @@ import java.util.Optional;
 
 public class While extends ASDDefault implements Stmt {
     private final Exp cond;
-    private final Optional<Stmt> stmt;
+    private final Stmt stmt;
 
-    public While(Exp cond, Optional<Stmt> stmt) {
+    public While(Exp cond, Stmt stmt) {
         this.cond = cond;
         this.stmt = stmt;
-        addSon(cond);
-        stmt.ifPresent(this::addSon);
+        addSon(cond, stmt);
+    }
+    public While(Exp cond) {
+        this(cond, null);
     }
 
     public Exp getCond() {
@@ -21,6 +23,6 @@ public class While extends ASDDefault implements Stmt {
     }
 
     public Optional<Stmt> getStmt() {
-        return stmt;
+        return Optional.ofNullable(stmt);
     }
 }

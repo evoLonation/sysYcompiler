@@ -7,16 +7,20 @@ import java.util.Optional;
 
 public class If extends ASDDefault implements Stmt {
     private final Exp cond;
-    private final Optional<Stmt> ifStmt;
-    private final Optional<Stmt> elseStmt;
+    private final Stmt ifStmt;
+    private final Stmt elseStmt;
 
-    public If(Exp cond, Optional<Stmt> ifStmt, Optional<Stmt> elseStmt) {
+    public If(Exp cond, Stmt ifStmt, Stmt elseStmt) {
         this.cond = cond;
         this.ifStmt = ifStmt;
         this.elseStmt = elseStmt;
-        addSon(cond);
-        ifStmt.ifPresent(this::addSon);
-        elseStmt.ifPresent(this::addSon);
+        addSon(cond, ifStmt, elseStmt);
+    }
+    public If(Exp cond, Stmt stmt, boolean ifOrElse) {
+        this(cond, ifOrElse ? stmt : null, ifOrElse ? null : stmt);
+    }
+    public If(Exp cond) {
+        this(cond, null, null);
     }
 
     public Exp getCond() {
@@ -24,11 +28,11 @@ public class If extends ASDDefault implements Stmt {
     }
 
     public Optional<Stmt> getIfStmt() {
-        return ifStmt;
+        return Optional.ofNullable(ifStmt);
     }
 
     public Optional<Stmt> getElseStmt() {
-        return elseStmt;
+        return Optional.ofNullable(elseStmt);
     }
 }
 

@@ -113,7 +113,7 @@ public class Semantic {
             // number must equal
             if(dimension >= 1){
                 int number1 = asd.getConstExps().get(0).getOptionType().get().getConstValue();
-                check(number1 == initVal.getNumber());
+                check(asd.getInitVal() instanceof ArrayInitVal && ((ArrayInitVal) asd.getInitVal()).getInitVals().size() == number1);
                 if(dimension == 2){
                     int number2 = asd.getConstExps().get(1).getOptionType().get().getConstValue();
                     check(number2 == initVal.getType().getSecondLen());
@@ -144,7 +144,7 @@ public class Semantic {
                 check(dimension == initVal.getType().getDimension());
                 if(dimension >= 1){
                     int number1 = asd.getConstExps().get(0).getOptionType().get().getConstValue();
-                    check(number1 == initVal.getNumber());
+                    check(asd.getInitVal().get() instanceof ArrayInitVal && ((ArrayInitVal) asd.getInitVal().get()).getInitVals().size() == number1);
                     if(dimension == 2){
                         int number2 = asd.getConstExps().get(1).getOptionType().get().getConstValue();
                         check(number2 == initVal.getType().getSecondLen());
@@ -193,9 +193,9 @@ public class Semantic {
             VarType type;
             if(subIsArray){
                 // 检查每个initVal的元素数量是否一致
-                int subNum = asd.getInitVals().get(0).getNumber();
+                int subNum = ((ArrayInitVal)initVals.get(0)).getInitVals().size();
                 for(int i = 1; i < initVals.size(); i++){
-                    check(subNum == initVals.get(i).getNumber());
+                    check(subNum == ((ArrayInitVal)initVals.get(i)).getInitVals().size());
                 }
                 if(isConst){
                     int[][] constValue = new int[asd.getInitVals().size()][];

@@ -26,14 +26,15 @@ public class UnaryExp extends ASDDefault implements Exp{
         return primaryExp;
     }
 
-    private Optional<VarType> type = Optional.empty();
+    private VarType type;
 
     public void setType(VarType type) {
-        this.type = Optional.of(type);
+        this.type = type;
     }
+
     @Override
     public Optional<VarType> getOptionType() {
-        return type;
+        return Optional.ofNullable(type);
     }
 
 }

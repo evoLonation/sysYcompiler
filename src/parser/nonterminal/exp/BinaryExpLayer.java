@@ -1,6 +1,6 @@
 package parser.nonterminal.exp;
 
-public enum ExpLayer {
+public enum BinaryExpLayer {
     ADD,
     MUL,
     REL,

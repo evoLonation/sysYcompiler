@@ -8,21 +8,21 @@ import java.util.List;
 import java.util.Optional;
 
 public class UnaryExp extends ASTDefault implements Exp{
-    private final List<TerminalType> UnaryOps;
-    private final PrimaryExp primaryExp;
+    private final UnaryOp op;
+    private final Exp exp;
 
-    public UnaryExp(List<TerminalType> unaryOps, PrimaryExp primaryExp) {
-        UnaryOps = unaryOps;
-        this.primaryExp = primaryExp;
-        addSon(primaryExp);
+    public UnaryExp(UnaryOp op, Exp exp) {
+        this.op = op;
+        this.exp = exp;
+        addSon(exp);
     }
 
-    public List<TerminalType> getUnaryOps() {
-        return UnaryOps;
+    public UnaryOp getOp() {
+        return op;
     }
 
-    public PrimaryExp getPrimaryExp() {
-        return primaryExp;
+    public Exp getExp() {
+        return exp;
     }
 
     private VarType type;

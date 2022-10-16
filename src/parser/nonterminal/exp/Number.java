@@ -1,13 +1,14 @@
 package parser.nonterminal.exp;
 
 import lexer.IntConst;
+import parser.nonterminal.AST;
 import parser.nonterminal.ASTDefault;
 import type.IntType;
 import type.VarType;
 
 import java.util.Optional;
 
-public class Number extends ASTDefault implements PrimaryExp {
+public class Number extends ASTDefault implements AST, ExpTyper, Exp {
 
     public Number(IntConst intConst) {
         type = new IntType(intConst.getDigitValue());

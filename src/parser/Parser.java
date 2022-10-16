@@ -449,89 +449,130 @@ public class Parser {
     }
 
     private Exp Exp(LVal lVal){
-        Exp ret = LayerExp(ExpLayer.ADD, lVal);
+        Exp ret = BinaryExp(BinaryExpLayer.ADD, lVal);
         postOrderList.add("<Exp>");
         return ret;
     }
 
 
-    private Exp LayerExp(ExpLayer layer){
-        return LayerExp(layer, null);
+    private Exp BinaryExp(BinaryExpLayer layer){
+        return BinaryExp(layer, null);
     }
 
+
+    private BinaryOp getBinaryOp(BinaryExpLayer layer){
+        TerminalType terminalType =  getTerminal().getTerminalType();
+        switch (layer){
+            case ADD:
+                switch (terminalType){
+                    case PLUS: return BinaryOp.PLUS;
+                    case MINU: return BinaryOp.MINU;
+                }
+                break;
+            case MUL:
+                switch (terminalType){
+                    case MULT: return BinaryOp.PLUS;
+                    case DIV: return BinaryOp.DIV;
+                    case MOD: return BinaryOp.MOD;
+                }
+                break;
+            case EQ:
+                switch (terminalType){
+                    case EQL: return BinaryOp.EQL;
+                    case NEQ: return BinaryOp.NEQ;
+                }
+                break;
+            case LOR:
+                if (terminalType == TerminalType.OR) {
+                    return BinaryOp.OR;
+                }
+                break;
+            case LAND:
+                if (terminalType == TerminalType.AND) {
+                    return BinaryOp.AND;
+                }
+                break;
+            case REL:
+                switch (terminalType){
+                    case LEQ: return BinaryOp.LEQ;
+                    case LSS: return BinaryOp.LSS;
+                    case GEQ: return BinaryOp.GEQ;
+                    case GRE: return BinaryOp.GRE;
+                }
+                break;
+        }
+        throw new ParserException();
+    }
     /**
      * @param firstLVal nullable
      */
-    private Exp LayerExp(ExpLayer layer, LVal firstLVal){
-        if(layer == ExpLayer.MUL){
-            Exp ret;
-            Exp first = UnaryExp(firstLVal);
-            List<Exp> exps = new ArrayList<>();
-            List<TerminalType> ops = new ArrayList<>();
-            while(isBinaryOp(layer)){
-                postOrderList.add("<MulExp>");
-                ops.add(getTerminal().getTerminalType());
-                exps.add(UnaryExp());
-            }
-            ret = new BinaryExp(first, exps, ops, layer);
+    private Exp BinaryExp(BinaryExpLayer layer, LVal firstLVal){
+        if(layer == BinaryExpLayer.MUL){
+            Exp ret = UnaryExp(firstLVal);
             postOrderList.add("<MulExp>");
+             while(isBinaryOp(layer)){
+                ret = new BinaryExp(ret, getBinaryOp(layer), UnaryExp());
+                postOrderList.add("<MulExp>");
+            }
             return ret;
         }
-        ExpLayer nextLayer;
+        BinaryExpLayer nextLayer;
         String wordName;
         switch (layer){
-            case REL: nextLayer = ExpLayer.ADD; wordName = "<RelExp>"; break;
-            case LAND: nextLayer = ExpLayer.EQ; wordName = "<LAndExp>";break;
-            case LOR: nextLayer = ExpLayer.LAND; wordName = "<LOrExp>";break;
-            case ADD: nextLayer = ExpLayer.MUL; wordName = "<AddExp>";break;
-            case EQ: nextLayer = ExpLayer.REL; wordName = "<EqExp>";break;
+            case REL: nextLayer = BinaryExpLayer.ADD; wordName = "<RelExp>"; break;
+            case LAND: nextLayer = BinaryExpLayer.EQ; wordName = "<LAndExp>";break;
+            case LOR: nextLayer = BinaryExpLayer.LAND; wordName = "<LOrExp>";break;
+            case ADD: nextLayer = BinaryExpLayer.MUL; wordName = "<AddExp>";break;
+            case EQ: nextLayer = BinaryExpLayer.REL; wordName = "<EqExp>";break;
             default: throw new ParserException();
         }
-        Exp ret;
-        Exp first = LayerExp(nextLayer, firstLVal);
-        List<Exp> exps = new ArrayList<>();
-        List<TerminalType> ops = new ArrayList<>();
-        while(isBinaryOp(layer)){
-            postOrderList.add(wordName);
-            ops.add(getTerminal().getTerminalType());
-            exps.add(LayerExp(nextLayer));
-        }
-        ret = new BinaryExp(first, exps, ops, layer);
+        Exp ret = BinaryExp(nextLayer, firstLVal);
         postOrderList.add(wordName);
+        while(isBinaryOp(layer)){
+            ret = new BinaryExp(ret, getBinaryOp(layer), BinaryExp(nextLayer));
+            postOrderList.add(wordName);
+        }
         return ret;
     }
 
     private Exp AddExp () {
-        return LayerExp(ExpLayer.ADD);
+        return BinaryExp(BinaryExpLayer.ADD);
     }
     private Exp LOrExp () {
-        return LayerExp(ExpLayer.LOR);
+        return BinaryExp(BinaryExpLayer.LOR);
     }
 
 
-    private UnaryExp UnaryExp(){
+    private Exp UnaryExp(){
         return UnaryExp(null);
     }
+
+    private UnaryOp getUnaryOp(){
+        UnaryOp ret;
+        switch (getTerminal().getTerminalType()){
+            case PLUS: ret = UnaryOp.PLUS; break;
+            case MINU: ret = UnaryOp.MINU; break;
+            case NOT: ret = UnaryOp.NOT; break;
+            default:  throw new ParserException();
+        }
+        postOrderList.add("<UnaryOp>");
+        return ret;
+    }
+
     /**
      * @param firstLVal nullable
      */
-    private UnaryExp UnaryExp (LVal firstLVal) {
+    private Exp UnaryExp (LVal firstLVal) {
         if(firstLVal != null){
             postOrderList.add("<PrimaryExp>");
             postOrderList.add("<UnaryExp>");
-            return new UnaryExp(new ArrayList<>(), firstLVal);
+            return firstLVal;
         }
-        UnaryExp ret;
-        PrimaryExp primaryExp;
-        int time = 1;
-        List<TerminalType> unaryOps = new ArrayList<>();
-        while(isUnaryOp()){
-            time ++;
-            unaryOps.add(getTerminal().getTerminalType());
-            postOrderList.add("<UnaryOp>");
-        }
-        if(is(TerminalType.LPARENT, TerminalType.INTCON) || is(TerminalType.IDENFR) && !is(1, TerminalType.LPARENT)){
-            primaryExp = PrimaryExp();
+        Exp ret;
+        if(isUnaryOp()){
+            ret = new UnaryExp(getUnaryOp(), UnaryExp());
+        }else if(is(TerminalType.LPARENT, TerminalType.INTCON) || is(TerminalType.IDENFR) && !is(1, TerminalType.LPARENT)){
+            ret = PrimaryExp();
         }else if(is(TerminalType.IDENFR)){
             Ident ident = getTerminal();
             List<Exp> exps = new ArrayList<>();
@@ -545,22 +586,19 @@ public class Parser {
                 postOrderList.add("<FuncRParams>");
             }
             checkRParent();
-            primaryExp = new FuncCall(ident, exps);
+            ret = new FuncCall(ident, exps);
         }else{
             throw new ParserException();
         }
-        while(time-- != 0){
-            postOrderList.add("<UnaryExp>");
-        }
-        ret = new UnaryExp(unaryOps, primaryExp);
+        postOrderList.add("<UnaryExp>");
         return ret;
     }
 
-    private PrimaryExp PrimaryExp () {
-        PrimaryExp ret;
+    private Exp PrimaryExp () {
+        Exp ret;
         if(is(TerminalType.LPARENT)){
             skipTerminal();
-            ret = new SubExp(Exp());
+            ret = Exp();
             checkRParent();
         }else if(is(TerminalType.IDENFR)){
             ret = LVal();
@@ -578,7 +616,7 @@ public class Parser {
         return is(TerminalType.PLUS, TerminalType.MINU, TerminalType.NOT);
     }
 
-    private boolean isBinaryOp(ExpLayer layer){
+    private boolean isBinaryOp(BinaryExpLayer layer){
         switch (layer){
             case EQ: return is(TerminalType.EQL, TerminalType.NEQ);
             case ADD: return is(TerminalType.PLUS, TerminalType.MINU);

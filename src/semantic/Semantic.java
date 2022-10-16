@@ -51,7 +51,6 @@ public class Semantic {
         map.put(Assign.class, new AssignExec());
         map.put(Printf.class, new PrintfExec());
         map.put(MainFuncDef.class, new MainFuncDefExec());
-        map.put(SubExp.class, new SubExpExec());
     }
     private final Exec<AST> exec = new Exec<>();
 
@@ -235,42 +234,29 @@ public class Semantic {
         @Override
         void exec(BinaryExp ast) {
             execSons(ast);
-            Exp first = ast.getFirst();
-            List<Exp> exps = ast.getExps();
-            if(exps.size() == 0){
-                // 如果只有first，则直接继承即可
-                if(first.getOptionType().isPresent()){
-                    ast.setType(first.getOptionType().get());
-                }
-            }else{
-                //考虑非常数数组的直接加减，后面的exps必须全部是int
-                if(first.getOptionType().isPresent()){
-                    VarType firstType = first.getOptionType().get();
-                    if(!firstType.isConst() && firstType.is(GenericType.ARRAY, GenericType.ARRAY2)){
-                        for(Exp exp : exps){
-                            check(exp.getOptionType().isPresent() && exp.getOptionType().get().is(GenericType.INT));
-                        }
-                        for(TerminalType op : ast.getOps()){
-                            check(op == TerminalType.PLUS || op == TerminalType.MINU);
-                        }
-                        ast.setType(firstType);
-                        return;
-                    }
-                }
-                // 如果有exps，则所有exp参与了运算，所有exp包括first必须为int
-                boolean isConst = checkIsConstInt(first) && checkIsConstInt(exps);
-                if(isConst){
-                    int value = first.getOptionType().get().getConstValue();
-                    for(int i = 0; i < exps.size(); i ++){
-                        value = compute(value, ast.getOps().get(i), exps.get(i).getOptionType().get().getConstValue());
-                    }
-                    ast.setType(new IntType(value));
-                }else{
-                    ast.setType(new IntType());
+            Exp exp1 = ast.getExp1();
+            Exp exp2 = ast.getExp2();
+            BinaryOp op = ast.getOp();
+            //考虑非常数数组的直接加减，后面的exps必须全部是int
+            if(exp1.getOptionType().isPresent()){
+                VarType firstType = exp1.getOptionType().get();
+                if(!firstType.isConst() && firstType.is(GenericType.ARRAY, GenericType.ARRAY2)){
+                    check(exp2.getOptionType().isPresent() && exp2.getOptionType().get().is(GenericType.INT));
+                    check(op == BinaryOp.PLUS || op == BinaryOp.MINU);
+                    ast.setType(exp1.getOptionType().get());
+                    return;
                 }
             }
+            // 所有exp必须为int
+            boolean isConst = checkIsConstInt(exp1) && checkIsConstInt(exp2);
+            if(isConst){
+                int value = compute(exp1.getOptionType().get().getConstValue(), op, exp2.getOptionType().get().getConstValue());
+                ast.setType(new IntType(value));
+            }else{
+                ast.setType(new IntType());
+            }
         }
-        int compute(int a, TerminalType op, int b){
+        int compute(int a, BinaryOp op, int b){
             switch (op){
                 case OR: return toInt(toBool(a) || toBool(b));
                 case AND: return toInt(toBool(a) && toBool(b));
@@ -300,28 +286,22 @@ public class Semantic {
         @Override
         void exec(UnaryExp ast) {
             execSons(ast);
-            PrimaryExp primaryExp = ast.getPrimaryExp();
-            List<TerminalType> ops = ast.getUnaryOps();
-            if(ops.size() == 0){
-                if(primaryExp.getOptionType().isPresent()){
-                    ast.setType(primaryExp.getOptionType().get());
+            Exp exp = ast.getExp();
+            UnaryOp op = ast.getOp();
+            if(exp instanceof UnaryExp){
+                check(op != ((UnaryExp) exp).getOp());
+            }
+            boolean isConst = checkIsConstInt(exp);
+            if(isConst){
+                int value = exp.getOptionType().get().getConstValue();
+                switch (op){
+                    case MINU: value = - value; break;
+                    case NOT: value = value != 0 ? 0 : 1; break;
+                    case PLUS: break;
                 }
+                ast.setType(new IntType(value));
             }else{
-                boolean isConst = checkIsConstInt(primaryExp);
-                if(isConst){
-                    int value = primaryExp.getOptionType().get().getConstValue();
-                    for(int i = ops.size() - 1; i >= 0; i--){
-                        switch (ops.get(i)){
-                            case MINU: value = - value; break;
-                            case NOT: value = value != 0 ? 0 : 1; break;
-                            case PLUS: break;
-                            default: errorRecorder.other(0);
-                        }
-                    }
-                    ast.setType(new IntType(value));
-                }else{
-                    ast.setType(new IntType());
-                }
+                ast.setType(new IntType());
             }
         }
     }
@@ -409,15 +389,6 @@ public class Semantic {
             }
             if(identType.isReturn()){
                 ast.setType(new IntType());
-            }
-        }
-    }
-    private class SubExpExec extends Exec<SubExp>{
-        @Override
-        void exec(SubExp ast) {
-            execSons(ast);
-            if(ast.getExp().getOptionType().isPresent()){
-                ast.setType(ast.getExp().getOptionType().get());
             }
         }
     }

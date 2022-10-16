@@ -1,43 +1,34 @@
 package parser.nonterminal.exp;
 
-import lexer.TerminalType;
 import parser.nonterminal.ASTDefault;
 import type.VarType;
 
-import java.util.List;
 import java.util.Optional;
 
 
 public class BinaryExp extends ASTDefault implements Exp{
-    private final Exp first;
-    private final List<Exp> exps;
-    private final List<TerminalType> ops;
+    private final Exp exp1;
+    private final Exp exp2;
+    private final BinaryOp op;
 
-    private final ExpLayer layer;
 
-    public BinaryExp(Exp first, List<Exp> exps, List<TerminalType> ops, ExpLayer layer) {
-        this.first = first;
-        this.exps = exps;
-        this.ops = ops;
-        this.layer = layer;
-        addSon(first);
-        addSon(exps);
+    public BinaryExp(Exp exp1, BinaryOp op, Exp exp2) {
+        this.exp1 = exp1;
+        this.exp2 = exp2;
+        this.op = op;
+        addSon(exp1, exp2);
     }
 
-    public ExpLayer getLayer() {
-        return layer;
+    public Exp getExp1() {
+        return exp1;
     }
 
-    public Exp getFirst() {
-        return first;
+    public Exp getExp2() {
+        return exp2;
     }
 
-    public List<Exp> getExps() {
-        return exps;
-    }
-
-    public List<TerminalType> getOps() {
-        return ops;
+    public BinaryOp getOp() {
+        return op;
     }
 
     private VarType type;

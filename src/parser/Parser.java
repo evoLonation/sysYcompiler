@@ -471,7 +471,7 @@ public class Parser {
                 break;
             case MUL:
                 switch (terminalType){
-                    case MULT: return BinaryOp.PLUS;
+                    case MULT: return BinaryOp.MULT;
                     case DIV: return BinaryOp.DIV;
                     case MOD: return BinaryOp.MOD;
                 }

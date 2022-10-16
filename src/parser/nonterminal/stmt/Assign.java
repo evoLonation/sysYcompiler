@@ -1,10 +1,10 @@
 package parser.nonterminal.stmt;
 
-import parser.nonterminal.ASDDefault;
+import parser.nonterminal.ASTDefault;
 import parser.nonterminal.exp.Exp;
 import parser.nonterminal.exp.LVal;
 
-public class Assign extends ASDDefault implements Stmt {
+public class Assign extends ASTDefault implements Stmt {
     private final LVal lVal;
     private final Exp exp;
 

@@ -1,11 +1,11 @@
 package parser.nonterminal.stmt;
 
-import parser.nonterminal.ASDDefault;
+import parser.nonterminal.ASTDefault;
 import parser.nonterminal.exp.Exp;
 
 import java.util.Optional;
 
-public class While extends ASDDefault implements Stmt {
+public class While extends ASTDefault implements Stmt {
     private final Exp cond;
     private final Stmt stmt;
 

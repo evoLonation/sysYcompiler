@@ -1,6 +1,5 @@
 package semantic;
 
-import common.CompileException;
 import common.SemanticException;
 import error.ErrorRecorder;
 import lexer.FormatString;
@@ -26,7 +25,7 @@ public class Semantic {
 
     SymbolTable symbolTable;
 
-    Map<Class<?>, Exec<? extends ASD>> map = new HashMap<>();
+    Map<Class<?>, Exec<? extends AST>> map = new HashMap<>();
 
     CompUnit compUnit;
 
@@ -54,10 +53,10 @@ public class Semantic {
         map.put(MainFuncDef.class, new MainFuncDefExec());
         map.put(SubExp.class, new SubExpExec());
     }
-    private final Exec<ASD> exec = new Exec<>();
+    private final Exec<AST> exec = new Exec<>();
 
-    private Exec<ASD> getExec(ASD asd){
-        Exec<ASD> ret = (Exec<ASD>) map.get(asd.getClass());
+    private Exec<AST> getExec(AST AST){
+        Exec<AST> ret = (Exec<AST>) map.get(AST.getClass());
         return ret == null ? exec : ret;
     }
 
@@ -66,12 +65,12 @@ public class Semantic {
         getExec(compUnit).exec(compUnit);
     }
 
-    private class Exec<T extends ASD>{
-        void exec(T asd){
-            execSons(asd);
+    private class Exec<T extends AST>{
+        void exec(T ast){
+            execSons(ast);
         }
-        final void  execSons(T asd){
-            for(ASD son : asd.sons()){
+        final void  execSons(T ast){
+            for(AST son : ast.sons()){
                 getExec(son).exec(son);
             }
         }
@@ -95,16 +94,16 @@ public class Semantic {
     // 后置：填充符号表
     private class ConstDefExec extends Exec<ConstDef> {
         @Override
-        void exec(ConstDef asd) {
-            execSons(asd);
+        void exec(ConstDef ast) {
+            execSons(ast);
             // check const exps
             // must all const
-            check(isAllConst(asd.getConstExps()));
+            check(isAllConst(ast.getConstExps()));
             // dimension <= 2
-            int dimension = asd.getConstExps().size();
+            int dimension = ast.getConstExps().size();
             check(dimension <= 2);
             // check init value
-            InitVal initVal = asd.getInitVal();
+            InitVal initVal = ast.getInitVal();
             // must be const
             check(initVal.getType().isConst());
             // dimension must equal
@@ -112,10 +111,10 @@ public class Semantic {
             VarType type;
             // number must equal
             if(dimension >= 1){
-                int number1 = asd.getConstExps().get(0).getOptionType().get().getConstValue();
-                check(asd.getInitVal() instanceof ArrayInitVal && ((ArrayInitVal) asd.getInitVal()).getInitVals().size() == number1);
+                int number1 = ast.getConstExps().get(0).getOptionType().get().getConstValue();
+                check(ast.getInitVal() instanceof ArrayInitVal && ((ArrayInitVal) ast.getInitVal()).getInitVals().size() == number1);
                 if(dimension == 2){
-                    int number2 = asd.getConstExps().get(1).getOptionType().get().getConstValue();
+                    int number2 = ast.getConstExps().get(1).getOptionType().get().getConstValue();
                     check(number2 == initVal.getType().getSecondLen());
                     type = new Array2Type(number2,initVal.getType().getConstValue2());
                 }else{
@@ -124,29 +123,29 @@ public class Semantic {
             }else{
                 type = new IntType(initVal.getType().getConstValue());
             }
-            symbolTable.addVariableSymbol(asd.getIdent(), type);
+            symbolTable.addVariableSymbol(ast.getIdent(), type);
         }
     }
     private class VarDefExec extends Exec<VarDef> {
         @Override
-        void exec(VarDef asd) {
-            execSons(asd);
+        void exec(VarDef ast) {
+            execSons(ast);
             // check const exps
             // must all const
-            check(isAllConst(asd.getConstExps()));
+            check(isAllConst(ast.getConstExps()));
             // dimension <= 2
-            int dimension = asd.getConstExps().size();
+            int dimension = ast.getConstExps().size();
             check(dimension <= 2);
             VarType type;
             // check init value
-            if(asd.getInitVal().isPresent()){
-                InitVal initVal = asd.getInitVal().get();
+            if(ast.getInitVal().isPresent()){
+                InitVal initVal = ast.getInitVal().get();
                 check(dimension == initVal.getType().getDimension());
                 if(dimension >= 1){
-                    int number1 = asd.getConstExps().get(0).getOptionType().get().getConstValue();
-                    check(asd.getInitVal().get() instanceof ArrayInitVal && ((ArrayInitVal) asd.getInitVal().get()).getInitVals().size() == number1);
+                    int number1 = ast.getConstExps().get(0).getOptionType().get().getConstValue();
+                    check(ast.getInitVal().get() instanceof ArrayInitVal && ((ArrayInitVal) ast.getInitVal().get()).getInitVals().size() == number1);
                     if(dimension == 2){
-                        int number2 = asd.getConstExps().get(1).getOptionType().get().getConstValue();
+                        int number2 = ast.getConstExps().get(1).getOptionType().get().getConstValue();
                         check(number2 == initVal.getType().getSecondLen());
                         type = new Array2Type(number2);
                     }else{
@@ -159,11 +158,11 @@ public class Semantic {
                 switch (dimension){
                     case 0 : type = new IntType();break;
                     case 1 : type = new ArrayType(); break;
-                    case 2 : type = new Array2Type(asd.getConstExps().get(1).getOptionType().get().getConstValue()); break;
+                    case 2 : type = new Array2Type(ast.getConstExps().get(1).getOptionType().get().getConstValue()); break;
                     default: throw new SemanticException();
                 }
             }
-            symbolTable.addVariableSymbol(asd.getIdent(), type);
+            symbolTable.addVariableSymbol(ast.getIdent(), type);
         }
     }
 
@@ -171,16 +170,16 @@ public class Semantic {
     // 后置：得到InitVal的Type
     private class ArrayInitValExec extends Exec<ArrayInitVal> {
         @Override
-        void exec(ArrayInitVal asd) {
-            execSons(asd);
+        void exec(ArrayInitVal ast) {
+            execSons(ast);
             // 所有子InitVal都是一维数组或者单个数字
-            List<InitVal> initVals = asd.getInitVals();
+            List<InitVal> initVals = ast.getInitVals();
             // 子initval不能是2维数组
             check(!initVals.get(0).getType().is(GenericType.ARRAY2));
             // 检查每个InitVal的类型，必须为数组或者int
             // 检查每个InitVal 的类型是否一致
             boolean subIsArray = initVals.get(0).getType().is(GenericType.ARRAY);
-            for(int i = 1; i < asd.getInitVals().size(); i++){
+            for(int i = 1; i < ast.getInitVals().size(); i++){
                 check(subIsArray == initVals.get(i).getType().is(GenericType.ARRAY));
             }
             // 检查每个initVal是否为Const
@@ -198,7 +197,7 @@ public class Semantic {
                     check(subNum == ((ArrayInitVal)initVals.get(i)).getInitVals().size());
                 }
                 if(isConst){
-                    int[][] constValue = new int[asd.getInitVals().size()][];
+                    int[][] constValue = new int[ast.getInitVals().size()][];
                     for(int i = 0; i < initVals.size(); i++){
                         constValue[i] = initVals.get(i).getType().getConstValue1();
                     }
@@ -217,16 +216,16 @@ public class Semantic {
                     type = new ArrayType();
                 }
             }
-            asd.setType(type);
+            ast.setType(type);
         }
     }
 
     private class IntInitValExec extends Exec<IntInitVal>{
         @Override
-        void exec(IntInitVal asd) {
-            execSons(asd);
-            check(asd.getExp().getOptionType().isPresent());
-            asd.setType(asd.getExp().getOptionType().get());
+        void exec(IntInitVal ast) {
+            execSons(ast);
+            check(ast.getExp().getOptionType().isPresent());
+            ast.setType(ast.getExp().getOptionType().get());
         }
     }
 
@@ -234,14 +233,14 @@ public class Semantic {
     // 后置：判断其是否为Const，如果是则计算值(换言之，setType)
     private class BinaryExpExec extends Exec<BinaryExp> {
         @Override
-        void exec(BinaryExp asd) {
-            execSons(asd);
-            Exp first = asd.getFirst();
-            List<Exp> exps = asd.getExps();
+        void exec(BinaryExp ast) {
+            execSons(ast);
+            Exp first = ast.getFirst();
+            List<Exp> exps = ast.getExps();
             if(exps.size() == 0){
                 // 如果只有first，则直接继承即可
                 if(first.getOptionType().isPresent()){
-                    asd.setType(first.getOptionType().get());
+                    ast.setType(first.getOptionType().get());
                 }
             }else{
                 //考虑非常数数组的直接加减，后面的exps必须全部是int
@@ -251,10 +250,10 @@ public class Semantic {
                         for(Exp exp : exps){
                             check(exp.getOptionType().isPresent() && exp.getOptionType().get().is(GenericType.INT));
                         }
-                        for(TerminalType op : asd.getOps()){
+                        for(TerminalType op : ast.getOps()){
                             check(op == TerminalType.PLUS || op == TerminalType.MINU);
                         }
-                        asd.setType(firstType);
+                        ast.setType(firstType);
                         return;
                     }
                 }
@@ -263,11 +262,11 @@ public class Semantic {
                 if(isConst){
                     int value = first.getOptionType().get().getConstValue();
                     for(int i = 0; i < exps.size(); i ++){
-                        value = compute(value, asd.getOps().get(i), exps.get(i).getOptionType().get().getConstValue());
+                        value = compute(value, ast.getOps().get(i), exps.get(i).getOptionType().get().getConstValue());
                     }
-                    asd.setType(new IntType(value));
+                    ast.setType(new IntType(value));
                 }else{
-                    asd.setType(new IntType());
+                    ast.setType(new IntType());
                 }
             }
         }
@@ -299,13 +298,13 @@ public class Semantic {
 
     private class UnaryExpExec extends Exec<UnaryExp>{
         @Override
-        void exec(UnaryExp asd) {
-            execSons(asd);
-            PrimaryExp primaryExp = asd.getPrimaryExp();
-            List<TerminalType> ops = asd.getUnaryOps();
+        void exec(UnaryExp ast) {
+            execSons(ast);
+            PrimaryExp primaryExp = ast.getPrimaryExp();
+            List<TerminalType> ops = ast.getUnaryOps();
             if(ops.size() == 0){
                 if(primaryExp.getOptionType().isPresent()){
-                    asd.setType(primaryExp.getOptionType().get());
+                    ast.setType(primaryExp.getOptionType().get());
                 }
             }else{
                 boolean isConst = checkIsConstInt(primaryExp);
@@ -319,9 +318,9 @@ public class Semantic {
                             default: errorRecorder.other(0);
                         }
                     }
-                    asd.setType(new IntType(value));
+                    ast.setType(new IntType(value));
                 }else{
-                    asd.setType(new IntType());
+                    ast.setType(new IntType());
                 }
             }
         }
@@ -329,16 +328,16 @@ public class Semantic {
 
     private class LValExec extends Exec<LVal>{
         @Override
-        void exec(LVal asd) {
-            execSons(asd);
-            Optional<VarType> ret = symbolTable.getVariableSymbol(asd.getIdent());
+        void exec(LVal ast) {
+            execSons(ast);
+            Optional<VarType> ret = symbolTable.getVariableSymbol(ast.getIdent());
             if(!ret.isPresent()){
-                asd.setType(new IntType());
+                ast.setType(new IntType());
                 return;
             }
             VarType identType = ret.get();
             int dimension = identType.getDimension();
-            List<Exp> exps = asd.getExps();
+            List<Exp> exps = ast.getExps();
             int expSize = exps.size();
             check(dimension >= expSize);
             VarType type;
@@ -356,7 +355,7 @@ public class Semantic {
                     type = new IntType();
                 }
             }else{
-                switch (identType.getDimension() - asd.getExps().size()) {
+                switch (identType.getDimension() - ast.getExps().size()) {
                     case 0:
                         type = new IntType();
                         break;
@@ -370,7 +369,7 @@ public class Semantic {
                         throw new SemanticException();
                 }
             }
-            asd.setType(type);
+            ast.setType(type);
         }
 
     }
@@ -391,72 +390,72 @@ public class Semantic {
 
     private class FuncCallExec extends Exec<FuncCall>{
         @Override
-        void exec(FuncCall asd) {
-            execSons(asd);
-            Optional<FuncType> ret = symbolTable.getFuncSymbol(asd.getIdent());
+        void exec(FuncCall ast) {
+            execSons(ast);
+            Optional<FuncType> ret = symbolTable.getFuncSymbol(ast.getIdent());
             if(!ret.isPresent()) return;
             FuncType identType = ret.get();
-            List<Exp> exps = asd.getExps();
+            List<Exp> exps = ast.getExps();
             if(identType.getParamNumber() != exps.size()){
-                errorRecorder.paramNumNotMatch(asd.getIdent().line(), asd.getIdent().getValue(), identType.getParamNumber(), asd.getExps().size());
+                errorRecorder.paramNumNotMatch(ast.getIdent().line(), ast.getIdent().getValue(), identType.getParamNumber(), ast.getExps().size());
             }else{
                 for(int i = 0; i < exps.size(); i++){
                     if(!exps.get(i).getOptionType().isPresent()){
-                        errorRecorder.paramTypeNotMatch(asd.getIdent().line(), asd.getIdent().getValue(), identType.getParams().get(i).getDimension(), -1);
+                        errorRecorder.paramTypeNotMatch(ast.getIdent().line(), ast.getIdent().getValue(), identType.getParams().get(i).getDimension(), -1);
                     }else if(!identType.getParams().get(i).match(exps.get(i).getOptionType().get())){
-                        errorRecorder.paramTypeNotMatch(asd.getIdent().line(), asd.getIdent().getValue(), identType.getParams().get(i).getDimension(), exps.get(i).getOptionType().get().getDimension());
+                        errorRecorder.paramTypeNotMatch(ast.getIdent().line(), ast.getIdent().getValue(), identType.getParams().get(i).getDimension(), exps.get(i).getOptionType().get().getDimension());
                     }
                 }
             }
             if(identType.isReturn()){
-                asd.setType(new IntType());
+                ast.setType(new IntType());
             }
         }
     }
     private class SubExpExec extends Exec<SubExp>{
         @Override
-        void exec(SubExp asd) {
-            execSons(asd);
-            if(asd.getExp().getOptionType().isPresent()){
-                asd.setType(asd.getExp().getOptionType().get());
+        void exec(SubExp ast) {
+            execSons(ast);
+            if(ast.getExp().getOptionType().isPresent()){
+                ast.setType(ast.getExp().getOptionType().get());
             }
         }
     }
 
     private class BlockExec extends Exec<Block>{
         @Override
-        void exec(Block asd) {
+        void exec(Block ast) {
             symbolTable = new SymbolTable(symbolTable);
-            execSons(asd);
+            execSons(ast);
             symbolTable = symbolTable.father();
         }
     }
     private class FuncDefExec extends Exec<FuncDef>{
         @Override
-        void exec(FuncDef asd) {
+        void exec(FuncDef ast) {
             // 先获取参数的type
             List<VarType> types = new ArrayList<>();
-            for(FuncDef.FuncFParam funcFParam : asd.getFuncFParams()){
+            for(FuncDef.FuncFParam funcFParam : ast.getFuncFParams()){
                 getExec(funcFParam).exec(funcFParam);
                 types.add(funcFParam.getType());
             }
-            symbolTable.addFuncSymbol(asd.getIdent(), new FuncType(asd.isInt(), types));
+            symbolTable.addFuncSymbol(ast.getIdent(), new FuncType(ast.isInt(), types));
             symbolTable = new SymbolTable(symbolTable);
-            for(FuncDef.FuncFParam funcFParam : asd.getFuncFParams()){
+            for(FuncDef.FuncFParam funcFParam : ast.getFuncFParams()){
                 symbolTable.addVariableSymbol(funcFParam.getIdent(), funcFParam.getType());
             }
-            checkWhileBreak(asd.getBlock());
-            List<BlockItem> blockItems = asd.getBlock().getBlockItems();
+            checkWhileBreak(ast.getBlock());
+            List<BlockItem> blockItems = ast.getBlock().getBlockItems();
             for(BlockItem blockItem : blockItems){
                 getExec(blockItem).exec(blockItem);
                 if(blockItem instanceof Return){
-                    if(!asd.isInt() && ((Return) blockItem).getExp().isPresent()){
+                    if(!ast.isInt() && ((Return) blockItem).getExp().isPresent()){
                         errorRecorder.voidFuncReturnValue(((Return) blockItem).line());
                     }
                 }
             }
-            if(asd.isInt() && (blockItems.size() == 0 || !(blockItems.get(blockItems.size() - 1) instanceof Return) || !((Return) blockItems.get(blockItems.size() - 1)).getExp().isPresent()) ){
-                errorRecorder.returnLack(asd.getBlock().endLine());
+            if(ast.isInt() && (blockItems.size() == 0 || !(blockItems.get(blockItems.size() - 1) instanceof Return) || !((Return) blockItems.get(blockItems.size() - 1)).getExp().isPresent()) ){
+                errorRecorder.returnLack(ast.getBlock().endLine());
             }
             symbolTable = symbolTable.father();
         }
@@ -465,18 +464,18 @@ public class Semantic {
     // 后置：设置type
     private class FuncFParamExec extends Exec<FuncDef.FuncFParam>{
         @Override
-        void exec(FuncDef.FuncFParam asd) {
-            execSons(asd);
-            if(asd.getDimension() == 0){
-                asd.setType(new IntType());
-            }else if(asd.getDimension() == 1){
-                asd.setType(new ArrayType());
-            }else if(asd.getDimension() == 2){
-                check(asd.getConstExp().isPresent());
-                if(!checkIsConstInt(asd.getConstExp().get())){
+        void exec(FuncDef.FuncFParam ast) {
+            execSons(ast);
+            if(ast.getDimension() == 0){
+                ast.setType(new IntType());
+            }else if(ast.getDimension() == 1){
+                ast.setType(new ArrayType());
+            }else if(ast.getDimension() == 2){
+                check(ast.getConstExp().isPresent());
+                if(!checkIsConstInt(ast.getConstExp().get())){
                     errorRecorder.other(0);
                 }
-                asd.setType(new Array2Type(asd.getConstExp().get().getOptionType().get().getConstValue()));
+                ast.setType(new Array2Type(ast.getConstExp().get().getOptionType().get().getConstValue()));
             }else{
                 errorRecorder.other(0);
             }
@@ -484,10 +483,10 @@ public class Semantic {
     }
     private class MainFuncDefExec extends Exec<MainFuncDef>{
         @Override
-        void exec(MainFuncDef asd) {
+        void exec(MainFuncDef ast) {
             symbolTable = new SymbolTable(symbolTable);
-            checkWhileBreak(asd.getBlock());
-            List<BlockItem> blockItems = asd.getBlock().getBlockItems();
+            checkWhileBreak(ast.getBlock());
+            List<BlockItem> blockItems = ast.getBlock().getBlockItems();
             for(BlockItem blockItem : blockItems){
                 getExec(blockItem).exec(blockItem);
                 if(blockItem instanceof Return){
@@ -497,7 +496,7 @@ public class Semantic {
                 }
             }
             if((blockItems.size() == 0 || !(blockItems.get(blockItems.size() - 1) instanceof Return) || !((Return) blockItems.get(blockItems.size() - 1)).getExp().isPresent()) ){
-                errorRecorder.returnLack(asd.getBlock().endLine());
+                errorRecorder.returnLack(ast.getBlock().endLine());
             }
             symbolTable = symbolTable.father();
         }
@@ -505,9 +504,9 @@ public class Semantic {
 
     private class AssignExec extends Exec<Assign> {
         @Override
-        void exec(Assign asd) {
-            execSons(asd);
-            LVal lVal = asd.getLVal();
+        void exec(Assign ast) {
+            execSons(ast);
+            LVal lVal = ast.getLVal();
             if(lVal.getType().isConst()){
                 errorRecorder.changeConst(lVal.getIdent().line(), lVal.getIdent().getValue());
             }
@@ -515,16 +514,17 @@ public class Semantic {
     }
     private class PrintfExec extends Exec<Printf>{
         @Override
-        void exec(Printf asd) {
-            execSons(asd);
-            List<Exp> exps = asd.getExps();
-            FormatString formatString = asd.getFormatString();
+        void exec(Printf ast) {
+            execSons(ast);
+            List<Exp> exps = ast.getExps();
+            FormatString formatString = ast.getFormatString();
             if(formatString.getFormatCharNumber() != exps.size()){
-                errorRecorder.printfParamNotMatch(asd.getLine(), formatString.getFormatCharNumber(), exps.size());
+                errorRecorder.printfParamNotMatch(ast.getLine(), formatString.getFormatCharNumber(), exps.size());
             }
         }
     }
 
+    // input a stmt that should not have continue or break directly
     private void checkWhileBreak(Stmt stmt){
         if(stmt instanceof Block){
             for(BlockItem blockItem : ((Block) stmt).getBlockItems()){

@@ -1,14 +1,13 @@
 package parser.nonterminal.exp;
 
 import lexer.TerminalType;
-import parser.nonterminal.ASDDefault;
-import type.Type;
+import parser.nonterminal.ASTDefault;
 import type.VarType;
 
 import java.util.List;
 import java.util.Optional;
 
-public class UnaryExp extends ASDDefault implements Exp{
+public class UnaryExp extends ASTDefault implements Exp{
     private final List<TerminalType> UnaryOps;
     private final PrimaryExp primaryExp;
 

@@ -1,14 +1,13 @@
 package parser.nonterminal.exp;
 
 import lexer.Ident;
-import parser.nonterminal.ASDDefault;
-import type.Type;
+import parser.nonterminal.ASTDefault;
 import type.VarType;
 
 import java.util.List;
 import java.util.Optional;
 
-public class LVal extends ASDDefault implements PrimaryExp {
+public class LVal extends ASTDefault implements PrimaryExp {
     private final Ident ident;
     private final List<Exp> exps;
 

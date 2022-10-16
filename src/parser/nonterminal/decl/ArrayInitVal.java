@@ -1,11 +1,11 @@
 package parser.nonterminal.decl;
 
-import parser.nonterminal.ASDDefault;
+import parser.nonterminal.ASTDefault;
 import type.VarType;
 
 import java.util.List;
 
-public class ArrayInitVal extends ASDDefault implements InitVal {
+public class ArrayInitVal extends ASTDefault implements InitVal {
     private final List<InitVal> initVals;
 
     public List<InitVal> getInitVals() {

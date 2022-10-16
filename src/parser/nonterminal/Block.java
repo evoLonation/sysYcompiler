@@ -4,7 +4,7 @@ import parser.nonterminal.stmt.Stmt;
 
 import java.util.List;
 
-public class Block extends ASDDefault implements Stmt {
+public class Block extends ASTDefault implements Stmt {
     private final List<BlockItem> blockItems;
     private final int endLine;
 

@@ -1,7 +1,7 @@
 package parser.nonterminal.decl;
 
-import parser.nonterminal.ASD;
+import parser.nonterminal.AST;
 
-public interface InitVal extends ASD, VarTyper {
+public interface InitVal extends AST, VarTyper {
 
 }

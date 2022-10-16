@@ -1,7 +1,7 @@
 package parser.nonterminal;
 
 
-public class MainFuncDef extends ASDDefault implements ASD {
+public class MainFuncDef extends ASTDefault implements AST {
     private final Block block;
 
     public MainFuncDef(Block block) {

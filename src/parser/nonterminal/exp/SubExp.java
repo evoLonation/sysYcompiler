@@ -1,13 +1,11 @@
 package parser.nonterminal.exp;
 
-import parser.nonterminal.ASD;
-import parser.nonterminal.ASDDefault;
+import parser.nonterminal.ASTDefault;
 import type.VarType;
 
-import java.util.List;
 import java.util.Optional;
 
-public class SubExp extends ASDDefault implements PrimaryExp{
+public class SubExp extends ASTDefault implements PrimaryExp{
     private final Exp exp;
 
     public SubExp(Exp exp) {

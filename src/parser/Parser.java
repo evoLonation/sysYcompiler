@@ -134,7 +134,7 @@ public class Parser {
     }
 
     private Def Def (boolean isConst) {
-        Ident ident = getTerminal();
+        Ident ident = getIdent();
         List<Exp> exps = new ArrayList<>();
         while(is(TerminalType.LBRACK)){
             skipTerminal();
@@ -209,7 +209,7 @@ public class Parser {
         }else{
             throw new ParserException();
         }
-        Ident ident = getTerminal();
+        Ident ident = getIdent();
         check(TerminalType.LPARENT);
         List<FuncDef.FuncFParam> funcFParams = new ArrayList<>();
         if(is(TerminalType.INTTK)){
@@ -235,7 +235,7 @@ public class Parser {
     private FuncDef.FuncFParam FuncFParam () {
         FuncDef.FuncFParam ret;
         BType();
-        Ident ident = getTerminal();
+        Ident ident = getIdent();
         int dimension = 0;
         Exp exp = null;
         if(is(TerminalType.LBRACK)){
@@ -330,7 +330,7 @@ public class Parser {
             int line = now().line();
             skipTerminal();
             check(TerminalType.LPARENT);
-            FormatString formatString = getTerminal();
+            FormatString formatString = getTerminal(FormatString.class);
             List<Exp> exps = new ArrayList<>();
             while(is(TerminalType.COMMA)){
                 skipTerminal();
@@ -408,7 +408,7 @@ public class Parser {
 
     private LVal LVal () {
         LVal ret;
-        Ident ident = getTerminal();
+        Ident ident = getIdent();
         List<Exp> exps = new ArrayList<>();
         if(is(TerminalType.LBRACK)){
             skipTerminal();
@@ -574,7 +574,7 @@ public class Parser {
         }else if(is(TerminalType.LPARENT, TerminalType.INTCON) || is(TerminalType.IDENFR) && !is(1, TerminalType.LPARENT)){
             ret = PrimaryExp();
         }else if(is(TerminalType.IDENFR)){
-            Ident ident = getTerminal();
+            Ident ident = getIdent();
             List<Exp> exps = new ArrayList<>();
             check(TerminalType.LPARENT);
             if(isExp()){
@@ -603,7 +603,7 @@ public class Parser {
         }else if(is(TerminalType.IDENFR)){
             ret = LVal();
         }else if(is(TerminalType.INTCON)){
-            ret = new Number(getTerminal());
+            ret = new Number(getIntConst());
             postOrderList.add("<Number>");
         }else {
             throw new ParserException();
@@ -687,17 +687,26 @@ public class Parser {
         postOrderList.add(iterator.now().toString());
         iterator.next();
     }
-    @SuppressWarnings("unchecked")
-    private <T extends Terminal> T getTerminal(){
-        try{
-            postOrderList.add(iterator.now().toString());
-            Terminal now = iterator.now();
-            iterator.next();
-            return (T) now;
-        }catch (ClassCastException e){
-            throw new ParserException();
-        }
 
+    private Ident getIdent(){
+        return getTerminal(Ident.class);
+    }
+    private IntConst getIntConst(){
+        return getTerminal(IntConst.class);
+    }
+    private Terminal getTerminal(){
+        return getTerminal(Terminal.class);
+    }
+
+    private <T extends Terminal> T getTerminal(Class<T> clazz){
+       try {
+           T now = clazz.cast(iterator.now());
+           postOrderList.add(now.toString());
+           iterator.next();
+           return now;
+       }catch (ClassCastException e) {
+           throw new ParserException();
+       }
     }
 
     private boolean is(int pre, TerminalType... terminals){

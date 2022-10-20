@@ -1,11 +1,10 @@
 package parser.nonterminal.stmt;
 
-import parser.nonterminal.ASTDefault;
 import parser.nonterminal.exp.Exp;
 
 import java.util.Optional;
 
-public class If extends ASTDefault implements Stmt {
+public class If implements Stmt {
     private final Exp cond;
     private final Stmt ifStmt;
     private final Stmt elseStmt;
@@ -14,7 +13,6 @@ public class If extends ASTDefault implements Stmt {
         this.cond = cond;
         this.ifStmt = ifStmt;
         this.elseStmt = elseStmt;
-        addSon(cond, ifStmt, elseStmt);
     }
     public If(Exp cond, Stmt stmt, boolean ifOrElse) {
         this(cond, ifOrElse ? stmt : null, ifOrElse ? null : stmt);

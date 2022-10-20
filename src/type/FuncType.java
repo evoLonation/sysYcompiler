@@ -1,15 +1,18 @@
 package type;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class FuncType extends Type {
-    List<VarType> params;
+public class FuncType{
+    List<VarType> params = new ArrayList<>();
     boolean isReturn;
 
-    public FuncType(boolean isReturn, List<VarType> argList) {
+    FuncType(boolean isReturn) {
         this.isReturn = isReturn;
-        this.params = argList;
-        this.gType = GenericType.FUNC;
+    }
+
+    void addParam(VarType type){
+        this.params.add(type);
     }
 
     public List<VarType> getParams() {

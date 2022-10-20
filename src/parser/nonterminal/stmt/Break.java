@@ -1,8 +1,6 @@
 package parser.nonterminal.stmt;
 
-import parser.nonterminal.ASTDefault;
-
-public class Break extends ASTDefault implements Stmt {
+public class Break implements Stmt {
     private final int line;
 
     public Break(int line) {

@@ -1,12 +1,12 @@
 package parser.nonterminal.decl;
 
 import lexer.Ident;
-import parser.nonterminal.ASTDefault;
+import parser.nonterminal.AST;
 import parser.nonterminal.exp.Exp;
 
 import java.util.List;
 
-public abstract class Def extends ASTDefault {
+public abstract class Def implements AST {
     protected final Ident ident;
     protected final List<Exp> constExps;
     protected final InitVal initVal;
@@ -23,8 +23,6 @@ public abstract class Def extends ASTDefault {
         this.ident = ident;
         this.constExps = constExps;
         this.initVal = initVal;
-        addSon(constExps);
-        addSon(initVal);
     }
 
 }

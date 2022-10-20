@@ -7,7 +7,7 @@ import type.VarType;
 import java.util.List;
 import java.util.Optional;
 
-public class FuncDef extends ASTDefault implements AST {
+public class FuncDef implements AST {
     private final boolean isInt;
     private final Ident ident;
     private final List<FuncFParam> funcFParams;
@@ -18,8 +18,6 @@ public class FuncDef extends ASTDefault implements AST {
         this.ident = ident;
         this.funcFParams = funcFParams;
         this.block = block;
-        addSon(funcFParams);
-        addSon(block);
     }
 
 
@@ -39,7 +37,7 @@ public class FuncDef extends ASTDefault implements AST {
         return block;
     }
 
-    static public class FuncFParam extends ASTDefault {
+    static public class FuncFParam {
         private final Ident ident;
         private final int dimension;
         private Exp constExp;
@@ -48,7 +46,6 @@ public class FuncDef extends ASTDefault implements AST {
             this.ident = ident;
             this.dimension = dimension;
             this.constExp = constExp;
-            addSon(constExp);
         }
         public FuncFParam(Ident ident, int dimension) {
             this(ident, dimension, null);

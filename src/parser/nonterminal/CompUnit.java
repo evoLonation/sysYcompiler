@@ -4,7 +4,7 @@ import parser.nonterminal.decl.Decl;
 
 import java.util.List;
 
-public class CompUnit extends ASTDefault implements AST {
+public class CompUnit implements AST {
     private final List<Decl> decls;
     private final List<FuncDef> funcDefs;
     private final MainFuncDef mainFuncDef;
@@ -13,8 +13,6 @@ public class CompUnit extends ASTDefault implements AST {
         this.decls = decls;
         this.funcDefs = funcDefs;
         this.mainFuncDef = mainFuncDef;
-        addSon(decls, funcDefs);
-        addSon(mainFuncDef);
     }
 
     public List<Decl> getDecls() {

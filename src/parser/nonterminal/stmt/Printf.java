@@ -1,12 +1,11 @@
 package parser.nonterminal.stmt;
 
 import lexer.FormatString;
-import parser.nonterminal.ASTDefault;
 import parser.nonterminal.exp.Exp;
 
 import java.util.List;
 
-public class Printf extends ASTDefault implements Stmt {
+public class Printf implements Stmt {
     private final FormatString formatString;
     private final List<Exp> exps;
     private final int line;
@@ -15,7 +14,6 @@ public class Printf extends ASTDefault implements Stmt {
         this.formatString = formatString;
         this.exps = exps;
         this.line = line;
-        addSon(exps);
     }
 
     public FormatString getFormatString() {

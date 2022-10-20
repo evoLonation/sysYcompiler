@@ -2,26 +2,19 @@ package parser.nonterminal.exp;
 
 import lexer.IntConst;
 import parser.nonterminal.AST;
-import parser.nonterminal.ASTDefault;
-import type.IntType;
-import type.VarType;
 
-import java.util.Optional;
-
-public class Number extends ASTDefault implements AST, ExpTyper, Exp {
+public class Number implements AST, Exp {
+    private final int number;
 
     public Number(IntConst intConst) {
-        type = new IntType(intConst.getDigitValue());
+        number = intConst.getDigitValue();
     }
 
-    private final VarType type;
-
-    @Override
-    public Optional<VarType> getOptionType() {
-        return Optional.of(type);
+    public Number(int number) {
+        this.number = number;
     }
 
-    public VarType getType() {
-        return type;
+    public int getNumber() {
+        return number;
     }
 }

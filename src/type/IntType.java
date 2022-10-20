@@ -1,29 +1,22 @@
 package type;
 
+import java.util.Optional;
+
 public class IntType extends VarType {
-    private final int constValue;
+    private final Integer constValue;
 
-    public int getConstValue() {
-        return constValue;
-    }
-
-    private IntType(boolean isConst, int constValue) {
-        super(isConst);
-        this.constValue = constValue;
-        this.gType = GenericType.INT;
+    public Optional<Integer> getConstValue() {
+        return Optional.ofNullable(constValue);
     }
 
     public IntType(int constValue) {
-        this(true, constValue);
+        super(1);
+        this.constValue = constValue;
     }
 
     public IntType() {
-        this(false, 0);
+        super(1);
+        this.constValue = null;
     }
-
-    public int getDimension() {
-        return 0;
-    }
-
 
 }

@@ -1,11 +1,10 @@
 package parser.nonterminal.decl;
 
-import parser.nonterminal.ASTDefault;
 import parser.nonterminal.BlockItem;
 
 import java.util.List;
 
-public class Decl extends ASTDefault implements BlockItem {
+public class Decl implements BlockItem {
     private final List<Def> defs;
 
     public List<Def> getDefs() {
@@ -14,6 +13,5 @@ public class Decl extends ASTDefault implements BlockItem {
 
     public Decl(List<Def> defs) {
         this.defs = defs;
-        addSon(defs);
     }
 }

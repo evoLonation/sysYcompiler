@@ -87,7 +87,7 @@ public class Compiler {
         String outputFile = "output.txt";
         ParserResult result = parser(lexer(inputFile));
         Semantic checker = new Semantic(result.compUnit, errorRecorder);
-        checker.analysis();
+//        checker.analysis();
         StringBuilder str = new StringBuilder();
         for(String word: result.postOrderList){
             if(word.equals("<Decl>") || word.equals("<BType>") || word.equals("<BlockItem>")){

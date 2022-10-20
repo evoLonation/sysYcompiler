@@ -1,8 +1,6 @@
 package parser.nonterminal.stmt;
 
-import parser.nonterminal.ASTDefault;
-
-public class Continue extends ASTDefault implements Stmt {
+public class Continue implements Stmt {
     private final int line;
 
     public Continue(int line) {

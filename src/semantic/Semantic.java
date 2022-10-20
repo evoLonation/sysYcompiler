@@ -3,7 +3,6 @@ package semantic;
 import common.SemanticException;
 import error.ErrorRecorder;
 import lexer.FormatString;
-import lexer.TerminalType;
 import parser.nonterminal.*;
 import parser.nonterminal.decl.*;
 import parser.nonterminal.exp.*;
@@ -21,17 +20,21 @@ import java.util.*;
  */
 public class Semantic {
 
-    ErrorRecorder errorRecorder;
+    private final ErrorRecorder errorRecorder;
 
-    SymbolTable symbolTable;
+    private SymbolTable symbolTable;
 
-    Map<Class<?>, Exec<? extends AST>> map = new HashMap<>();
+    private final List<MidCode> midCodes;
+
+
+    private Map<Class<?>, Exec<? extends AST>> map = new HashMap<>();
 
     CompUnit compUnit;
 
     public Semantic(CompUnit compUnit, ErrorRecorder errorRecorder) {
         this.compUnit = compUnit;
         this.errorRecorder = errorRecorder;
+        this.midCodes = new ArrayList<>();
         symbolTable = new SymbolTable(errorRecorder);
         inject();
     }
@@ -52,6 +55,7 @@ public class Semantic {
         map.put(Printf.class, new PrintfExec());
         map.put(MainFuncDef.class, new MainFuncDefExec());
     }
+
     private final Exec<AST> exec = new Exec<>();
 
     private Exec<AST> getExec(AST AST){
@@ -122,7 +126,7 @@ public class Semantic {
             }else{
                 type = new IntType(initVal.getType().getConstValue());
             }
-            symbolTable.addVariableSymbol(ast.getIdent(), type);
+            symbolTable.addVariable(ast.getIdent(), type);
         }
     }
     private class VarDefExec extends Exec<VarDef> {
@@ -161,7 +165,7 @@ public class Semantic {
                     default: throw new SemanticException();
                 }
             }
-            symbolTable.addVariableSymbol(ast.getIdent(), type);
+            symbolTable.addVariable(ast.getIdent(), type);
         }
     }
 
@@ -410,10 +414,10 @@ public class Semantic {
                 getExec(funcFParam).exec(funcFParam);
                 types.add(funcFParam.getType());
             }
-            symbolTable.addFuncSymbol(ast.getIdent(), new FuncType(ast.isInt(), types));
+            symbolTable.addFunc(ast.getIdent(), new FuncType(ast.isInt(), types));
             symbolTable = new SymbolTable(symbolTable);
             for(FuncDef.FuncFParam funcFParam : ast.getFuncFParams()){
-                symbolTable.addVariableSymbol(funcFParam.getIdent(), funcFParam.getType());
+                symbolTable.addVariable(funcFParam.getIdent(), funcFParam.getType());
             }
             checkWhileBreak(ast.getBlock());
             List<BlockItem> blockItems = ast.getBlock().getBlockItems();

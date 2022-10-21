@@ -11,11 +11,12 @@ public class SymbolTable {
     private final Stack<Integer> offsetStack = new Stack<>();
     private final Map<String, FunctionInfo> functionMap = new HashMap<>();
     private final Map<String, VariableInfo> globalVariableMap = new HashMap<>();
-    private final Map<VarType, Integer> constIntMap = new HashMap<>();
-    private final Map<VarType, int[]> constArrayMap = new HashMap<>();
     private int currentGlobalOffset = 0;
+
     private int currentTotalOffset = 0;
     private int currentBlockOffset = 0;
+    private int currentMaxOffset = 0;
+
     private String currentFunction;
 
 
@@ -143,6 +144,7 @@ public class SymbolTable {
             }else{
                 localVariableStack.peek().put(symbol, variableInfo);
                 currentTotalOffset += size;
+                if(currentTotalOffset > currentMaxOffset) currentMaxOffset = currentTotalOffset;
                 currentBlockOffset += size;
             }
         }
@@ -151,6 +153,7 @@ public class SymbolTable {
     // 该方法会进入一个函数的嵌套作用域
     public void addFunc(Function function, Ident ident, boolean isReturn) {
         assert localVariableStack.isEmpty();
+        currentMaxOffset = 0;
         String symbol = ident.getValue();
         int line = ident.line();
         if(isGlobalConflict(symbol)){
@@ -175,20 +178,15 @@ public class SymbolTable {
     }
 
 
-    public int outBlock() {
+    public void outBlock() {
         localVariableStack.pop();
-        int ret = currentTotalOffset;
         currentTotalOffset -= currentBlockOffset;
         currentBlockOffset = offsetStack.pop();
-        return ret;
     }
 
-    public int getCurrentTotalOffset() {
-        return currentTotalOffset;
-    }
-
-    public int getCurrentGlobalOffset() {
-        return currentGlobalOffset;
+    public int getMaxOffset() {
+        assert localVariableStack.isEmpty();
+        return currentMaxOffset;
     }
 
     private SymbolTable() {offsetStack.push(0);}

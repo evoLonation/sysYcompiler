@@ -36,11 +36,15 @@ public class BackFill {
                 condGotoInfo.condGoto.falseBasicBlock = basicBlock;
             }
         }
+        gotos.clear();
+        condGotos.clear();
     }
 
     public void deliverTo(BackFill backFill){
         backFill.condGotos.addAll(condGotos);
         backFill.gotos.addAll(gotos);
+        gotos.clear();
+        condGotos.clear();
     }
 
 }

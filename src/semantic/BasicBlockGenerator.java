@@ -7,7 +7,6 @@ public abstract class BasicBlockGenerator extends Generator{
 
 
     protected BasicBlock basicBlock;
-    protected BasicBlockFactory basicBlockFactory = BasicBlockFactory.getInstance();
 
     public BasicBlockGenerator(BasicBlock basicBlock) {
         this.basicBlock = basicBlock;

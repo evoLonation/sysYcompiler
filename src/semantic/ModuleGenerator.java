@@ -179,7 +179,10 @@ public class ModuleGenerator extends Generator{
         function = BasicBlockFactory.getInstance().newMainFunction();
         BasicBlock funcBasicBlock = function.getEntry();
         Block block = mainFuncDef.getBlock();
+        symbolTable.newBlock();
         new FuncBlockGenerator(funcBasicBlock, block);
+        symbolTable.outBlock();
+        basicBlockFactory.outFunction(function);
         return function;
     }
 }

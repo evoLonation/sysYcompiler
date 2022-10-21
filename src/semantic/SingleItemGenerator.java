@@ -9,6 +9,7 @@ import midcode.value.LValue;
 import parser.nonterminal.BlockItem;
 import parser.nonterminal.decl.Decl;
 import parser.nonterminal.exp.Exp;
+import parser.nonterminal.exp.FuncCall;
 import parser.nonterminal.stmt.*;
 import type.*;
 
@@ -58,6 +59,8 @@ public class SingleItemGenerator extends InstrumentGenerator{
             });
 
             inject(Decl.class, decl -> new DeclGenerator(instruments, decl));
+
+            inject(FuncCall.class, funcCall -> new FuncCallGenerator(instruments, funcCall));
 
             inject(GetInt.class, getint->{
                 // todo

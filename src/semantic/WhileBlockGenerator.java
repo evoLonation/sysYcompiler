@@ -17,9 +17,9 @@ public class WhileBlockGenerator extends BlockGenerator{
         generate();
     }
 
-    private BackFill backFill ;
-    private BackFill continueBackFill ;
-    private BackFill breakBackFill ;
+    private BackFill backFill = new BackFill();
+    private BackFill continueBackFill = new BackFill();
+    private BackFill breakBackFill = new BackFill();
 
     public BackFill getBackFill() {
         return backFill;
@@ -51,13 +51,13 @@ public class WhileBlockGenerator extends BlockGenerator{
 
     @Override
     protected void dealBreak(Break breakItem) {
-        breakBackFill = basicBlockFactory.outBasicBlock(currentBasicBlock, new Goto());
+        basicBlockFactory.outBasicBlock(currentBasicBlock, new Goto()).deliverTo(breakBackFill);
         breakBackFill.fill(currentBasicBlock);
     }
 
     @Override
     protected void dealContinue(Continue continueItem) {
-        continueBackFill = basicBlockFactory.outBasicBlock(currentBasicBlock, new Goto());
+        basicBlockFactory.outBasicBlock(currentBasicBlock, new Goto()).deliverTo(continueBackFill);
         continueBackFill.fill(currentBasicBlock);
     }
 }

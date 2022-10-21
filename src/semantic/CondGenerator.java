@@ -7,7 +7,7 @@ import midcode.instrument.CondGoto;
 import parser.nonterminal.exp.BinaryExp;
 import parser.nonterminal.exp.BinaryOp;
 import parser.nonterminal.exp.Exp;
-
+// todo 添加对于or和and的编译期常量计算
 public class CondGenerator extends BasicBlockGenerator {
     private final Exp exp;
 

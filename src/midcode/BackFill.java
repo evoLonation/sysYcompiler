@@ -1,6 +1,5 @@
-package semantic;
+package midcode;
 
-import midcode.BasicBlock;
 import midcode.instrument.CondGoto;
 import midcode.instrument.Goto;
 
@@ -20,4 +19,6 @@ public class BackFill {
     public void deliverTo(BackFill backFill){
         throw new UnsupportedOperationException();
     }
+
+    BackFill() {}
 }

@@ -19,15 +19,14 @@ public class Parser {
 
     private final List<String> postOrderList = new ArrayList<>();
 
-    private final ErrorRecorder errorRecorder;
+    private final ErrorRecorder errorRecorder = ErrorRecorder.getInstance();
 
-    public Parser(PreIterator<Terminal> iterator, ErrorRecorder errorRecorder) {
+    public Parser(PreIterator<Terminal> iterator) {
         this.iterator = iterator;
-        this.errorRecorder = errorRecorder;
     }
 
-    public Parser(List<Terminal> list, ErrorRecorder errorRecorder) {
-        this(new PreIterator<>(list), errorRecorder);
+    public Parser(List<Terminal> list) {
+        this(new PreIterator<>(list));
     }
 
     public CompUnit analysis(){
@@ -347,9 +346,9 @@ public class Parser {
             int line = now().line();
             skipTerminal();
             if(isExp()){
-                ret = new Return(Exp(), line);
+                ret = new ReturnNode(Exp(), line);
             }else{
-                ret = new Return(line);
+                ret = new ReturnNode(line);
             }
             checkSemicolon();
         }else if(is(TerminalType.LBRACE)){

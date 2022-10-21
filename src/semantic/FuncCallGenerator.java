@@ -16,6 +16,7 @@ public class FuncCallGenerator extends InstrumentGenerator{
     public FuncCallGenerator(List<Instrument> instruments, FuncCall funcCall) {
         super(instruments);
         this.funcCall = funcCall;
+        generate();
     }
 
     private LValue result = null;
@@ -37,14 +38,18 @@ public class FuncCallGenerator extends InstrumentGenerator{
         }else{
             FuncType funcType = infoOptional.get().type;
             Function function = infoOptional.get().function;
-            check(funcType.getParamNumber() == exps.size());
-            // 每个exp类型是数组当且仅当其为BinaryExp且exp1为数组的Lval,或者其本身为LVal
+            assert funcType.getParamNumber() == exps.size();
             for(int i = 0; i < exps.size(); i++){
                 Exp exp = exps.get(i);
                 VarType paramType = funcType.getParams().get(i);
                 ExpGenerator.Result expResult = new ExpGenerator(instruments, exp).getResult();
-                check(paramType.match(expResult.type));
-                addInstrument(new Param(expResult.value));
+                if(expResult instanceof ExpGenerator.RValueResult){
+                    assert paramType.match(new IntType());
+                    addInstrument(new Param(((ExpGenerator.RValueResult) expResult).rValue));
+                }else if(expResult instanceof ExpGenerator.PointerResult){
+                    assert paramType.match(((ExpGenerator.PointerResult) expResult).type);
+                    addInstrument(new Param(((ExpGenerator.PointerResult) expResult).value));
+                }
             }
             if(funcType.isReturn()){
                 Temp ret = valueFactory.newTemp();

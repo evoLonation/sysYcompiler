@@ -5,14 +5,14 @@ import java.util.Optional;
 public class ArrayType extends PointerType {
     private final int size;
 
-    public ArrayType(int size) {
+    public ArrayType(int firstLen) {
         super();
-        this.size = size;
+        this.size = firstLen;
     }
 
-    public ArrayType(int size, int secondLen) {
+    public ArrayType(int firstLen, int secondLen) {
         super(secondLen);
-        this.size = size;
+        this.size = firstLen * secondLen;
     }
 
     public int getSize() {

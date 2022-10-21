@@ -1,6 +1,9 @@
 package midcode.value;
 
 import lexer.Ident;
+import midcode.instrument.Instrument;
+
+import java.util.List;
 
 public class ValueFactory {
     public Temp newTemp(){

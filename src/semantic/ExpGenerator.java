@@ -28,6 +28,7 @@ public class ExpGenerator extends InstrumentGenerator{
     public ExpGenerator(List<Instrument> instruments, Exp exp) {
         super(instruments);
         this.exp = exp;
+        generate();
     }
 
     public static abstract class Result{}
@@ -67,6 +68,11 @@ public class ExpGenerator extends InstrumentGenerator{
 
     public Result getResult() {
         return result;
+    }
+
+    public RValue getRValueResult(){
+        assert result instanceof RValueResult;
+        return ((RValueResult) result).rValue;
     }
 
     public void generate() {

@@ -9,8 +9,8 @@ package midcode.value;
  * 可以看出对于每个类型是指针（包括数组）的变量，其本身不会变化。
  */
 public class PointerValue implements Value {
-    protected String name;
-    protected RValue offset;
+    private String name;
+    private RValue offset;
 
     private boolean isGlobal;
     // 指的是相对于静态区\栈顶的偏移

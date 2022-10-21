@@ -21,7 +21,6 @@ public class SymbolTable {
 
     private final ErrorRecorder errorRecorder = ErrorRecorder.getInstance();
 
-    public SymbolTable() {}
 
     public static class VariableInfo {
         public VarType type;
@@ -42,7 +41,7 @@ public class SymbolTable {
         }
     }
     private static class ConstIntVariableInfo extends VariableInfo{
-        private int constValue;
+        private final int constValue;
 
         public ConstIntVariableInfo(VarType type, int offset, boolean isGlobal, int constValue) {
             super(type, offset, isGlobal);
@@ -53,7 +52,7 @@ public class SymbolTable {
         }
     }
     private static class ConstArrayVariableInfo extends VariableInfo{
-        private int[] constValue;
+        private final int[] constValue;
 
         public ConstArrayVariableInfo(VarType type, int offset, boolean isGlobal, int[] constValue) {
             super(type, offset, isGlobal);
@@ -126,7 +125,7 @@ public class SymbolTable {
         addVariable(ident, new VariableInfo(type, currentGlobalOffset, isGlobal));
     }
 
-    public void addVariable(Ident ident, VariableInfo variableInfo) {
+    private void addVariable(Ident ident, VariableInfo variableInfo) {
         boolean isGlobal = variableInfo.isGlobal;
         String symbol = ident.getValue();
         int line = ident.line();
@@ -150,20 +149,18 @@ public class SymbolTable {
     }
 
     // 该方法会进入一个函数的嵌套作用域
-    public Function addFunc(Ident ident, boolean isReturn) {
+    public void addFunc(Function function, Ident ident, boolean isReturn) {
         assert localVariableStack.isEmpty();
         String symbol = ident.getValue();
         int line = ident.line();
-        Function ret = new Function();
         if(isGlobalConflict(symbol)){
             errorRecorder.redefined(line, symbol);
         }else {
             FuncType type = new FuncType(isReturn);
-            functionMap.put(symbol, new FunctionInfo(type, ret));
+            functionMap.put(symbol, new FunctionInfo(type, function));
         }
         currentFunction = symbol;
         localVariableStack.push(new HashMap<>());
-        return ret;
     }
 
     public void addParam(Ident ident, VarType type){
@@ -186,6 +183,15 @@ public class SymbolTable {
         return ret;
     }
 
+    public int getCurrentTotalOffset() {
+        return currentTotalOffset;
+    }
+
+    public int getCurrentGlobalOffset() {
+        return currentGlobalOffset;
+    }
+
+    private SymbolTable() {}
     static private final SymbolTable instance = new SymbolTable();
     static public SymbolTable getInstance(){
         return instance;

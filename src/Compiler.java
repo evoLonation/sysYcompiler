@@ -2,9 +2,10 @@ import error.Error;
 import error.ErrorRecorder;
 import lexer.Lexer;
 import lexer.Terminal;
+import midcode.Module;
 import parser.Parser;
 import parser.nonterminal.CompUnit;
-import semantic.Semantic;
+import semantic.ModuleGenerator;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Compiler {
-    static ErrorRecorder errorRecorder = new ErrorRecorder();
 
     public static void main(String[] args) {
         lab3();
@@ -50,13 +50,13 @@ public class Compiler {
 
     static List<Terminal> lexer(String inputFile){
         List<Character> charList = getCharList(inputFile);
-        Lexer analyser = new Lexer(charList.iterator(), errorRecorder);
+        Lexer analyser = new Lexer(charList.iterator());
         return analyser.analysis();
     }
 
     static class ParserResult{
-        CompUnit compUnit;
-        List<String> postOrderList;
+        public CompUnit compUnit;
+        public List<String> postOrderList;
         public ParserResult(CompUnit compUnit, List<String> strings) {
             this.compUnit = compUnit;
             this.postOrderList = strings;
@@ -64,7 +64,7 @@ public class Compiler {
     }
 
     static ParserResult parser(List<Terminal> terminals){
-        Parser parser = new Parser(terminals, errorRecorder);
+        Parser parser = new Parser(terminals);
         return new ParserResult(parser.analysis(), parser.getPostOrderList());
     }
 
@@ -72,22 +72,19 @@ public class Compiler {
         String inputFile = "testfile.txt";
         String outputFile = "error.txt";
         ParserResult result = parser(lexer(inputFile));
-        Semantic checker = new Semantic(result.compUnit, errorRecorder);
-        checker.analysis();
-        StringBuilder str = new StringBuilder();
-        for(Error error : errorRecorder.getErrorSet()){
-            str.append(error.simple()).append("\n");
+        Module module = new ModuleGenerator(result.compUnit).getModule();
+//        StringBuilder str = new StringBuilder();
+//        for(Error error : errorRecorder.getErrorSet()){
+//            str.append(error.simple()).append("\n");
 //            str.append(error.detail()).append("\n");
-        }
-        printAndWrite(outputFile, str.toString());
+//        }
+//        printAndWrite(outputFile, str.toString());
     }
 
     static void lab3(){
         String inputFile = "testfile.txt";
         String outputFile = "output.txt";
         ParserResult result = parser(lexer(inputFile));
-        Semantic checker = new Semantic(result.compUnit, errorRecorder);
-//        checker.analysis();
         StringBuilder str = new StringBuilder();
         for(String word: result.postOrderList){
             if(word.equals("<Decl>") || word.equals("<BType>") || word.equals("<BlockItem>")){

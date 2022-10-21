@@ -1,7 +1,14 @@
 package semantic;
 
+import midcode.BackFill;
 import midcode.BasicBlock;
+import parser.nonterminal.Block;
+import parser.nonterminal.BlockItem;
 import parser.nonterminal.stmt.If;
+import parser.nonterminal.stmt.Stmt;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class IfGenerator extends BasicBlockGenerator {
     private final If ifNode;
@@ -9,9 +16,10 @@ public class IfGenerator extends BasicBlockGenerator {
     public IfGenerator(BasicBlock basicBlock, If ifNode) {
         super(basicBlock);
         this.ifNode = ifNode;
+        generate();
     }
 
-    private final BackFill backFill = new BackFill();
+    private BackFill backFill;
 
     public BackFill getBackFill() {
         return backFill;
@@ -21,21 +29,41 @@ public class IfGenerator extends BasicBlockGenerator {
     protected void generate() {
         CondGenerator condGenerator = new CondGenerator(basicBlock, ifNode.getCond());
         if(ifNode.getIfStmt().isPresent()) {
-            SingleItemGenerator ifStmtGenerator = new SingleItemGenerator(new BasicBlock(), ifNode.getIfStmt().get(), true);
-            condGenerator.getTrueBackFill().fill(ifStmtGenerator.getBasicBlock());
-            assert ifStmtGenerator.getBackFill().isPresent();
-            ifStmtGenerator.getBackFill().get().deliverTo(backFill);
+            Stmt ifStmt = ifNode.getIfStmt().get();
+            BasicBlock ifBasicBlock = basicBlockFactory.newBasicBlock();
+            condGenerator.getTrueBackFill().fill(ifBasicBlock);
+            backFill = new NormalBlockGenerator(ifBasicBlock, getBlock(ifStmt)).getBackFill();
         }else {
-            condGenerator.getTrueBackFill().deliverTo(backFill);
+            backFill = condGenerator.getTrueBackFill();
         }
-        if(ifNode.getElseStmt().isPresent()){
-            SingleItemGenerator elseStmtGenerator = new SingleItemGenerator(new BasicBlock(), ifNode.getElseStmt().get(), true);
-            condGenerator.getFalseBackFill().fill(elseStmtGenerator.getBasicBlock());
-            assert elseStmtGenerator.getBackFill().isPresent();
-            elseStmtGenerator.getBackFill().get().deliverTo(backFill);
+        if(ifNode.getElseStmt().isPresent()) {
+            Stmt elseStmt = ifNode.getElseStmt().get();
+            BasicBlock elseBasicBlock = basicBlockFactory.newBasicBlock();
+            condGenerator.getFalseBackFill().fill(elseBasicBlock);
+            if (backFill != null){
+                new NormalBlockGenerator(elseBasicBlock, getBlock(elseStmt)).getBackFill().deliverTo(backFill);
+            }else{
+                backFill = new NormalBlockGenerator(elseBasicBlock, getBlock(elseStmt)).getBackFill();
+            }
+        }else {
+            if (backFill != null){
+                condGenerator.getFalseBackFill().deliverTo(backFill);
+            }else{
+                backFill = condGenerator.getFalseBackFill();
+            }
+        }
+    }
+
+    private Block getBlock(Stmt elseStmt) {
+        Block block;
+        if(elseStmt instanceof Block){
+            block = (Block) elseStmt;
         }else{
-            condGenerator.getFalseBackFill().deliverTo(backFill);
+            List<BlockItem> blockItems = new ArrayList<>();
+            blockItems.add(elseStmt);
+            block = new Block(blockItems, 0);
         }
+        return block;
     }
 
 }

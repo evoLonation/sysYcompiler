@@ -4,15 +4,15 @@ import parser.nonterminal.exp.Exp;
 
 import java.util.Optional;
 
-public class Return implements Stmt {
+public class ReturnNode implements Stmt {
     private final Exp exp;
     private final int line;
 
-    public Return(Exp exp, int line) {
+    public ReturnNode(Exp exp, int line) {
         this.line = line;
         this.exp = exp;
     }
-    public Return(int line) {
+    public ReturnNode(int line) {
         this(null, line);
     }
 

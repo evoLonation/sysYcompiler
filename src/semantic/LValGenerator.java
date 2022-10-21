@@ -47,6 +47,7 @@ public class LValGenerator extends InstrumentGenerator {
     public LValGenerator(List<Instrument> instruments, LVal lVal) {
         super(instruments);
         this.lVal = lVal;
+        generate();
     }
 
 
@@ -129,7 +130,7 @@ public class LValGenerator extends InstrumentGenerator {
 
                     offsetExp =  new BinaryExp(new BinaryExp(exp1, BinaryOp.MULT, new Number(secondLen)), BinaryOp.PLUS, exp2);
                 }else{
-                    check(exps.size() <= 1);
+                    assert exps.size() <= 1;
                     if(exps.size() == 0){
                         resultType = new PointerType();
                         offsetExp = new Number(0);

@@ -7,10 +7,9 @@ import java.util.*;
 
 public class Lexer {
     private final SourceIterator iterator;
-    private final ErrorRecorder errorRecorder;
-    public Lexer(Iterator<Character> iterator, ErrorRecorder errorRecorder){
+    private final ErrorRecorder errorRecorder = ErrorRecorder.getInstance();
+    public Lexer(Iterator<Character> iterator){
         this.iterator = new SourceIterator(iterator);
-        this.errorRecorder = errorRecorder;
     }
 
     public boolean isIdentifierNoDigit(char c){

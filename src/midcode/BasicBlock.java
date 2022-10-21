@@ -2,28 +2,30 @@ package midcode;
 
 import midcode.instrument.Instrument;
 import midcode.instrument.Jump;
+import type.SymbolTable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
 /**
  * offset : sp ~ sp + offset 是该基本块的活动记录。（包括了涵盖他的所有BLock直到FuncBlock）
+ * 注意，sp只有进入一个function时才会修改。
  */
 public class BasicBlock {
-    private int offset;
+    int offset;
 
-    private List<Instrument> instruments;
-    private Jump lastInstrument;
+    private final List<Instrument> instruments = new ArrayList<>();
+    Jump lastInstrument;
+
+
+    public void addInstrument(Instrument instrument){
+        instruments.add(instrument);
+    }
 
     public List<Instrument> getInstruments() {
         return instruments;
     }
 
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
-    public void setLastInstrument(Jump lastInstrument) {
-        this.lastInstrument = lastInstrument;
-    }
+    BasicBlock() {}
 }

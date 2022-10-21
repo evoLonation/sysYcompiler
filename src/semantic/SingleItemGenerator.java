@@ -1,6 +1,7 @@
 package semantic;
 
 import common.SemanticException;
+import midcode.BasicBlock;
 import midcode.instrument.Assignment;
 import midcode.instrument.Instrument;
 import midcode.instrument.Store;
@@ -22,6 +23,12 @@ public class SingleItemGenerator extends InstrumentGenerator{
     public SingleItemGenerator(List<Instrument> instruments, BlockItem blockItem) {
         super(instruments);
         this.blockItem = blockItem;
+        generate();
+    }
+
+    public SingleItemGenerator(BasicBlock basicBlock, BlockItem blockItem) {
+        super(basicBlock);
+        this.blockItem = blockItem;
     }
 
     public void generate(){
@@ -37,15 +44,14 @@ public class SingleItemGenerator extends InstrumentGenerator{
             inject(Exp.class, stmt -> new ExpGenerator(instruments, stmt));
 
             inject(Assign.class, assign -> {
-                LValGenerator.Result lValResult = new LValGenerator(instruments, assign.getLVal(), true).getResult();
+                LValGenerator.Result lValResult = new LValGenerator(instruments, assign.getLVal()).getResult();
+                assert lValResult instanceof LValGenerator.LValueResult || lValResult instanceof LValGenerator.IntPointerResult;
                 ExpGenerator.Result expResult = new ExpGenerator(instruments, assign.getExp()).getResult();
-                assert lValResult.type instanceof IntType;
-                assert expResult.type instanceof IntType;
-                if(lValResult.identType == LValGenerator.IdentType.Pointer){
-                    addInstrument(new Store(lValResult.value, expResult.value));
+                assert expResult instanceof ExpGenerator.RValueResult;
+                if(lValResult instanceof LValGenerator.IntPointerResult){
+                    addInstrument(new Store(((LValGenerator.IntPointerResult) lValResult).pointerValue, ((ExpGenerator.RValueResult) expResult).rValue));
                 }else{
-                    assert lValResult.value instanceof LValue;
-                    addInstrument(new Assignment((LValue) lValResult.value, expResult.value));
+                    addInstrument(new Assignment(((LValGenerator.LValueResult) lValResult).lVal, ((ExpGenerator.RValueResult) expResult).rValue));
                 }
             });
 

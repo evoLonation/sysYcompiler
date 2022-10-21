@@ -11,6 +11,8 @@ public class SymbolTable {
     private final Stack<Integer> offsetStack = new Stack<>();
     private final Map<String, FunctionInfo> functionMap = new HashMap<>();
     private final Map<String, VariableInfo> globalVariableMap = new HashMap<>();
+    private final Map<VarType, Integer> constIntMap = new HashMap<>();
+    private final Map<VarType, int[]> constArrayMap = new HashMap<>();
     private int currentGlobalOffset = 0;
     private int currentTotalOffset = 0;
     private int currentBlockOffset = 0;
@@ -25,12 +27,40 @@ public class SymbolTable {
         public VarType type;
         public int offset;
         public boolean isGlobal;
-        public boolean isArray;
 
         public VariableInfo(VarType type, int offset, boolean isGlobal) {
             this.type = type;
             this.offset = offset;
             this.isGlobal = isGlobal;
+        }
+
+        public Optional<Integer> getConstInteger(){
+            return Optional.empty();
+        }
+        public Optional<int[]> getConstArray(){
+            return Optional.empty();
+        }
+    }
+    private static class ConstIntVariableInfo extends VariableInfo{
+        private int constValue;
+
+        public ConstIntVariableInfo(VarType type, int offset, boolean isGlobal, int constValue) {
+            super(type, offset, isGlobal);
+            this.constValue = constValue;
+        }
+        public Optional<Integer> getConstInteger(){
+            return Optional.of(constValue);
+        }
+    }
+    private static class ConstArrayVariableInfo extends VariableInfo{
+        private int[] constValue;
+
+        public ConstArrayVariableInfo(VarType type, int offset, boolean isGlobal, int[] constValue) {
+            super(type, offset, isGlobal);
+            this.constValue = constValue;
+        }
+        public Optional<int[]> getConstArray(){
+            return Optional.of(constValue);
         }
     }
 
@@ -78,26 +108,44 @@ public class SymbolTable {
         return globalVariableMap.containsKey(symbol) || functionMap.containsKey(symbol);
     }
 
-    public void addLocalVariable(Ident ident, VarType type){
-        String symbol = ident.getValue();
-        int line = ident.line();
-        if(isLocalConflict(symbol)){
-            errorRecorder.redefined(line, symbol);
-        }else{
-            localVariableStack.peek().put(symbol, new VariableInfo(type, currentTotalOffset, false));
-            currentTotalOffset += type.getSize();
-            currentBlockOffset += type.getSize();
-        }
+    public void newInteger(Ident ident, boolean isGlobal){
+        addVariable(ident, new VariableInfo(new IntType(), currentGlobalOffset, isGlobal));
     }
 
-    public void addGlobalVariable(Ident ident, VarType type){
+    public void newInteger(Ident ident, boolean isGlobal, int constValue){
+        addVariable(ident, new ConstIntVariableInfo(new IntType(), currentGlobalOffset, isGlobal, constValue));
+    }
+
+
+
+    public void newArray(Ident ident, boolean isGlobal, ArrayType type, int[] constValue) {
+        addVariable(ident, new ConstArrayVariableInfo(type, currentGlobalOffset, isGlobal, constValue));
+    }
+
+    public void newArray(Ident ident, boolean isGlobal, ArrayType type){
+        addVariable(ident, new VariableInfo(type, currentGlobalOffset, isGlobal));
+    }
+
+    public void addVariable(Ident ident, VariableInfo variableInfo) {
+        boolean isGlobal = variableInfo.isGlobal;
         String symbol = ident.getValue();
         int line = ident.line();
-        if(isGlobalConflict(symbol)){
-            errorRecorder.redefined(line, symbol);
+        int size = variableInfo.type.getSize();
+        if(isGlobal){
+            if(isGlobalConflict(symbol)){
+                errorRecorder.redefined(line, symbol);
+            }else{
+                globalVariableMap.put(symbol, variableInfo);
+                currentGlobalOffset += size;
+            }
         }else{
-            globalVariableMap.put(symbol, new VariableInfo(type, currentGlobalOffset, true));
-            currentGlobalOffset += type.getSize();
+            if(isLocalConflict(symbol)){
+                errorRecorder.redefined(line, symbol);
+            }else{
+                localVariableStack.peek().put(symbol, variableInfo);
+                currentTotalOffset += size;
+                currentBlockOffset += size;
+            }
         }
     }
 
@@ -119,8 +167,9 @@ public class SymbolTable {
     }
 
     public void addParam(Ident ident, VarType type){
+        assert ! (type instanceof ArrayType);
         functionMap.get(currentFunction).type.addParam(type);
-        addLocalVariable(ident, type);
+        addVariable(ident, new VariableInfo(type, currentTotalOffset, false));
     }
 
     public void newBlock() {

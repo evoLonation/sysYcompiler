@@ -1,6 +1,7 @@
 package semantic;
 
 import common.SemanticException;
+import lexer.Ident;
 import midcode.instrument.BinaryOperation;
 import midcode.instrument.Instrument;
 import midcode.instrument.Load;
@@ -13,9 +14,12 @@ import type.PointerType;
 import type.VarType;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 保证返回的rvalue取值操作得到的是exp的值。
+ * 1、要作为调用函数的参数。这时LVal不能是指向常量数组的，类型为指针的PointerType。
+ * 2、用于赋值等等。这时得到的Type必须是IntType。
  */
 public class ExpGenerator extends InstrumentGenerator{
 
@@ -26,13 +30,36 @@ public class ExpGenerator extends InstrumentGenerator{
         this.exp = exp;
     }
 
-    public static class Result {
-        public VarType type;
-        public RValue value;
+    public static abstract class Result{}
 
-        public Result(RValue result, VarType type) {
+    public static class RValueResult extends Result{
+        public RValue rValue;
+
+        public RValueResult(RValue rValue) {
+            this.rValue = rValue;
+        }
+    }
+
+    // 该类不会在中间产生，只会在generate方法中进行转化
+    public static class PointerResult extends Result{
+        public PointerValue value;
+        public PointerType type;
+
+        public PointerResult(PointerValue value, PointerType type) {
+            this.value = value;
             this.type = type;
-            this.value = result;
+        }
+    }
+
+    private static class TempResult extends Result{
+        public PointerType pointerType;
+        public Ident ident;
+        public RValue offset;
+
+        public TempResult(PointerType pointerType, Ident ident, RValue offset) {
+            this.pointerType = pointerType;
+            this.ident = ident;
+            this.offset = offset;
         }
     }
 
@@ -43,7 +70,11 @@ public class ExpGenerator extends InstrumentGenerator{
     }
 
     public void generate() {
-        execution.exec(exp);
+        result = execution.exec(exp);
+        if(result instanceof TempResult){
+            PointerValue pointerValue = valueFactory.newPointer(((TempResult) result).ident, ((TempResult) result).offset);
+            result = new PointerResult(pointerValue, ((TempResult) result).pointerType);
+        }
     }
 
 
@@ -54,15 +85,32 @@ public class ExpGenerator extends InstrumentGenerator{
 
                 Result result1 = exec(exp.getExp1());
                 Result result2 = exec(exp.getExp2());
-                if(result1.value instanceof Constant && result2.value instanceof Constant){
-                    return new Result(new Constant(compute(((Constant) result1.value).getNumber(), exp.getOp(), ((Constant) result2.value).getNumber())), new IntType());
-                }else if(
-                        result1.type instanceof IntType && result2.type instanceof IntType ||
-                                result1.type instanceof PointerType && result2.type instanceof IntType && exp.getOp() == BinaryOp.PLUS
-                ){
-                    Temp ret = valueFactory.newTemp();
-                    addInstrument(new BinaryOperation(result1.value, result2.value, exp.getOp(), ret));
-                    return new Result(ret, result1.type);
+                BinaryOp op = exp.getOp();
+
+                assert result2 instanceof RValueResult;
+                RValue value2 = ((RValueResult) result2).rValue;
+                if(result1 instanceof RValueResult){
+                    RValue value1 = ((RValueResult) result1).rValue;
+                    if(value1 instanceof Constant && value2 instanceof Constant){
+                        return new RValueResult(new Constant(compute(((Constant) value1).getNumber(), op, ((Constant) value2).getNumber())));
+                    }else {
+                        Temp result = valueFactory.newTemp();
+                        addInstrument(new BinaryOperation(value1, value2, op, result));
+                        return new RValueResult(result);
+                    }
+                }else if(result1 instanceof TempResult) {
+                    assert op == BinaryOp.PLUS || op == BinaryOp.MINU;
+                    PointerType lvalType = ((TempResult) result1).pointerType;
+                    RValue offset = ((TempResult) result1).offset;
+                    Temp newOffset = valueFactory.newTemp();
+                    if(lvalType.getSecondLen().isPresent()){
+                        Temp temp1 = valueFactory.newTemp();
+                        addInstrument(new BinaryOperation(value2, new Constant(lvalType.getSecondLen().get()), BinaryOp.MULT, temp1));
+                        addInstrument(new BinaryOperation(offset, temp1, BinaryOp.PLUS, newOffset));
+                    }else{
+                        addInstrument(new BinaryOperation(offset, value2, BinaryOp.PLUS, newOffset));
+                    }
+                    return new TempResult(lvalType, ((TempResult) result1).ident, newOffset);
                 }else{
                     throw new SemanticException();
                 }
@@ -71,36 +119,40 @@ public class ExpGenerator extends InstrumentGenerator{
 
             inject(UnaryExp.class,  exp -> {
                 Result result = exec(exp.getExp());
-                if(result.value instanceof Constant){
-                    return new Result(new Constant(compute(((Constant) result.value).getNumber(), exp.getOp())), new IntType());
-                }else if(result.type instanceof IntType){
-                    Temp ret = valueFactory.newTemp();
-                    addInstrument(new UnaryOperation(result.value, exp.getOp(), ret));
-                    return new Result(ret, new IntType());
+                UnaryOp op = exp.getOp();
+                assert result instanceof RValueResult;
+                RValue value = ((RValueResult) result).rValue;
+                if(value instanceof Constant){
+                    return new RValueResult(new Constant(compute(((Constant) value).getNumber(), op)));
                 }else{
-                    throw new SemanticException();
+                    Temp ret = valueFactory.newTemp();
+                    addInstrument(new UnaryOperation(value, op, ret));
+                    return new RValueResult(ret);
                 }
             });
 
-            inject(Number.class, exp -> new Result(new Constant(exp.getNumber()), new IntType()));
-
+            inject(Number.class, exp -> new RValueResult(new Constant(exp.getNumber())));
 
             inject(FuncCall.class, exp -> {
-                FuncCallGenerator funcCallGenerator = new FuncCallGenerator(instruments, exp);
-                if(!funcCallGenerator.getResult().isPresent()){
-                    throw new SemanticException();
-                }
-                return new Result(funcCallGenerator.getResult().get(), new IntType());
+                Optional<LValue> returnValue = new FuncCallGenerator(instruments, exp).getResult();
+                assert returnValue.isPresent();
+                return new RValueResult(returnValue.get());
             });
 
             inject(LVal.class, exp -> {
-                LValGenerator.Result lValResult = new LValGenerator(instruments, exp, false).getResult();
-                if(lValResult.identType == LValGenerator.IdentType.Pointer && lValResult.type instanceof IntType){
-                    Temp resultValue = valueFactory.newTemp();
-                    addInstrument(new Load(resultValue, lValResult.value));
-                    return new Result(resultValue, lValResult.type);
+                LValGenerator.Result lValResult = new LValGenerator(instruments, exp).getResult();
+                if(lValResult instanceof LValGenerator.ConstantResult){
+                    return new RValueResult(((LValGenerator.ConstantResult) lValResult).constant);
+                }else if(lValResult instanceof LValGenerator.LValueResult){
+                    return new RValueResult(((LValGenerator.LValueResult) lValResult).lVal);
+                }else if(lValResult instanceof LValGenerator.IntPointerResult){
+                    Temp ret = valueFactory.newTemp();
+                    addInstrument(new Load(ret, ((LValGenerator.IntPointerResult) lValResult).pointerValue) );
+                    return new RValueResult(ret);
+                }else if(lValResult instanceof LValGenerator.ArrayPointerResult){
+                    return new TempResult(((LValGenerator.ArrayPointerResult) lValResult).pointerType, ((LValGenerator.ArrayPointerResult) lValResult).ident, ((LValGenerator.ArrayPointerResult) lValResult).offset);
                 }else{
-                    return new Result(lValResult.value, lValResult.type);
+                    throw new SemanticException();
                 }
             });
         }

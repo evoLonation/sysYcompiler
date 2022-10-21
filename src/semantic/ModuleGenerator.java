@@ -40,6 +40,7 @@ public class ModuleGenerator extends Generator{
     @Override
     protected void generate() {
         module.staticData = dealDecl(compUnit.getDecls());
+        module.functions = new ArrayList<>();
         for(FuncDef funcDef : compUnit.getFuncDefs()){
             module.functions.add(new FuncDefGenerator(funcDef).getFunction());
         }
@@ -55,9 +56,12 @@ public class ModuleGenerator extends Generator{
                 assert  lens.size() <= 2;
                 int dimension = lens.size();
                 InitVal initVal;
+                boolean isConst;
                 if(def instanceof ConstDef){
+                    isConst = true;
                     initVal = ((ConstDef) def).getInitVal();
                 }else if(def instanceof VarDef){
+                    isConst = false;
                     initVal = ((VarDef)def).getInitVal().orElse(null);
                 }else{
                     throw new SemanticException();
@@ -66,17 +70,17 @@ public class ModuleGenerator extends Generator{
                 switch (dimension) {
                     case 0: {
                         assert initVal == null || initVal instanceof IntInitVal;
-                        tmp2 = new int[]{assignment0(ident, (IntInitVal) initVal, false)};
+                        tmp2 = new int[]{assignment0(ident, (IntInitVal) initVal, isConst)};
                         break;
                     }
                     case 1: {
                         assert initVal == null || initVal instanceof ArrayInitVal;
-                        tmp2 = assignment1(ident, lens.get(0), (ArrayInitVal) initVal, false);
+                        tmp2 = assignment1(ident, lens.get(0), (ArrayInitVal) initVal, isConst);
                         break;
                     }
                     case 2: {
                         assert initVal == null || initVal instanceof ArrayInitVal;
-                        tmp2 = assignment2(ident, lens.get(0), lens.get(1), (ArrayInitVal) initVal, false);
+                        tmp2 = assignment2(ident, lens.get(0), lens.get(1), (ArrayInitVal) initVal, isConst);
                         break;
                     }
                     default: throw new SemanticException();

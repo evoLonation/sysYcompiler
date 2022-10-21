@@ -1,6 +1,6 @@
 package semantic;
 
-import midcode.BackFill;
+import midcode.instrument.BackFill;
 import midcode.BasicBlock;
 import parser.nonterminal.Block;
 import parser.nonterminal.BlockItem;
@@ -21,8 +21,14 @@ public class FuncBlockGenerator extends BlockGenerator{
         for(BlockItem item : block.getBlockItems()) {
             dealBlockItem(item);
             if(item instanceof ReturnNode){
-                break;
+                return;
             }
+        }
+        // 在这里说明最外层的block没有return语句
+        if(isReturn){
+            errorRecorder.returnLack(block.endLine());
+        }else{
+            dealBlockItem(new ReturnNode(0));
         }
     }
 

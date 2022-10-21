@@ -1,7 +1,7 @@
 package semantic;
 
 import common.SemanticException;
-import midcode.BackFill;
+import midcode.instrument.BackFill;
 import midcode.BasicBlock;
 import midcode.instrument.Goto;
 import midcode.instrument.Return;

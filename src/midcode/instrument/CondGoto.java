@@ -4,8 +4,8 @@ import midcode.BasicBlock;
 import midcode.value.RValue;
 
 public class CondGoto implements Jump{
-    private BasicBlock trueBasicBlock;
-    private BasicBlock falseBasicBlock;
+    BasicBlock trueBasicBlock;
+    BasicBlock falseBasicBlock;
     private final RValue cond;
 
     public CondGoto(RValue cond) {

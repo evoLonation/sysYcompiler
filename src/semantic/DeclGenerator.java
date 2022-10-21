@@ -40,9 +40,12 @@ public class DeclGenerator extends InstrumentGenerator{
             assert  lens.size() <= 2;
             int dimension = lens.size();
             InitVal initVal;
+            boolean isConst;
             if(def instanceof ConstDef){
+                isConst = true;
                 initVal = ((ConstDef) def).getInitVal();
             }else if(def instanceof VarDef){
+                isConst = false;
                 initVal = ((VarDef)def).getInitVal().orElse(null);
             }else{
                 throw new SemanticException();
@@ -50,17 +53,17 @@ public class DeclGenerator extends InstrumentGenerator{
             switch (dimension) {
                 case 0: {
                     assert initVal == null || initVal instanceof IntInitVal;
-                    assignment0(ident, (IntInitVal) initVal, false);
+                    assignment0(ident, (IntInitVal) initVal, isConst);
                     break;
                 }
                 case 1: {
                     assert initVal == null || initVal instanceof ArrayInitVal;
-                    assignment1(ident, lens.get(0), (ArrayInitVal) initVal, false);
+                    assignment1(ident, lens.get(0), (ArrayInitVal) initVal, isConst);
                     break;
                 }
                 case 2: {
                     assert initVal == null || initVal instanceof ArrayInitVal;
-                    assignment2(ident, lens.get(0), lens.get(1), (ArrayInitVal) initVal, false);
+                    assignment2(ident, lens.get(0), lens.get(1), (ArrayInitVal) initVal, isConst);
                     break;
                 }
             }
@@ -106,8 +109,8 @@ public class DeclGenerator extends InstrumentGenerator{
             if(isConst){
                 int[] constValue = new int[firstLen];
                 for(int i = 0; i < results.size(); i++){
-                    assert results.get(0) instanceof Constant;
-                    constValue[i] = ((Constant) results.get(0)).getNumber();
+                    assert results.get(i) instanceof Constant;
+                    constValue[i] = ((Constant) results.get(i)).getNumber();
                 }
                 symbolTable.newArray(ident, false, new ArrayType(firstLen), constValue);
             }else{

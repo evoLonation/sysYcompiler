@@ -1,6 +1,7 @@
 package midcode.value;
 
 public class Temp extends LValue {
-    private Temp() {
+    Temp(String name) {
+        super(name);
     }
 }

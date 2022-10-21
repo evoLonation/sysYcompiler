@@ -15,11 +15,21 @@ public class PointerValue implements Value {
     private boolean isGlobal;
     // 指的是相对于静态区\栈顶的偏移
     private int memOffset;
+    private Type type;
+
+    PointerValue(String name, RValue offset, boolean isGlobal, int memOffset, Type type) {
+        this.name = name;
+        this.offset = offset;
+        this.isGlobal = isGlobal;
+        this.memOffset = memOffset;
+        this.type = type;
+    }
+
     /**
      * 类型的不同，最后取得指针的值的方式不同
      * 区别是数组变量通过使用栈指针和offset计算得到，指针变量是实参，从内存中取得。
      */
-    public enum PointerType {
+    public enum Type {
         array,
         pointer,
     }

@@ -1,6 +1,6 @@
 package semantic;
 
-import midcode.BackFill;
+import midcode.instrument.BackFill;
 import midcode.BasicBlock;
 import midcode.instrument.Goto;
 import parser.nonterminal.Block;

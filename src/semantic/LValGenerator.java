@@ -112,13 +112,13 @@ public class LValGenerator extends InstrumentGenerator {
                 }else {
                     result = new LValueResult(valueFactory.newVariable(ident));
                 }
-            }else if(type instanceof ArrayType){
+            }else if(type instanceof PointerType){
                 assert exps.size() <= 2;
                 Exp offsetExp;
                 VarType resultType = null;
-                if(((ArrayType) type).getSecondLen().isPresent()){
+                if(((PointerType) type).getSecondLen().isPresent()){
                     int secondLen;
-                    secondLen = ((ArrayType) type).getSecondLen().get();
+                    secondLen = ((PointerType) type).getSecondLen().get();
                     Exp exp1 = exps.size() >= 1 ? exps.get(0) : new Number(0);
                     Exp exp2 = exps.size() == 2 ? exps.get(1) : new Number(0);
 

@@ -29,9 +29,11 @@ public class SingleItemGenerator extends InstrumentGenerator{
     public SingleItemGenerator(BasicBlock basicBlock, BlockItem blockItem) {
         super(basicBlock);
         this.blockItem = blockItem;
+        generate();
     }
 
     public void generate(){
+        execution.inject();
         execution.exec(blockItem);
     }
 
@@ -57,9 +59,14 @@ public class SingleItemGenerator extends InstrumentGenerator{
 
             inject(Decl.class, decl -> new DeclGenerator(instruments, decl));
 
-            inject(GetInt.class, getint->{throw new UnsupportedOperationException();});
+            inject(GetInt.class, getint->{
+                // todo
+            });
 
-            inject(Printf.class, printf->{throw new UnsupportedOperationException();});
+            inject(Printf.class, printf->{
+                //todo
+            });
+
 
 
         }

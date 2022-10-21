@@ -22,14 +22,14 @@ public class SymbolTable {
     private final ErrorRecorder errorRecorder = ErrorRecorder.getInstance();
 
 
-    public static class VariableInfo {
+    public class VariableInfo {
         public VarType type;
         public int offset;
         public boolean isGlobal;
 
-        public VariableInfo(VarType type, int offset, boolean isGlobal) {
+        public VariableInfo(VarType type, boolean isGlobal) {
             this.type = type;
-            this.offset = offset;
+            this.offset = isGlobal ? currentGlobalOffset : currentTotalOffset;
             this.isGlobal = isGlobal;
         }
 
@@ -40,22 +40,22 @@ public class SymbolTable {
             return Optional.empty();
         }
     }
-    private static class ConstIntVariableInfo extends VariableInfo{
+    private class ConstIntVariableInfo extends VariableInfo{
         private final int constValue;
 
-        public ConstIntVariableInfo(VarType type, int offset, boolean isGlobal, int constValue) {
-            super(type, offset, isGlobal);
+        public ConstIntVariableInfo(VarType type, boolean isGlobal, int constValue) {
+            super(type, isGlobal);
             this.constValue = constValue;
         }
         public Optional<Integer> getConstInteger(){
             return Optional.of(constValue);
         }
     }
-    private static class ConstArrayVariableInfo extends VariableInfo{
+    private class ConstArrayVariableInfo extends VariableInfo{
         private final int[] constValue;
 
-        public ConstArrayVariableInfo(VarType type, int offset, boolean isGlobal, int[] constValue) {
-            super(type, offset, isGlobal);
+        public ConstArrayVariableInfo(VarType type, boolean isGlobal, int[] constValue) {
+            super(type, isGlobal);
             this.constValue = constValue;
         }
         public Optional<int[]> getConstArray(){
@@ -66,7 +66,7 @@ public class SymbolTable {
     public Optional<VariableInfo> getVariable(Ident ident) {
         String symbol = ident.getValue();
         int line = ident.line();
-        for(int i = localVariableStack.capacity() - 1; i >= 0; i --){
+        for(int i = localVariableStack.size() - 1; i >= 0; i --){
             Map<String, VariableInfo> localVariableMap = localVariableStack.get(i);
             if( localVariableMap.containsKey(symbol) ) {
                 return Optional.of(localVariableMap.get(symbol));
@@ -108,21 +108,21 @@ public class SymbolTable {
     }
 
     public void newInteger(Ident ident, boolean isGlobal){
-        addVariable(ident, new VariableInfo(new IntType(), currentGlobalOffset, isGlobal));
+        addVariable(ident, new VariableInfo(new IntType(), isGlobal));
     }
 
     public void newInteger(Ident ident, boolean isGlobal, int constValue){
-        addVariable(ident, new ConstIntVariableInfo(new IntType(), currentGlobalOffset, isGlobal, constValue));
+        addVariable(ident, new ConstIntVariableInfo(new IntType(), isGlobal, constValue));
     }
 
 
 
     public void newArray(Ident ident, boolean isGlobal, ArrayType type, int[] constValue) {
-        addVariable(ident, new ConstArrayVariableInfo(type, currentGlobalOffset, isGlobal, constValue));
+        addVariable(ident, new ConstArrayVariableInfo(type, isGlobal, constValue));
     }
 
     public void newArray(Ident ident, boolean isGlobal, ArrayType type){
-        addVariable(ident, new VariableInfo(type, currentGlobalOffset, isGlobal));
+        addVariable(ident, new VariableInfo(type, isGlobal));
     }
 
     private void addVariable(Ident ident, VariableInfo variableInfo) {
@@ -160,13 +160,13 @@ public class SymbolTable {
             functionMap.put(symbol, new FunctionInfo(type, function));
         }
         currentFunction = symbol;
-        localVariableStack.push(new HashMap<>());
+        newBlock();
     }
 
     public void addParam(Ident ident, VarType type){
         assert ! (type instanceof ArrayType);
         functionMap.get(currentFunction).type.addParam(type);
-        addVariable(ident, new VariableInfo(type, currentTotalOffset, false));
+        addVariable(ident, new VariableInfo(type, false));
     }
 
     public void newBlock() {
@@ -191,7 +191,7 @@ public class SymbolTable {
         return currentGlobalOffset;
     }
 
-    private SymbolTable() {}
+    private SymbolTable() {offsetStack.push(0);}
     static private final SymbolTable instance = new SymbolTable();
     static public SymbolTable getInstance(){
         return instance;

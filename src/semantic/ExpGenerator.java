@@ -76,6 +76,7 @@ public class ExpGenerator extends InstrumentGenerator{
     }
 
     public void generate() {
+        execution.inject();
         result = execution.exec(exp);
         if(result instanceof TempResult){
             PointerValue pointerValue = valueFactory.newPointer(((TempResult) result).ident, ((TempResult) result).offset);

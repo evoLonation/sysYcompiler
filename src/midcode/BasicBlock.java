@@ -13,7 +13,6 @@ import java.util.List;
  * 注意，sp只有进入一个function时才会修改。
  */
 public class BasicBlock {
-    int offset;
 
     private final List<Instrument> instruments = new ArrayList<>();
     Jump lastInstrument;

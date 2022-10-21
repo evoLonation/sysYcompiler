@@ -250,9 +250,13 @@ public class Parser {
             }
         }
         if(exp == null){
-            ret = new FuncDef.FuncFParam(ident, dimension);
+            if(dimension == 0){
+                ret = new FuncDef.IntFParam(ident);
+            }else {
+                ret = new FuncDef.PointerFParam(ident);
+            }
         }else{
-            ret = new FuncDef.FuncFParam(ident, dimension, exp);
+            ret = new FuncDef.PointerFParam(ident, exp);
         }
         postOrderList.add("<FuncFParam>");
         return ret;

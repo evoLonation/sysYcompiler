@@ -37,40 +37,37 @@ public class FuncDef implements AST {
         return block;
     }
 
-    static public class FuncFParam {
+    static public abstract class FuncFParam {
         private final Ident ident;
-        private final int dimension;
-        private Exp constExp;
 
-        public FuncFParam(Ident ident, int dimension, Exp constExp) {
+        public FuncFParam(Ident ident) {
             this.ident = ident;
-            this.dimension = dimension;
-            this.constExp = constExp;
-        }
-        public FuncFParam(Ident ident, int dimension) {
-            this(ident, dimension, null);
         }
 
         public Ident getIdent() {
             return ident;
         }
+    }
 
-        public int getDimension() {
-            return dimension;
+    static public class IntFParam extends FuncFParam {
+        public IntFParam(Ident ident) {
+            super(ident);
         }
+    }
 
+    static public class PointerFParam extends FuncFParam{
+        private final Exp constExp;
         public Optional<Exp> getConstExp() {
             return Optional.ofNullable(constExp);
         }
 
-        private VarType type;
-
-        public VarType getType() {
-            return type;
+        public PointerFParam(Ident ident, Exp constExp) {
+            super(ident);
+            this.constExp = constExp;
         }
-
-        public void setType(VarType type) {
-            this.type = type;
+        public PointerFParam(Ident ident) {
+            super(ident);
+            this.constExp = null;
         }
     }
 }

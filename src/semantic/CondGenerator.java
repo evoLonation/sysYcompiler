@@ -1,80 +1,61 @@
 package semantic;
 
-import midcode.instrument.Goto;
-import midcode.instrument.IfGoto;
-import midcode.instrument.Label;
-import midcode.instrument.LabelFactory;
+import midcode.BasicBlock;
+import midcode.instrument.CondGoto;
 import parser.nonterminal.exp.BinaryExp;
 import parser.nonterminal.exp.BinaryOp;
 import parser.nonterminal.exp.Exp;
+import type.IntType;
 
-public class CondGenerator extends VoidExecution<Exp> {
-    private final LabelFactory labelFactory = LabelFactory.getInstance();
-    private Exp exp;
+public class CondGenerator extends BasicBlockGenerator {
+    private final Exp exp;
 
-    private Label trueLabel;
-    private  Label falseLabel;
-
-    public CondGenerator(Exp exp) {
+    public CondGenerator(BasicBlock basicBlock, Exp exp) {
+        super(basicBlock);
         this.exp = exp;
-        trueLabel = labelFactory.newLabel();
-        falseLabel = labelFactory.newLabel();
     }
+
+    public BackFill getTrueBackFill() {
+        return trueBackFill;
+    }
+
+    public BackFill getFalseBackFill() {
+        return falseBackFill;
+    }
+
+    private final BackFill trueBackFill = new BackFill();
+    private final BackFill falseBackFill = new BackFill();
 
     @Override
-    protected void inject() {
-        inject(BinaryExp.class, exp -> {
-            if(exp.getOp() == BinaryOp.OR){
-                CondGenerator condGenerator1 = new CondGenerator(exp.getExp1());
-                CondGenerator condGenerator2 = new CondGenerator(exp.getExp2());
-                condGenerator1.generate();
-                condGenerator2.generate();
-                midCodes.addAll(condGenerator1.getMidCodes());
-                midCodes.add(condGenerator1.getFalseLabel());
-                midCodes.addAll(condGenerator2.getMidCodes());
-                midCodes.add(condGenerator2.getTrueLabel());
-                midCodes.add(condGenerator1.getTrueLabel());
-                midCodes.add(new Goto(trueLabel));
-                midCodes.add(condGenerator2.getFalseLabel());
-                midCodes.add(new Goto(falseLabel));
-            }else if(exp.getOp() == BinaryOp.AND){
-                CondGenerator condGenerator1 = new CondGenerator(exp.getExp1());
-                CondGenerator condGenerator2 = new CondGenerator(exp.getExp2());
-                condGenerator1.generate();
-                condGenerator2.generate();
-                midCodes.addAll(condGenerator1.getMidCodes());
-                midCodes.add(condGenerator1.getTrueLabel());
-                midCodes.addAll(condGenerator2.getMidCodes());
-                midCodes.add(condGenerator2.getTrueLabel());
-                midCodes.add(new Goto(trueLabel));
-                midCodes.add(condGenerator1.getFalseLabel());
-                midCodes.add(condGenerator2.getFalseLabel());
-                midCodes.add(new Goto(falseLabel));
+    protected void generate() {
+        if(exp instanceof BinaryExp){
+            BinaryExp binaryExp = (BinaryExp) exp;
+            CondGenerator condGenerator1 = new CondGenerator(basicBlock, binaryExp.getExp1());
+            CondGenerator condGenerator2 = new CondGenerator(new BasicBlock(), binaryExp.getExp2());
+            if(binaryExp.getOp() == BinaryOp.OR) {
+                condGenerator1.getFalseBackFill().fill(condGenerator2.getBasicBlock());
+                trueBackFill.merge(condGenerator1.getTrueBackFill());
+                trueBackFill.merge(condGenerator2.getTrueBackFill());
+                falseBackFill.merge(condGenerator2.getFalseBackFill());
+            }else if(binaryExp.getOp() == BinaryOp.AND){
+                condGenerator1.getTrueBackFill().fill(condGenerator2.getBasicBlock());
+                trueBackFill.merge(condGenerator2.getTrueBackFill());
+                falseBackFill.merge(condGenerator1.getFalseBackFill());
+                falseBackFill.merge(condGenerator2.getFalseBackFill());
             }else{
-                NormalGenerate(exp);
+                normalGenerate(exp);
             }
-        });
-
-        inject(this::NormalGenerate);
+        }else{
+            normalGenerate(exp);
+        }
     }
 
-    private void NormalGenerate(Exp exp){
-        AddExpGenerator addExpGenerator = new AddExpGenerator(exp);
-        midCodes.addAll(addExpGenerator.getMidCodes());
-        midCodes.add(new IfGoto(trueLabel, addExpGenerator.getResult()));
-        midCodes.add(new Goto(falseLabel));
-    };
-
-    public CondGenerator generate(){
-        exec(exp);
-        return this;
+    private void normalGenerate(Exp exp){
+        ExpGenerator expGenerator = new ExpGenerator(basicBlock.getInstruments(), exp);
+        assert expGenerator.getResult().type instanceof IntType;
+        CondGoto jump = new CondGoto(expGenerator.getResult().value);
+        trueBackFill.add(jump, true);
+        falseBackFill.add(jump, false);
     }
 
-    public Label getTrueLabel() {
-        return trueLabel;
-    }
-
-    public Label getFalseLabel() {
-        return falseLabel;
-    }
 }

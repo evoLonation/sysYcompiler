@@ -2,38 +2,38 @@ package type;
 
 import java.util.Optional;
 
-public class ArrayType extends VarType {
+public class ArrayType extends PointerType {
     private final int[] constValue;
-    private final Integer secondLen;
+    private final int size;
 
     public ArrayType(int[] constValue) {
-        super(constValue.length);
+        super();
         this.constValue = constValue;
-        this.secondLen = null;
+        this.size = constValue.length;
     }
     public ArrayType(int[] constValue, int secondLen) {
-        super(constValue.length);
+        super(secondLen);
         this.constValue = constValue;
-        this.secondLen = secondLen;
+        this.size = constValue.length;
     }
 
     public ArrayType(int size) {
-        super(size);
+        super();
         this.constValue = null;
-        this.secondLen = null;
+        this.size = size;
     }
 
     public ArrayType(int size, int secondLen) {
-        super(size);
+        super(secondLen);
         this.constValue = null;
-        this.secondLen = secondLen;
+        this.size = size;
     }
 
     public Optional<int[]> getConstValue(){
         return Optional.ofNullable(constValue);
     }
 
-    public Optional<Integer> getSecondLen() {
-        return Optional.ofNullable(secondLen);
+    public int getSize() {
+        return size;
     }
 }

@@ -17,7 +17,7 @@ public class BackFill {
 
     }
 
-    static public BackFill merge(BackFill backFill1, BackFill backFill2){
+    public void deliverTo(BackFill backFill){
         throw new UnsupportedOperationException();
     }
 }

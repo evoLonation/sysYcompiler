@@ -10,4 +10,9 @@ import midcode.value.Variable;
 public class Store implements Instrument{
     private RValue left;
     private RValue right;
+
+    public Store(RValue left, RValue right) {
+        this.left = left;
+        this.right = right;
+    }
 }

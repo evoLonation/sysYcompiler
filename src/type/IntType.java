@@ -10,13 +10,12 @@ public class IntType extends VarType {
     }
 
     public IntType(int constValue) {
-        super(1);
         this.constValue = constValue;
     }
 
     public IntType() {
-        super(1);
         this.constValue = null;
     }
+
 
 }

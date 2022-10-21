@@ -2,13 +2,14 @@ package type;
 
 import error.ErrorRecorder;
 import lexer.Ident;
+import midcode.Function;
 
 import java.util.*;
 
 public class SymbolTable {
     private final Stack<Map<String, VariableInfo>> localVariableStack = new Stack<>();
     private final Stack<Integer> offsetStack = new Stack<>();
-    private final Map<String, FuncType> functionMap = new HashMap<>();
+    private final Map<String, FunctionInfo> functionMap = new HashMap<>();
     private final Map<String, VariableInfo> globalVariableMap = new HashMap<>();
     private int currentGlobalOffset = 0;
     private int currentTotalOffset = 0;
@@ -20,10 +21,11 @@ public class SymbolTable {
 
     public SymbolTable() {}
 
-    static class VariableInfo {
+    public static class VariableInfo {
         public VarType type;
         public int offset;
         public boolean isGlobal;
+        public boolean isArray;
 
         public VariableInfo(VarType type, int offset, boolean isGlobal) {
             this.type = type;
@@ -48,7 +50,17 @@ public class SymbolTable {
         return Optional.empty();
     }
 
-    public Optional<FuncType> getFunction(Ident ident) {
+    public static class FunctionInfo {
+        public FuncType type;
+        public Function function;
+
+        public FunctionInfo(FuncType type, Function function) {
+            this.type = type;
+            this.function = function;
+        }
+    }
+
+    public Optional<FunctionInfo> getFunction(Ident ident) {
         String symbol = ident.getValue();
         int line = ident.line();
         if(functionMap.containsKey(symbol)){
@@ -90,21 +102,24 @@ public class SymbolTable {
     }
 
     // 该方法会进入一个函数的嵌套作用域
-    public void addFunc(Ident ident, boolean isReturn) {
+    public Function addFunc(Ident ident, boolean isReturn) {
         assert localVariableStack.isEmpty();
         String symbol = ident.getValue();
         int line = ident.line();
+        Function ret = new Function();
         if(isGlobalConflict(symbol)){
             errorRecorder.redefined(line, symbol);
         }else {
-            functionMap.put(symbol, new FuncType(isReturn));
+            FuncType type = new FuncType(isReturn);
+            functionMap.put(symbol, new FunctionInfo(type, ret));
         }
         currentFunction = symbol;
         localVariableStack.push(new HashMap<>());
+        return ret;
     }
 
     public void addParam(Ident ident, VarType type){
-        functionMap.get(currentFunction).addParam(type);
+        functionMap.get(currentFunction).type.addParam(type);
         addLocalVariable(ident, type);
     }
 

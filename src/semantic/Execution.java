@@ -1,20 +1,21 @@
 package semantic;
 
+import common.SemanticException;
+import midcode.instrument.Instrument;
 import parser.nonterminal.AST;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-public abstract class Execution<T extends AST, RT> extends Generator {
-    protected Execution(){
-        inject();
-    }
+public abstract class Execution<T extends AST, RT> {
 
     protected abstract void inject();
     protected final Map<Class<? extends T>, Executor<? extends T, RT>> map = new HashMap<>();
-    private Executor<? extends T, RT> defaultExec;
+    private Executor<? extends T, RT> defaultExec = ast -> {throw new SemanticException();};
 
-    protected <TT extends T> void inject(Class<TT> clazz, Executor<TT, RT> executor){
+
+    protected <TT extends T> void inject(Class<TT> clazz, Executor<TT, RT> executor) {
         map.put(clazz, executor);
     }
 

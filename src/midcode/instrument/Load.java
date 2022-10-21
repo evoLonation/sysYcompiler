@@ -10,4 +10,9 @@ public class Load implements Instrument{
     private LValue left;
     // 理应是一个指针
     private RValue right;
+
+    public Load(LValue left, RValue right) {
+        this.left = left;
+        this.right = right;
+    }
 }

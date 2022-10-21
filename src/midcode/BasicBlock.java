@@ -14,4 +14,16 @@ public class BasicBlock {
 
     private List<Instrument> instruments;
     private Jump lastInstrument;
+
+    public List<Instrument> getInstruments() {
+        return instruments;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
+    public void setLastInstrument(Jump lastInstrument) {
+        this.lastInstrument = lastInstrument;
+    }
 }

@@ -4,7 +4,11 @@ import midcode.instrument.Instrument;
 
 import java.util.List;
 
-public abstract class InstrumentGenerator {
+public abstract class InstrumentGenerator extends Generator {
+
+    public InstrumentGenerator(List<Instrument> instruments) {
+        this.instruments = instruments;
+    }
 
     protected List<Instrument> instruments;
     public List<Instrument> getInstruments() {

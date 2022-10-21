@@ -11,6 +11,16 @@ public class Call implements Instrument{
     private int paramNumber;
     private Temp ret;
 
+    public Call(Function function, int paramNumber, Temp ret) {
+        this.function = function;
+        this.paramNumber = paramNumber;
+        this.ret = ret;
+    }
+
+    public Call(Function function, int paramNumber) {
+        this.function = function;
+        this.paramNumber = paramNumber;
+    }
 
     public Function getFunction() {
         return function;

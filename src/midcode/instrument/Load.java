@@ -1,6 +1,7 @@
 package midcode.instrument;
 
 import midcode.value.LValue;
+import midcode.value.PointerValue;
 import midcode.value.RValue;
 
 /**
@@ -8,10 +9,9 @@ import midcode.value.RValue;
  */
 public class Load implements Instrument{
     private LValue left;
-    // 理应是一个指针
-    private RValue right;
+    private PointerValue right;
 
-    public Load(LValue left, RValue right) {
+    public Load(LValue left, PointerValue right) {
         this.left = left;
         this.right = right;
     }

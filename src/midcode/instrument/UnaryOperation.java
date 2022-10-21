@@ -9,7 +9,7 @@ import parser.nonterminal.exp.UnaryOp;
  * 考虑到实际机器码的计算是将结果放在寄存器，因此result限制为Temp
  */
 public class UnaryOperation implements Instrument{
-    private LValue result;
+    private Temp result;
     private RValue value;
     private UnaryOp op;
 

@@ -7,6 +7,13 @@ public class ValueFactory {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * 指针类型变量并不会被改变，因此不用重新赋值（非SSA形式）
+     */
+    public PointerValue newPointer(Ident ident, RValue offset){
+        throw new UnsupportedOperationException();
+    }
+
     public Variable newVariable(Ident ident) {
         throw new UnsupportedOperationException();
     }

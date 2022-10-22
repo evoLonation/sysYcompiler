@@ -102,7 +102,7 @@ public class SymbolTable {
 
     // 检查当前作用域的变量重名或者函数重名
     private boolean isLocalConflict(String symbol){
-        return localVariableStack.peek().containsKey(symbol) || functionMap.containsKey(symbol);
+        return localVariableStack.peek().containsKey(symbol);
     }
     private boolean isGlobalConflict(String symbol){
         return globalVariableMap.containsKey(symbol) || functionMap.containsKey(symbol);

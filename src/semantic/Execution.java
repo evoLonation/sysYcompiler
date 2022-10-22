@@ -24,10 +24,18 @@ public abstract class Execution<T extends AST, RT> {
     }
 
     protected RT exec(T ast){
-        if(!map.containsKey(ast.getClass())){
-            return ((Executor<T, RT>)defaultExec).innerExec(ast);
+        Class<?> nowClass = ast.getClass();
+        while(!map.containsKey(nowClass)){
+            if(nowClass.getSuperclass() == Object.class){
+                nowClass = nowClass.getInterfaces().length == 1 ? nowClass.getInterfaces()[0] : null;
+            }else{
+                nowClass = nowClass.getSuperclass();
+            }
+            if(nowClass == null){
+                return ((Executor<T, RT>)defaultExec).innerExec(ast);
+            }
         }
-        return ((Executor<T, RT>)map.get(ast.getClass())).innerExec(ast);
+        return ((Executor<T, RT>)map.get(nowClass)).innerExec(ast);
     }
 
     protected interface Executor<TT, RTT>{

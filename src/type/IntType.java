@@ -8,4 +8,8 @@ public class IntType extends VarType {
     }
 
 
+    @Override
+    protected String getTypeName() {
+        return "int";
+    }
 }

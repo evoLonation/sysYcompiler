@@ -5,6 +5,7 @@ import midcode.Function;
 import midcode.instrument.*;
 import midcode.value.*;
 import parser.nonterminal.exp.*;
+import parser.nonterminal.exp.Number;
 import type.*;
 
 import java.util.List;
@@ -38,16 +39,27 @@ public class FuncCallGenerator extends InstrumentGenerator{
         }else{
             FuncType funcType = infoOptional.get().type;
             Function function = infoOptional.get().function;
-            assert funcType.getParamNumber() == exps.size();
-            for(int i = 0; i < exps.size(); i++){
-                Exp exp = exps.get(i);
+            if(funcType.getParamNumber() != exps.size()){
+                errorRecorder.paramNumNotMatch(ident.line(), ident.getValue(), funcType.getParamNumber(), exps.size());
+            }
+            for(int i = 0; i < funcType.getParamNumber(); i++){
+                Exp exp;
+                if(exps.size() <= i){
+                    exp = new Number(0);
+                }else{
+                    exp = exps.get(i);
+                }
                 VarType paramType = funcType.getParams().get(i);
                 ExpGenerator.Result expResult = new ExpGenerator(instruments, exp).getResult();
                 if(expResult instanceof ExpGenerator.RValueResult){
-                    assert paramType.match(new IntType());
+                    if(!paramType.match(new IntType())){
+                        errorRecorder.paramTypeNotMatch(ident.line(), ident.getValue(), paramType, new IntType());
+                    }
                     addInstrument(new Param(((ExpGenerator.RValueResult) expResult).rValue));
                 }else if(expResult instanceof ExpGenerator.PointerResult){
-                    assert paramType.match(((ExpGenerator.PointerResult) expResult).type);
+                    if(!paramType.match(((ExpGenerator.PointerResult) expResult).type)){
+                        errorRecorder.paramTypeNotMatch(ident.line(), ident.getValue(), paramType, ((ExpGenerator.PointerResult) expResult).type);
+                    }
                     addInstrument(new Param(((ExpGenerator.PointerResult) expResult).value));
                 }
             }

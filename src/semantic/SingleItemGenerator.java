@@ -48,7 +48,9 @@ public class SingleItemGenerator extends InstrumentGenerator{
 
             inject(Assign.class, assign -> {
                 LValGenerator.Result lValResult = new LValGenerator(instruments, assign.getLVal()).getResult();
-                assert lValResult instanceof LValGenerator.LValueResult || lValResult instanceof LValGenerator.IntPointerResult;
+                if(!(lValResult instanceof LValGenerator.LValueResult || lValResult instanceof LValGenerator.IntPointerResult)){
+                    errorRecorder.changeConst(assign.getLVal().getIdent().line(), assign.getLVal().getIdent().getValue());
+                }
                 ExpGenerator.Result expResult = new ExpGenerator(instruments, assign.getExp()).getResult();
                 assert expResult instanceof ExpGenerator.RValueResult;
                 if(lValResult instanceof LValGenerator.IntPointerResult){

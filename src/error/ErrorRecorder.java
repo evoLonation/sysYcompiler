@@ -1,5 +1,7 @@
 package error;
 
+import type.VarType;
+
 import java.util.TreeSet;
 
 public class ErrorRecorder {
@@ -25,10 +27,8 @@ public class ErrorRecorder {
         Error error = new Error(lineno, 'd', "function " + funcName + "parameter number not match, need " + need+ " , give " + real );
         errorSet.add(error);
     }
-    public void paramTypeNotMatch(int lineno, String funcName, int needDimension, int realDimension){
-        String need = needDimension == 0 ? "int" : needDimension + " dimension array";
-        String real = realDimension == 0 ? "int" : realDimension + " dimension array";
-        Error error = new Error(lineno, 'e', "function " + funcName + "parameter type not match, need " + need+ " , give " + real );
+    public void paramTypeNotMatch(int lineno, String funcName, VarType needType, VarType realType){
+        Error error = new Error(lineno, 'e', "function " + funcName + "parameter type not match, need " + needType + " , give " + realType );
         errorSet.add(error);
     }
     public void voidFuncReturnValue(int lineno) {

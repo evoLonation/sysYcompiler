@@ -16,7 +16,7 @@ import java.util.List;
 public class Compiler {
 
     public static void main(String[] args) {
-        lab4();
+        lab3();
     }
 
     static List<Character> getCharList(String fileName){
@@ -88,6 +88,7 @@ public class Compiler {
         String inputFile = "testfile.txt";
         String outputFile = "output.txt";
         ParserResult result = parser(lexer(inputFile));
+        Module module = new ModuleGenerator(result.compUnit).getModule();
         StringBuilder str = new StringBuilder();
         for(String word: result.postOrderList){
             if(word.equals("<Decl>") || word.equals("<BType>") || word.equals("<BlockItem>")){

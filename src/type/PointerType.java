@@ -13,4 +13,13 @@ public class PointerType extends VarType{
     public Optional<Integer> getSecondLen() {
         return Optional.ofNullable(secondLen);
     }
+
+    @Override
+    protected String getTypeName() {
+        if(secondLen == null){
+            return "int[]";
+        }else{
+            return "int[][" + secondLen + "]";
+        }
+    }
 }

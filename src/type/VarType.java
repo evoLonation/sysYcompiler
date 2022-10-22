@@ -17,4 +17,10 @@ public abstract class VarType{
             return false;
         }
     }
+
+    protected abstract String getTypeName();
+    @Override
+    public String toString() {
+        return getTypeName();
+    }
 }

@@ -23,11 +23,21 @@ public abstract class VoidExecution<T extends AST>  {
     }
 
     protected void exec(T ast){
-        if(!map.containsKey(ast.getClass())){
-            ((Executor<T>)defaultExec).innerExec(ast);
+        Class<?> nowClass = ast.getClass();
+        while(!map.containsKey(nowClass)){
+            if(nowClass.getSuperclass() == Object.class){
+                nowClass = nowClass.getInterfaces().length == 1 ? nowClass.getInterfaces()[0] : null;
+            }else{
+                nowClass = nowClass.getSuperclass();
+            }
+            if(nowClass == null){
+                ((Executor<T>)defaultExec).innerExec(ast);
+                return;
+            }
         }
-        ((Executor<T>)map.get(ast.getClass())).innerExec(ast);
+        ((Executor<T>)map.get(nowClass)).innerExec(ast);
     }
+
 
     protected interface Executor<TT>{
         abstract void innerExec(TT ast);

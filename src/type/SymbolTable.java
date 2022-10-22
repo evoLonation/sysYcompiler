@@ -136,17 +136,30 @@ public class SymbolTable {
                 errorRecorder.redefined(line, symbol);
             }else{
                 globalVariableMap.put(symbol, variableInfo);
-                currentGlobalOffset += size;
+                pushStack(variableInfo);
             }
         }else{
             if(isLocalConflict(symbol)){
                 errorRecorder.redefined(line, symbol);
             }else{
                 localVariableStack.peek().put(symbol, variableInfo);
-                currentTotalOffset += size;
-                if(currentTotalOffset > currentMaxOffset) currentMaxOffset = currentTotalOffset;
-                currentBlockOffset += size;
+                pushStack(variableInfo);
             }
+        }
+    }
+
+    private void pushStack(VariableInfo variableInfo){
+        // 常量int不用压栈
+        if((variableInfo.getConstArray().isPresent() || variableInfo.getConstInteger().isPresent()) && variableInfo.type instanceof IntType){
+            return;
+        }
+        int size = variableInfo.type.getSize();
+        if(variableInfo.isGlobal){
+            currentGlobalOffset += size;
+        }else{
+            currentTotalOffset += size;
+            if(currentTotalOffset > currentMaxOffset) currentMaxOffset = currentTotalOffset;
+            currentBlockOffset += size;
         }
     }
 

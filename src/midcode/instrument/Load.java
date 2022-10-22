@@ -20,4 +20,12 @@ public class Load implements Instrument{
     public String print() {
         return left.print() + " =* " + right.print();
     }
+
+    public LValue getLeft() {
+        return left;
+    }
+
+    public PointerValue getRight() {
+        return right;
+    }
 }

@@ -42,5 +42,19 @@ public class PointerValue implements Value {
         return name;
     }
 
+    public RValue getOffset() {
+        return offset;
+    }
 
+    public boolean isGlobal() {
+        return isGlobal;
+    }
+
+    public int getMemOffset() {
+        return memOffset;
+    }
+
+    public Type getType() {
+        return type;
+    }
 }

@@ -43,4 +43,20 @@ public class BinaryOperation implements Instrument{
         }
         return result.print() + " = " + left.print() + " " + opStr + " " + right.print();
     }
+
+    public RValue getLeft() {
+        return left;
+    }
+
+    public RValue getRight() {
+        return right;
+    }
+
+    public BinaryOp getOp() {
+        return op;
+    }
+
+    public Temp getResult() {
+        return result;
+    }
 }

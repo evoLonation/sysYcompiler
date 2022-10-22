@@ -31,4 +31,16 @@ public class UnaryOperation implements Instrument{
         }
         return result.print() + " = " + opStr + " " + value.print();
     }
+
+    public Temp getResult() {
+        return result;
+    }
+
+    public RValue getValue() {
+        return value;
+    }
+
+    public UnaryOp getOp() {
+        return op;
+    }
 }

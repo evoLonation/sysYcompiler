@@ -10,7 +10,7 @@ import java.util.Map;
 
 public abstract class Execution<T extends AST, RT> {
 
-    protected abstract void inject();
+    public abstract void inject();
     protected final Map<Class<? extends T>, Executor<? extends T, RT>> map = new HashMap<>();
     private Executor<? extends T, RT> defaultExec = ast -> {throw new SemanticException();};
 
@@ -23,7 +23,7 @@ public abstract class Execution<T extends AST, RT> {
         defaultExec = executor;
     }
 
-    protected RT exec(T ast){
+    public final RT exec(T ast){
         Class<?> nowClass = ast.getClass();
         while(!map.containsKey(nowClass)){
             if(nowClass.getSuperclass() == Object.class){

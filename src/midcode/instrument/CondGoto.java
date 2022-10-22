@@ -36,4 +36,5 @@ public class CondGoto implements Jump{
     public String print() {
         return "if " + cond.print() + " goto " + trueBasicBlock.getName() + " else " + falseBasicBlock.getName();
     }
+
 }

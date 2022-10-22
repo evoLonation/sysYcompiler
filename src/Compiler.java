@@ -3,6 +3,7 @@ import error.ErrorRecorder;
 import lexer.Lexer;
 import lexer.Terminal;
 import midcode.Module;
+import midcode.VirtualMachine;
 import parser.Parser;
 import parser.nonterminal.CompUnit;
 import semantic.ModuleGenerator;
@@ -16,7 +17,7 @@ import java.util.List;
 public class Compiler {
 
     public static void main(String[] args) {
-        lab3();
+        lab5();
     }
 
     static List<Character> getCharList(String fileName){
@@ -68,6 +69,23 @@ public class Compiler {
         return new ParserResult(parser.analysis(), parser.getPostOrderList());
     }
 
+    static void lab5(){
+        String srcFile = "testfile.txt";
+        String inputFile = "input.txt";
+        String outputFile = "pcoderesult.txt";
+        String codeFile = "midcode.txt";
+        ParserResult result = parser(lexer(srcFile));
+        Module module = new ModuleGenerator(result.compUnit).getModule();
+        String input = "";
+        for(Character c : getCharList(inputFile)){
+            input += c;
+        }
+        VirtualMachine virtualMachine = new VirtualMachine(module, input);
+        virtualMachine.run();
+//        printAndWrite(codeFile, module.print());
+        printAndWrite(outputFile, virtualMachine.getStdout());
+    }
+
     static void lab4(){
         String inputFile = "testfile.txt";
         String outputFile = "output.txt";
@@ -78,7 +96,7 @@ public class Compiler {
         ErrorRecorder errorRecorder = ErrorRecorder.getInstance();
         for(Error error : errorRecorder.getErrorSet()){
             str.append(error.simple()).append("\n");
-            str.append(error.detail()).append("\n");
+//            str.append(error.detail()).append("\n");
         }
         printAndWrite(outputFile, module.print());
         printAndWrite(errorFile, str.toString());

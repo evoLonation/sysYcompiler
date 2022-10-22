@@ -8,9 +8,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class VoidExecution<T extends AST>  {
+public abstract class VoidExecution<T>  {
 
-    protected abstract void inject();
+    public abstract void inject();
     private final Map<Class<? extends T>, Executor<? extends T>> map = new HashMap<>();
     private Executor<? extends T> defaultExec = ast -> {throw new SemanticException();};
 
@@ -22,7 +22,7 @@ public abstract class VoidExecution<T extends AST>  {
         defaultExec = executor;
     }
 
-    protected void exec(T ast){
+    public final void exec(T ast){
         Class<?> nowClass = ast.getClass();
         while(!map.containsKey(nowClass)){
             if(nowClass.getSuperclass() == Object.class){

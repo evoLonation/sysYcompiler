@@ -13,4 +13,8 @@ public class GetInt implements Instrument{
     public String print() {
         return lValue.print() + " = getint";
     }
+
+    public LValue getlValue() {
+        return lValue;
+    }
 }

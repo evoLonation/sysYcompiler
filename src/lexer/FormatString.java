@@ -29,16 +29,16 @@ public class FormatString extends Terminal{
         return charList;
     }
 
-    interface Char{
+    public interface Char{
 
     }
-    static class FormatChar implements Char{
+    public static class FormatChar implements Char{
         @Override
         public String toString() {
             return "%d";
         }
     }
-    static class NormalChar implements Char{
+    public static class NormalChar implements Char{
         private final char value;
 
         public char getValue() {

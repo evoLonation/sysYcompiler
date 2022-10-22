@@ -21,4 +21,12 @@ public class Store implements Instrument{
     public String print() {
         return left.print() + " *= " + right.print();
     }
+
+    public PointerValue getLeft() {
+        return left;
+    }
+
+    public RValue getRight() {
+        return right;
+    }
 }

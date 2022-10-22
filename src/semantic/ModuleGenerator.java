@@ -70,7 +70,13 @@ public class ModuleGenerator extends Generator{
                 switch (dimension) {
                     case 0: {
                         assert initVal == null || initVal instanceof IntInitVal;
-                        tmp2 = new int[]{assignment0(ident, (IntInitVal) initVal, isConst)};
+                        // 对于常量int声明，不应该加在staticData中
+                        int tmp = assignment0(ident, (IntInitVal) initVal, isConst);
+                        if(isConst){
+                            tmp2 = new int[0];
+                        }else{
+                            tmp2 = new int[]{tmp};
+                        }
                         break;
                     }
                     case 1: {

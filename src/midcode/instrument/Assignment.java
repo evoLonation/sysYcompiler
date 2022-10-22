@@ -16,4 +16,12 @@ public class Assignment implements Instrument{
     public String print() {
         return left.print() + " = " + right.print();
     }
+
+    public LValue getLeft() {
+        return left;
+    }
+
+    public RValue getRight() {
+        return right;
+    }
 }

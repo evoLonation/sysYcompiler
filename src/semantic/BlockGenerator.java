@@ -75,7 +75,7 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
         currentBasicBlock = basicBlockFactory.newBasicBlock();
         frontBlockBackFill.fill(currentBasicBlock);
         symbolTable.newBlock();
-        BackFill subBackFill = new NormalBlockGenerator(basicBlock, block).getBackFill();
+        BackFill subBackFill = new NormalBlockGenerator(currentBasicBlock, block).getBackFill();
         symbolTable.outBlock();
         currentBasicBlock = basicBlockFactory.newBasicBlock();
         subBackFill.fill(currentBasicBlock);

@@ -91,7 +91,7 @@ public class ExpGenerator extends InstrumentGenerator{
 
     private final Execution<Exp, Result> execution = new Execution<Exp, Result>() {
         @Override
-        protected void inject() {
+        public void inject() {
             inject(BinaryExp.class,  exp -> {
 
                 Result result1 = exec(exp.getExp1());

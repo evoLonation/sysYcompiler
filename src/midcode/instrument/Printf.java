@@ -23,4 +23,12 @@ public class Printf implements Instrument{
         }
         return ret.toString();
     }
+
+    public FormatString getFormatString() {
+        return formatString;
+    }
+
+    public List<RValue> getRValues() {
+        return rValues;
+    }
 }

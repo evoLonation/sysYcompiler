@@ -9,4 +9,8 @@ public class Goto implements Jump{
     public String print() {
         return "goto " + basicBlock.getName();
     }
+
+    public BasicBlock getBasicBlock() {
+        return basicBlock;
+    }
 }

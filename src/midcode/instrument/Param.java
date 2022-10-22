@@ -15,4 +15,8 @@ public class Param implements Instrument{
     public String print() {
         return "param " + value.print();
     }
+
+    public Value getValue() {
+        return value;
+    }
 }

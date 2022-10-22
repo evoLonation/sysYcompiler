@@ -188,6 +188,7 @@ public class SymbolTable {
     public void newBlock() {
         localVariableStack.push(new HashMap<>());
         offsetStack.push(currentBlockOffset);
+        currentBlockOffset = 0;
     }
 
 
@@ -202,7 +203,7 @@ public class SymbolTable {
         return currentMaxOffset;
     }
 
-    private SymbolTable() {offsetStack.push(0);}
+    private SymbolTable() {}
     static private final SymbolTable instance = new SymbolTable();
     static public SymbolTable getInstance(){
         return instance;

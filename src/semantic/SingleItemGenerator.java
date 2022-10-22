@@ -42,7 +42,7 @@ public class SingleItemGenerator extends InstrumentGenerator{
 
     private final VoidExecution<BlockItem> execution = new VoidExecution<BlockItem>() {
         @Override
-        protected void inject() {
+        public void inject() {
             inject(stmt -> {
                 assert stmt instanceof Exp;
                 new ExpGenerator(instruments, (Exp) stmt);

@@ -2,6 +2,8 @@ package midcode.instrument;
 
 import midcode.value.RValue;
 
+import java.util.Optional;
+
 public class Return implements Jump{
     private RValue returnValue;
 
@@ -12,8 +14,8 @@ public class Return implements Jump{
         this.returnValue = returnValue;
     }
 
-    public RValue getReturnValue() {
-        return returnValue;
+    public Optional<RValue> getReturnValue() {
+        return Optional.ofNullable(returnValue);
     }
 
     @Override
@@ -24,4 +26,5 @@ public class Return implements Jump{
             return "return " + returnValue.print();
         }
     }
+
 }

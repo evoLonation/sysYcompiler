@@ -16,11 +16,11 @@ public class FuncBlockGenerator extends BlockGenerator{
         generate();
     }
 
+    //todo 最后一行return 的检查
     @Override
     protected void generate() {
         for(BlockItem item : block.getBlockItems()) {
-            dealBlockItem(item);
-            if(item instanceof ReturnNode){
+            if(dealBlockItem(item)){
                 return;
             }
         }
@@ -30,21 +30,6 @@ public class FuncBlockGenerator extends BlockGenerator{
         }else{
             dealBlockItem(new ReturnNode(0));
         }
-    }
-
-    @Override
-    protected BackFill blockGenerator(BasicBlock basicBlock, Block block, boolean isReturn) {
-        return new NormalBlockGenerator(basicBlock, block).getBackFill();
-    }
-
-    @Override
-    protected void dealBreak(Break breakItem) {
-        errorRecorder.wrongBreak(breakItem.line());
-    }
-
-    @Override
-    protected void dealContinue(Continue continueItem) {
-        errorRecorder.wrongContinue(continueItem.line());
     }
 
 }

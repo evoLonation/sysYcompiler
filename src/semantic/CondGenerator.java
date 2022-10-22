@@ -40,13 +40,14 @@ public class CondGenerator extends BasicBlockGenerator {
                     condGenerator1.getFalseBackFill().fill(rightBasicBlock);
                     condGenerator1.getTrueBackFill().deliverTo(trueBackFill);
                 }else{
-                    condGenerator1.getTrueBackFill().fill(rightBasicBlock);
                     condGenerator1.getFalseBackFill().deliverTo(falseBackFill);
+                    condGenerator1.getTrueBackFill().fill(rightBasicBlock);
                 }
                 condGenerator2.getTrueBackFill().deliverTo(trueBackFill);
                 condGenerator2.getFalseBackFill().deliverTo(falseBackFill);
+            }else{
+                normalGenerate(exp);
             }
-            normalGenerate(exp);
         }else{
             normalGenerate(exp);
         }

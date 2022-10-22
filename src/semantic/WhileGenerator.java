@@ -20,7 +20,7 @@ public class WhileGenerator extends BasicBlockGenerator{
         generate();
     }
 
-    private BackFill backFill;
+    private final BackFill backFill = new BackFill();
 
     public BackFill getBackFill() {
         return backFill;
@@ -32,29 +32,20 @@ public class WhileGenerator extends BasicBlockGenerator{
         BasicBlock condBasicBlock = basicBlockFactory.newBasicBlock();
         preBackFill.fill(condBasicBlock);
         CondGenerator condGenerator = new CondGenerator(condBasicBlock, whileNode.getCond());
-        backFill = condGenerator.getFalseBackFill();
+        condGenerator.getFalseBackFill().deliverTo(backFill);
         if(whileNode.getStmt().isPresent()) {
+            whileStmtDealer.inWhile();
             Stmt whileStmt = whileNode.getStmt().get();
             BasicBlock whileBasicBlock = basicBlockFactory.newBasicBlock();
-            WhileBlockGenerator whileBlockGenerator = new WhileBlockGenerator(whileBasicBlock, getBlock(whileStmt));
+            NormalBlockGenerator whileBlockGenerator = new NormalBlockGenerator(whileBasicBlock, getBlock(whileStmt));
             condGenerator.getTrueBackFill().fill(whileBasicBlock);
             whileBlockGenerator.getBackFill().fill(condBasicBlock);
-            whileBlockGenerator.getContinueBackFill().fill(condBasicBlock);
-            whileBlockGenerator.getBreakBackFill().deliverTo(backFill);
+            whileStmtDealer.getContinueBackFill().fill(condBasicBlock);
+            whileStmtDealer.getBreakBackFill().deliverTo(backFill);
+            whileStmtDealer.outWhile();
         }else {
-            backFill = condGenerator.getTrueBackFill();
+            condGenerator.getTrueBackFill().deliverTo(backFill);
         }
     }
 
-    private Block getBlock(Stmt elseStmt) {
-        Block block;
-        if(elseStmt instanceof Block){
-            block = (Block) elseStmt;
-        }else{
-            List<BlockItem> blockItems = new ArrayList<>();
-            blockItems.add(elseStmt);
-            block = new Block(blockItems, 0);
-        }
-        return block;
-    }
 }

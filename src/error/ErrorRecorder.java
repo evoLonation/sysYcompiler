@@ -72,7 +72,8 @@ public class ErrorRecorder {
         errorSet.add(error);
     }
 
-    static private ErrorRecorder instance = new ErrorRecorder();
+    private ErrorRecorder(){}
+    static private final ErrorRecorder instance = new ErrorRecorder();
     static public ErrorRecorder getInstance(){
         return instance;
     }

@@ -16,7 +16,7 @@ public class NormalBlockGenerator extends BlockGenerator{
         generate();
     }
 
-    private BackFill backFill;
+    private BackFill backFill = new BackFill();
 
     public BackFill getBackFill() {
         return backFill;
@@ -25,27 +25,12 @@ public class NormalBlockGenerator extends BlockGenerator{
     @Override
     protected void generate() {
         for(BlockItem item : block.getBlockItems()){
-            dealBlockItem(item);
-            if(item instanceof ReturnNode){
+            if(dealBlockItem(item)){
                 return;
             }
         }
-        backFill = basicBlockFactory.outBasicBlock(currentBasicBlock, new Goto());
+        // 正常退出，中途没有return或者continue、break
+        basicBlockFactory.outBasicBlock(currentBasicBlock, new Goto()).deliverTo(backFill);
     }
 
-    @Override
-    protected BackFill blockGenerator(BasicBlock basicBlock, Block block, boolean isReturn) {
-        return new NormalBlockGenerator(basicBlock, block).getBackFill();
-    }
-
-
-    @Override
-    protected void dealBreak(Break breakItem) {
-        errorRecorder.wrongBreak(breakItem.line());
-    }
-
-    @Override
-    protected void dealContinue(Continue continueItem) {
-        errorRecorder.wrongContinue(continueItem.line());
-    }
 }

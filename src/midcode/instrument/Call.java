@@ -36,6 +36,10 @@ public class Call implements Instrument{
 
     @Override
     public String print() {
-        return "call " + function.getEntry().getName() + " params " + getParamNumber();
+        if(ret == null){
+            return "call " + function.getEntry().getName() + " params " + getParamNumber();
+        }else {
+            return ret.print() +  " = call " + function.getEntry().getName() + " params " + getParamNumber();
+        }
     }
 }

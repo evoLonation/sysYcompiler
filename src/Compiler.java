@@ -70,15 +70,18 @@ public class Compiler {
 
     static void lab4(){
         String inputFile = "testfile.txt";
-        String outputFile = "error.txt";
+        String outputFile = "output.txt";
+        String errorFile = "error.txt";
         ParserResult result = parser(lexer(inputFile));
         Module module = new ModuleGenerator(result.compUnit).getModule();
-//        StringBuilder str = new StringBuilder();
-//        for(Error error : errorRecorder.getErrorSet()){
-//            str.append(error.simple()).append("\n");
-//            str.append(error.detail()).append("\n");
-//        }
+        StringBuilder str = new StringBuilder();
+        ErrorRecorder errorRecorder = ErrorRecorder.getInstance();
+        for(Error error : errorRecorder.getErrorSet()){
+            str.append(error.simple()).append("\n");
+            str.append(error.detail()).append("\n");
+        }
         printAndWrite(outputFile, module.print());
+        printAndWrite(errorFile, str.toString());
     }
 
     static void lab3(){

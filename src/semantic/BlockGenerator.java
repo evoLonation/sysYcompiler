@@ -27,7 +27,10 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
     @Override
     protected abstract void generate();
 
-    protected final void dealBlockItem(BlockItem blockItem) {
+    /**
+     * @return 是否该结束了
+     */
+    protected final boolean dealBlockItem(BlockItem blockItem) {
         if(blockItem instanceof If){
             BackFill ifBackFill = new IfGenerator(currentBasicBlock, (If) blockItem).getBackFill();
             currentBasicBlock = basicBlockFactory.newBasicBlock();
@@ -54,33 +57,27 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
             }else{
                 basicBlockFactory.outBasicBlock(currentBasicBlock, new Return());
             }
+            return true;
         }else if(blockItem instanceof Block){
             dealBlock((Block) blockItem);
         }else if(blockItem instanceof Break){
-            dealBreak((Break) blockItem);
+            return whileStmtDealer.newBreak(currentBasicBlock, ((Break) blockItem).line());
         }else if(blockItem instanceof Continue){
-            dealContinue((Continue) blockItem);
+            return whileStmtDealer.newContinue(currentBasicBlock, ((Continue) blockItem).line());
         }else{
             throw new SemanticException();
         }
+        return false;
     }
 
-    protected abstract BackFill blockGenerator(BasicBlock basicBlock, Block block, boolean isReturn);
-
-
-    protected final void dealBlock(Block block) {
+    protected final void dealBlock(Block block){
         BackFill frontBlockBackFill = basicBlockFactory.outBasicBlock(currentBasicBlock, new Goto());
         currentBasicBlock = basicBlockFactory.newBasicBlock();
         frontBlockBackFill.fill(currentBasicBlock);
         symbolTable.newBlock();
-        BackFill subBackFill = blockGenerator(currentBasicBlock, block, isReturn);
+        BackFill subBackFill = new NormalBlockGenerator(basicBlock, block).getBackFill();
         symbolTable.outBlock();
         currentBasicBlock = basicBlockFactory.newBasicBlock();
         subBackFill.fill(currentBasicBlock);
     }
-
-    protected abstract void dealBreak(Break breakItem);
-    protected abstract void dealContinue(Continue continueItem);
-
-
 }

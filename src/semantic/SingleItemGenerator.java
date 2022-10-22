@@ -42,9 +42,10 @@ public class SingleItemGenerator extends InstrumentGenerator{
     private final VoidExecution<BlockItem> execution = new VoidExecution<BlockItem>() {
         @Override
         protected void inject() {
-            inject(stmt -> {throw new SemanticException();});
-
-            inject(Exp.class, stmt -> new ExpGenerator(instruments, stmt));
+            inject(stmt -> {
+                assert stmt instanceof Exp;
+                new ExpGenerator(instruments, (Exp) stmt);
+            });
 
             inject(Assign.class, assign -> {
                 LValGenerator.Result lValResult = new LValGenerator(instruments, assign.getLVal()).getResult();

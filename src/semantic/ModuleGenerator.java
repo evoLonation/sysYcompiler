@@ -162,7 +162,7 @@ public class ModuleGenerator extends Generator{
                     assert sub2InitVal instanceof IntInitVal;
                     RValue rvalue = new ExpGenerator(new ArrayList<>(), ((IntInitVal)sub2InitVal).getExp()).getRValueResult();
                     assert rvalue instanceof Constant;
-                    ret[i*firstLen + j] = ((Constant) rvalue).getNumber();
+                    ret[i*secondLen + j] = ((Constant) rvalue).getNumber();
                 }
             }
             if(isConst){

@@ -12,4 +12,9 @@ public abstract class LValue implements RValue {
     public String getName() {
         return name;
     }
+
+    @Override
+    public String print() {
+        return name;
+    }
 }

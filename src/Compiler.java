@@ -78,7 +78,7 @@ public class Compiler {
 //            str.append(error.simple()).append("\n");
 //            str.append(error.detail()).append("\n");
 //        }
-//        printAndWrite(outputFile, str.toString());
+        printAndWrite(outputFile, module.print());
     }
 
     static void lab3(){

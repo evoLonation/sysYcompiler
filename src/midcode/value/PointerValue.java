@@ -25,6 +25,11 @@ public class PointerValue implements Value {
         this.type = type;
     }
 
+    @Override
+    public String print() {
+        return "&" + name + " + " + offset.print();
+    }
+
     /**
      * 类型的不同，最后取得指针的值的方式不同
      * 区别是数组变量通过使用栈指针和offset计算得到，指针变量是实参，从内存中取得。

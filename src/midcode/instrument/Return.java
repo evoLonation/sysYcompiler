@@ -15,4 +15,13 @@ public class Return implements Jump{
     public RValue getReturnValue() {
         return returnValue;
     }
+
+    @Override
+    public String print() {
+        if(returnValue == null){
+            return "return ";
+        }else{
+            return "return " + returnValue.print();
+        }
+    }
 }

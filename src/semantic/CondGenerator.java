@@ -25,28 +25,28 @@ public class CondGenerator extends BasicBlockGenerator {
         return falseBackFill;
     }
 
-    private BackFill trueBackFill;
-    private BackFill falseBackFill;
+    private final BackFill trueBackFill = new BackFill();
+    private final BackFill falseBackFill = new BackFill();
 
     @Override
     protected void generate() {
         if(exp instanceof BinaryExp){
             BinaryExp binaryExp = (BinaryExp) exp;
-            CondGenerator condGenerator1 = new CondGenerator(basicBlock, binaryExp.getExp1());
-            CondGenerator condGenerator2 = new CondGenerator(basicBlockFactory.newBasicBlock(), binaryExp.getExp2());
-            if(binaryExp.getOp() == BinaryOp.OR) {
-                condGenerator1.getFalseBackFill().fill(condGenerator2.getBasicBlock());
-                trueBackFill = condGenerator1.getTrueBackFill();
+            if(binaryExp.getOp() == BinaryOp.OR || binaryExp.getOp() == BinaryOp.AND){
+                CondGenerator condGenerator1 = new CondGenerator(basicBlock, binaryExp.getExp1());
+                BasicBlock rightBasicBlock = basicBlockFactory.newBasicBlock();
+                CondGenerator condGenerator2 = new CondGenerator(rightBasicBlock, binaryExp.getExp2());
+                if(binaryExp.getOp() == BinaryOp.OR) {
+                    condGenerator1.getFalseBackFill().fill(rightBasicBlock);
+                    condGenerator1.getTrueBackFill().deliverTo(trueBackFill);
+                }else{
+                    condGenerator1.getTrueBackFill().fill(rightBasicBlock);
+                    condGenerator1.getFalseBackFill().deliverTo(falseBackFill);
+                }
                 condGenerator2.getTrueBackFill().deliverTo(trueBackFill);
-                falseBackFill = condGenerator2.getFalseBackFill();
-            }else if(binaryExp.getOp() == BinaryOp.AND){
-                condGenerator1.getTrueBackFill().fill(condGenerator2.getBasicBlock());
-                falseBackFill = condGenerator1.getFalseBackFill();
-                trueBackFill = condGenerator2.getTrueBackFill();
                 condGenerator2.getFalseBackFill().deliverTo(falseBackFill);
-            }else{
-                normalGenerate(exp);
             }
+            normalGenerate(exp);
         }else{
             normalGenerate(exp);
         }
@@ -57,8 +57,8 @@ public class CondGenerator extends BasicBlockGenerator {
         assert expResult instanceof ExpGenerator.RValueResult;
         CondGoto jump = new CondGoto(((ExpGenerator.RValueResult) expResult).rValue);
         BasicBlockFactory.CondGotoBackFill result = basicBlockFactory.outBasicBlock(basicBlock, jump);
-        trueBackFill = result.trueBackFill;
-        falseBackFill = result.falseBackFill;
+        result.trueBackFill.deliverTo(trueBackFill);
+        result.falseBackFill.deliverTo(falseBackFill);
     }
 
 }

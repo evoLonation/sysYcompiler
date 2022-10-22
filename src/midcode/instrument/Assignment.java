@@ -11,4 +11,9 @@ public class Assignment implements Instrument{
         this.left = left;
         this.right = right;
     }
+
+    @Override
+    public String print() {
+        return left.print() + " = " + right.print();
+    }
 }

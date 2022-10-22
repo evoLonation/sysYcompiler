@@ -1,4 +1,6 @@
 package midcode.instrument;
 
-public interface Jump{
+import midcode.MidCode;
+
+public interface Jump extends MidCode {
 }

@@ -33,4 +33,9 @@ public class Call implements Instrument{
     public Optional<Temp> getRet() {
         return Optional.ofNullable(ret);
     }
+
+    @Override
+    public String print() {
+        return "call " + function.getEntry().getName() + " params " + getParamNumber();
+    }
 }

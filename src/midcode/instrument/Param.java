@@ -10,4 +10,9 @@ public class Param implements Instrument{
     public Param(Value value) {
         this.value = value;
     }
+
+    @Override
+    public String print() {
+        return "param " + value.print();
+    }
 }

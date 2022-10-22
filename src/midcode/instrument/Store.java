@@ -16,4 +16,9 @@ public class Store implements Instrument{
         this.left = left;
         this.right = right;
     }
+
+    @Override
+    public String print() {
+        return left.print() + " *= " + right.print();
+    }
 }

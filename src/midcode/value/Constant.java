@@ -10,4 +10,9 @@ public class Constant implements RValue{
     public int getNumber() {
         return number;
     }
+
+    @Override
+    public String print() {
+        return Integer.toString(number);
+    }
 }

@@ -106,6 +106,7 @@ public class ExpGenerator extends InstrumentGenerator{
                         return new RValueResult(result);
                     }
                 }else if(result1 instanceof TempResult) {
+                    //todo 指针减去int？
                     assert op == BinaryOp.PLUS || op == BinaryOp.MINU;
                     PointerType lvalType = ((TempResult) result1).pointerType;
                     RValue offset = ((TempResult) result1).offset;
@@ -172,8 +173,19 @@ public class ExpGenerator extends InstrumentGenerator{
             case MULT: return a * b;
             case DIV: return  a / b;
             case MOD: return a % b;
+            case LEQ: return a <= b ? 1 : 0;
+            case GRE: return a > b ? 1 : 0;
+            case GEQ: return a >= b ? 1 : 0;
+            case LSS: return a < b ? 1 : 0;
+            case NEQ: return a != b ? 1 : 0;
+            case AND: return a != 0 && b != 0 ? 1 : 0;
+            case OR: return a != 0 || b != 0 ? 1 : 0;
+            case EQL: return a == b ? 1 : 0;
             default: throw new SemanticException();
         }
+    }
+    private boolean toBool(int a ){
+        return a != 0;
     }
     private int compute(int a, UnaryOp op){
         switch (op){

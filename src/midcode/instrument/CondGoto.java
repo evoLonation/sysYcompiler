@@ -31,4 +31,9 @@ public class CondGoto implements Jump{
     public RValue getCond() {
         return cond;
     }
+
+    @Override
+    public String print() {
+        return "if " + cond.print() + " goto " + trueBasicBlock.getName() + " else " + falseBasicBlock.getName();
+    }
 }

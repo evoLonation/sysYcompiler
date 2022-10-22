@@ -1,5 +1,6 @@
 package midcode.instrument;
 
+import common.SemanticException;
 import midcode.value.LValue;
 import midcode.value.RValue;
 import midcode.value.Temp;
@@ -17,5 +18,17 @@ public class UnaryOperation implements Instrument{
         this.result = result;
         this.value = value;
         this.op = op;
+    }
+
+    @Override
+    public String print() {
+        String opStr;
+        switch (op){
+            case PLUS: opStr = "+"; break;
+            case MINU: opStr = "-"; break;
+            case NOT: opStr = "!"; break;
+            default: throw new SemanticException();
+        }
+        return result.print() + " = " + opStr + " " + value.print();
     }
 }

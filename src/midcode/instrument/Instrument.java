@@ -1,5 +1,7 @@
 package midcode.instrument;
 
-public interface Instrument{
+import midcode.MidCode;
+
+public interface Instrument extends MidCode {
 
 }

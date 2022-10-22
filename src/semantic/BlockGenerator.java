@@ -5,6 +5,7 @@ import midcode.instrument.BackFill;
 import midcode.BasicBlock;
 import midcode.instrument.Goto;
 import midcode.instrument.Return;
+import midcode.value.RValue;
 import parser.nonterminal.Block;
 import parser.nonterminal.BlockItem;
 import parser.nonterminal.decl.Decl;
@@ -39,7 +40,7 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
             BackFill whileBackFill = new WhileGenerator(currentBasicBlock, (While) blockItem).getBackFill();
             currentBasicBlock = basicBlockFactory.newBasicBlock();
             whileBackFill.fill(currentBasicBlock);
-        }else if(blockItem instanceof Assign || blockItem instanceof GetInt || blockItem instanceof Printf ||
+        }else if(blockItem instanceof Assign || blockItem instanceof GetIntNode || blockItem instanceof PrintfNode ||
                 blockItem instanceof Exp || blockItem instanceof Decl){
             new SingleItemGenerator(currentBasicBlock, blockItem);
         }else if(blockItem instanceof ReturnNode) {
@@ -50,9 +51,8 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
                     basicBlockFactory.outBasicBlock(currentBasicBlock, new Return());
                 }else{
                     Exp exp = ((ReturnNode) blockItem).getExp().get();
-                    ExpGenerator.Result returnValue = new ExpGenerator(currentBasicBlock.getInstruments(), exp).getResult();
-                    assert returnValue instanceof ExpGenerator.RValueResult;
-                    basicBlockFactory.outBasicBlock(currentBasicBlock, new Return(((ExpGenerator.RValueResult) returnValue).rValue));
+                    RValue returnValue = new ExpGenerator(currentBasicBlock.getInstruments(), exp).getRValueResult();
+                    basicBlockFactory.outBasicBlock(currentBasicBlock, new Return( returnValue));
                 }
             }else{
                 basicBlockFactory.outBasicBlock(currentBasicBlock, new Return());

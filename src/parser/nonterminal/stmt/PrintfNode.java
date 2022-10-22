@@ -5,12 +5,12 @@ import parser.nonterminal.exp.Exp;
 
 import java.util.List;
 
-public class Printf implements Stmt {
+public class PrintfNode implements Stmt {
     private final FormatString formatString;
     private final List<Exp> exps;
     private final int line;
 
-    public Printf(FormatString formatString, List<Exp> exps, int line) {
+    public PrintfNode(FormatString formatString, List<Exp> exps, int line) {
         this.formatString = formatString;
         this.exps = exps;
         this.line = line;

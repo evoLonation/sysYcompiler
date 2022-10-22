@@ -28,6 +28,10 @@ public class FuncBlockGenerator extends BlockGenerator{
             }
         }
         if(isReturn){
+            if(block.getBlockItems().size() == 0){
+                errorRecorder.returnLack(block.endLine());
+                return;
+            }
             BlockItem lastItem = block.getBlockItems().get(block.getBlockItems().size() - 1);
             if(lastItem instanceof ReturnNode){
                 if(((ReturnNode) lastItem).getExp().isPresent()){

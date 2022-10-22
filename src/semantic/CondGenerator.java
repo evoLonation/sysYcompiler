@@ -4,6 +4,7 @@ import midcode.instrument.BackFill;
 import midcode.BasicBlock;
 import midcode.BasicBlockFactory;
 import midcode.instrument.CondGoto;
+import midcode.value.RValue;
 import parser.nonterminal.exp.BinaryExp;
 import parser.nonterminal.exp.BinaryOp;
 import parser.nonterminal.exp.Exp;
@@ -54,9 +55,8 @@ public class CondGenerator extends BasicBlockGenerator {
     }
 
     private void normalGenerate(Exp exp){
-        ExpGenerator.Result expResult = new ExpGenerator(basicBlock.getInstruments(), exp).getResult();
-        assert expResult instanceof ExpGenerator.RValueResult;
-        CondGoto jump = new CondGoto(((ExpGenerator.RValueResult) expResult).rValue);
+        RValue expResult = new ExpGenerator(basicBlock.getInstruments(), exp).getRValueResult();
+        CondGoto jump = new CondGoto(expResult);
         BasicBlockFactory.CondGotoBackFill result = basicBlockFactory.outBasicBlock(basicBlock, jump);
         result.trueBackFill.deliverTo(trueBackFill);
         result.falseBackFill.deliverTo(falseBackFill);

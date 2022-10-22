@@ -52,21 +52,21 @@ public class LValGenerator extends InstrumentGenerator {
 
 
     public static class LValueResult extends Result{
-        public LValueResult(LValue lVal) {
+        LValueResult(LValue lVal) {
             this.lVal = lVal;
         }
 
         public LValue lVal;
     }
     public static class ConstantResult extends Result{
-        public ConstantResult(Constant constant) {
+        ConstantResult(Constant constant) {
             this.constant = constant;
         }
 
         public Constant constant;
     }
     public static class IntPointerResult extends Result{
-        public IntPointerResult(PointerValue pointerValue) {
+        IntPointerResult(PointerValue pointerValue) {
             this.pointerValue = pointerValue;
         }
 
@@ -77,7 +77,7 @@ public class LValGenerator extends InstrumentGenerator {
         public Ident ident;
         public RValue offset;
 
-        public ArrayPointerResult(PointerType pointerType, Ident ident, RValue offset) {
+        ArrayPointerResult(PointerType pointerType, Ident ident, RValue offset) {
             this.pointerType = pointerType;
             this.ident = ident;
             this.offset = offset;
@@ -139,9 +139,7 @@ public class LValGenerator extends InstrumentGenerator {
                         offsetExp = exps.get(0);
                     }
                 }
-                ExpGenerator.Result offsetResult = new ExpGenerator(instruments, offsetExp).getResult();
-                assert offsetResult instanceof ExpGenerator.RValueResult;
-                RValue offset = ((ExpGenerator.RValueResult) offsetResult).rValue;
+                RValue offset = new ExpGenerator(instruments, offsetExp).getRValueResult();
                 /* 可能有三种情况：
                  * 1、type是int，都是常量
                  * 2、type是int，但是有一个不是常量

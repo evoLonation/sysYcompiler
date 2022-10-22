@@ -2,10 +2,10 @@ package parser.nonterminal.stmt;
 
 import parser.nonterminal.exp.LVal;
 
-public class GetInt implements Stmt {
+public class GetIntNode implements Stmt {
     private final LVal lVal;
 
-    public GetInt(LVal lVal) {
+    public GetIntNode(LVal lVal) {
         this.lVal = lVal;
     }
 

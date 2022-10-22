@@ -341,7 +341,7 @@ public class Parser {
             }
             checkRParent();
             checkSemicolon();
-            ret = new Printf(formatString, exps, line);
+            ret = new PrintfNode(formatString, exps, line);
         }else if(is(TerminalType.RETURNTK)){
             int line = now().line();
             skipTerminal();
@@ -382,7 +382,7 @@ public class Parser {
                         check(TerminalType.LPARENT);
                         checkRParent();
                         checkSemicolon();
-                        ret = new GetInt(lVal);
+                        ret = new GetIntNode(lVal);
                     }else if(isExp()){
                         Exp exp = Exp();
                         checkSemicolon();

@@ -1,5 +1,6 @@
 package semantic;
 
+import common.SemanticException;
 import lexer.Ident;
 import midcode.Function;
 import midcode.instrument.*;
@@ -61,6 +62,9 @@ public class FuncCallGenerator extends InstrumentGenerator{
                         errorRecorder.paramTypeNotMatch(ident.line(), ident.getValue(), paramType, ((ExpGenerator.PointerResult) expResult).type);
                     }
                     addInstrument(new Param(((ExpGenerator.PointerResult) expResult).value));
+                }else{
+                    errorRecorder.paramTypeNotMatch(ident.line(), ident.getValue(), paramType);
+                    addInstrument(new Param(new Constant(0)));
                 }
             }
             if(funcType.isReturn()){

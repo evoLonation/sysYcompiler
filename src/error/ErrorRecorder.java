@@ -31,6 +31,10 @@ public class ErrorRecorder {
         Error error = new Error(lineno, 'e', "function " + funcName + "parameter type not match, need " + needType + " , give " + realType );
         errorSet.add(error);
     }
+    public void paramTypeNotMatch(int lineno, String funcName, VarType needType){
+        Error error = new Error(lineno, 'e', "function " + funcName + "parameter type not match, need " + needType + " , give void" );
+        errorSet.add(error);
+    }
     public void voidFuncReturnValue(int lineno) {
         Error error = new Error(lineno, 'f', "function has no return but the return statement has value");
         errorSet.add(error);

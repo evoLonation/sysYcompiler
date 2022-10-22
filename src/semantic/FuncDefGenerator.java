@@ -6,6 +6,7 @@ import midcode.BasicBlockFactory;
 import midcode.Function;
 import midcode.instrument.Return;
 import midcode.value.Constant;
+import midcode.value.RValue;
 import parser.nonterminal.Block;
 import parser.nonterminal.BlockItem;
 import parser.nonterminal.FuncDef;
@@ -43,10 +44,9 @@ public class FuncDefGenerator extends Generator{
             }else if(funcFParam instanceof FuncDef.PointerFParam){
                 Optional<Exp> constExp = ((FuncDef.PointerFParam) funcFParam).getConstExp();
                 if(constExp.isPresent()){
-                    ExpGenerator.Result result = new ExpGenerator(new ArrayList<>(), constExp.get()).getResult();
-                    assert result instanceof ExpGenerator.RValueResult;
-                    assert ((ExpGenerator.RValueResult) result).rValue instanceof Constant;
-                    symbolTable.addParam(funcFParam.getIdent(), new PointerType(((Constant) ((ExpGenerator.RValueResult) result).rValue).getNumber()));
+                    RValue result = new ExpGenerator(new ArrayList<>(), constExp.get()).getRValueResult();
+                    assert result instanceof Constant;
+                    symbolTable.addParam(funcFParam.getIdent(), new PointerType(((Constant) result).getNumber()));
                 }else{
                     symbolTable.addParam(funcFParam.getIdent(), new PointerType());
                 }

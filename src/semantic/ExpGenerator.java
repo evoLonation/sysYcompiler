@@ -64,6 +64,10 @@ public class ExpGenerator extends InstrumentGenerator{
         }
     }
 
+    private static class VoidResult extends Result{
+
+    }
+
     private Result result;
 
     public Result getResult() {
@@ -143,8 +147,11 @@ public class ExpGenerator extends InstrumentGenerator{
 
             inject(FuncCall.class, exp -> {
                 Optional<LValue> returnValue = new FuncCallGenerator(instruments, exp).getResult();
-                assert returnValue.isPresent();
-                return new RValueResult(returnValue.get());
+                if(!returnValue.isPresent()){
+                    return new VoidResult();
+                }else{
+                    return new RValueResult(returnValue.get());
+                }
             });
 
             inject(LVal.class, exp -> {

@@ -38,7 +38,7 @@ public class ValueFactory {
         }else{
             pointerType = PointerValue.Type.pointer;
         }
-        return new PointerValue(symbol, offset, false, variableInfo.offset, pointerType);
+        return new PointerValue(symbol, offset, variableInfo.isGlobal, variableInfo.offset, pointerType);
     }
 
     public Variable newVariable(Ident ident) {

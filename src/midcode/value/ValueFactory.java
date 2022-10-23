@@ -30,15 +30,15 @@ public class ValueFactory {
         Optional<SymbolTable.VariableInfo> optionalVariableInfo = symbolTable.getVariable(ident);
         assert optionalVariableInfo.isPresent();
         SymbolTable.VariableInfo variableInfo = optionalVariableInfo.get();
-        assert variableInfo.type instanceof PointerType;
-        PointerType type = (PointerType) variableInfo.type;
+        assert variableInfo.getType() instanceof PointerType;
+        PointerType type = (PointerType) variableInfo.getType();
         PointerValue.Type pointerType;
         if(type instanceof ArrayType){
             pointerType = PointerValue.Type.array;
         }else{
             pointerType = PointerValue.Type.pointer;
         }
-        return new PointerValue(symbol, offset, variableInfo.isGlobal, variableInfo.offset, pointerType);
+        return new PointerValue(symbol + "#" + variableInfo.getLayer(), offset, variableInfo.isGlobal(), variableInfo.getOffset(), pointerType);
     }
 
     public Variable newVariable(Ident ident) {
@@ -46,7 +46,7 @@ public class ValueFactory {
         Optional<SymbolTable.VariableInfo> optionalVariableInfo = symbolTable.getVariable(ident);
         assert optionalVariableInfo.isPresent();
         SymbolTable.VariableInfo variableInfo = optionalVariableInfo.get();
-        assert variableInfo.type instanceof IntType;
+        assert variableInfo.getType() instanceof IntType;
         int number;
         if(numberMap.containsKey(variableInfo)){
             number = numberMap.get(variableInfo) + 1;
@@ -54,7 +54,7 @@ public class ValueFactory {
             number = 1;
         }
         numberMap.replace(variableInfo, number);
-        Variable ret = new Variable(symbol + "%" + number, variableInfo.isGlobal, variableInfo.offset);
+        Variable ret = new Variable(symbol + "%" + number + "#" + variableInfo.getLayer(), variableInfo.isGlobal(), variableInfo.getOffset());
         variableMap.replace(variableInfo, ret);
         return ret;
     }
@@ -63,7 +63,7 @@ public class ValueFactory {
         Optional<SymbolTable.VariableInfo> optionalVariableInfo = symbolTable.getVariable(ident);
         assert optionalVariableInfo.isPresent();
         SymbolTable.VariableInfo variableInfo = optionalVariableInfo.get();
-        assert variableInfo.type instanceof IntType;
+        assert variableInfo.getType() instanceof IntType;
         return variableMap.get(variableInfo);
     }
 

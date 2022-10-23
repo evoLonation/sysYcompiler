@@ -2,16 +2,12 @@ package semantic;
 
 import common.SemanticException;
 import midcode.BasicBlock;
-import midcode.BasicBlockFactory;
 import midcode.Function;
-import midcode.instrument.Return;
 import midcode.value.Constant;
 import midcode.value.RValue;
 import parser.nonterminal.Block;
-import parser.nonterminal.BlockItem;
 import parser.nonterminal.FuncDef;
 import parser.nonterminal.exp.Exp;
-import parser.nonterminal.stmt.*;
 import type.IntType;
 import type.PointerType;
 
@@ -37,7 +33,7 @@ public class FuncDefGenerator extends Generator{
     protected void generate() {
         isReturn = funcDef.isInt();
         function = basicBlockFactory.newFunction(funcDef.getIdent(), funcDef.isInt());
-        symbolTable.addFunc(function, funcDef.getIdent(), funcDef.isInt());
+        symbolTable.newFuncDomain(function, funcDef.getIdent(), funcDef.isInt());
         for(FuncDef.FuncFParam funcFParam : funcDef.getFuncFParams()){
             if(funcFParam instanceof FuncDef.IntFParam){
                 symbolTable.addParam(funcFParam.getIdent(), new IntType());

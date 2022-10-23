@@ -24,14 +24,14 @@ public class SymbolTable {
 
 
     public class VariableInfo {
-        public VarType type;
-        public int offset;
-        public boolean isGlobal;
+        private final VarType type;
+        private final int offset;
+        private final int layer;
 
-        public VariableInfo(VarType type, boolean isGlobal) {
+        public VariableInfo(VarType type, int layer) {
             this.type = type;
-            this.offset = isGlobal ? currentGlobalOffset : currentTotalOffset;
-            this.isGlobal = isGlobal;
+            this.offset = layer == 0 ? currentGlobalOffset : currentTotalOffset;
+            this.layer = layer;
         }
 
         public Optional<Integer> getConstInteger(){
@@ -40,23 +40,41 @@ public class SymbolTable {
         public Optional<int[]> getConstArray(){
             return Optional.empty();
         }
+
+        public VarType getType() {
+            return type;
+        }
+
+        public int getOffset() {
+            return offset;
+        }
+
+        public int getLayer() {
+            return layer;
+        }
+
+        public boolean isGlobal(){
+            return layer == 0;
+        }
+
     }
     private class ConstIntVariableInfo extends VariableInfo{
         private final int constValue;
 
-        public ConstIntVariableInfo(VarType type, boolean isGlobal, int constValue) {
-            super(type, isGlobal);
+        public ConstIntVariableInfo(VarType type, int layer, int constValue) {
+            super(type, layer);
             this.constValue = constValue;
         }
         public Optional<Integer> getConstInteger(){
             return Optional.of(constValue);
         }
     }
+
     private class ConstArrayVariableInfo extends VariableInfo{
         private final int[] constValue;
 
-        public ConstArrayVariableInfo(VarType type, boolean isGlobal, int[] constValue) {
-            super(type, isGlobal);
+        public ConstArrayVariableInfo(VarType type, int layer, int[] constValue) {
+            super(type, layer);
             this.constValue = constValue;
         }
         public Optional<int[]> getConstArray(){
@@ -109,52 +127,54 @@ public class SymbolTable {
     }
 
     public void newInteger(Ident ident, boolean isGlobal){
-        addVariable(ident, new VariableInfo(new IntType(), isGlobal));
+        addVariable(ident, new VariableInfo(new IntType(), computeLayer(isGlobal)), isGlobal);
     }
 
     public void newInteger(Ident ident, boolean isGlobal, int constValue){
-        addVariable(ident, new ConstIntVariableInfo(new IntType(), isGlobal, constValue));
+        addVariable(ident, new ConstIntVariableInfo(new IntType(), computeLayer(isGlobal), constValue), isGlobal);
     }
 
 
 
     public void newArray(Ident ident, boolean isGlobal, ArrayType type, int[] constValue) {
-        addVariable(ident, new ConstArrayVariableInfo(type, isGlobal, constValue));
+        addVariable(ident, new ConstArrayVariableInfo(type, computeLayer(isGlobal), constValue), isGlobal);
     }
 
     public void newArray(Ident ident, boolean isGlobal, ArrayType type){
-        addVariable(ident, new VariableInfo(type, isGlobal));
+        addVariable(ident, new VariableInfo(type, computeLayer(isGlobal)), isGlobal);
     }
 
-    private void addVariable(Ident ident, VariableInfo variableInfo) {
-        boolean isGlobal = variableInfo.isGlobal;
+    private int computeLayer(boolean isGlobal){
+        return isGlobal ?0 : localVariableStack.size();
+    }
+
+    private void addVariable(Ident ident, VariableInfo variableInfo, boolean isGlobal) {
         String symbol = ident.getValue();
         int line = ident.line();
-        int size = variableInfo.type.getSize();
         if(isGlobal){
             if(isGlobalConflict(symbol)){
                 errorRecorder.redefined(line, symbol);
             }else{
                 globalVariableMap.put(symbol, variableInfo);
-                pushStack(variableInfo);
+                pushStack(variableInfo, true);
             }
         }else{
             if(isLocalConflict(symbol)){
                 errorRecorder.redefined(line, symbol);
             }else{
                 localVariableStack.peek().put(symbol, variableInfo);
-                pushStack(variableInfo);
+                pushStack(variableInfo, false);
             }
         }
     }
 
-    private void pushStack(VariableInfo variableInfo){
+    private void pushStack(VariableInfo variableInfo, boolean isGlobal){
         // 常量int不用压栈
         if((variableInfo.getConstArray().isPresent() || variableInfo.getConstInteger().isPresent()) && variableInfo.type instanceof IntType){
             return;
         }
         int size = variableInfo.type.getSize();
-        if(variableInfo.isGlobal){
+        if(isGlobal){
             currentGlobalOffset += size;
         }else{
             currentTotalOffset += size;
@@ -164,7 +184,7 @@ public class SymbolTable {
     }
 
     // 该方法会进入一个函数的嵌套作用域
-    public void addFunc(Function function, Ident ident, boolean isReturn) {
+    public void newFuncDomain(Function function, Ident ident, boolean isReturn) {
         assert localVariableStack.isEmpty();
         currentMaxOffset = 0;
         String symbol = ident.getValue();
@@ -182,7 +202,7 @@ public class SymbolTable {
     public void addParam(Ident ident, VarType type){
         assert ! (type instanceof ArrayType);
         functionMap.get(currentFunction).type.addParam(type);
-        addVariable(ident, new VariableInfo(type, false));
+        addVariable(ident, new VariableInfo(type, computeLayer(false)), false);
     }
 
     public void newBlock() {

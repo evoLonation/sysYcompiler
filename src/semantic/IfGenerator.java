@@ -19,7 +19,7 @@ public class IfGenerator extends BasicBlockGenerator {
         generate();
     }
 
-    private BackFill backFill;
+    private final BackFill backFill = new BackFill();
 
     public BackFill getBackFill() {
         return backFill;
@@ -32,28 +32,22 @@ public class IfGenerator extends BasicBlockGenerator {
             Stmt ifStmt = ifNode.getIfStmt().get();
             BasicBlock ifBasicBlock = basicBlockFactory.newBasicBlock();
             condGenerator.getTrueBackFill().fill(ifBasicBlock);
-            backFill = new NormalBlockGenerator(ifBasicBlock, getBlock(ifStmt)).getBackFill();
+            symbolTable.newBlock();
+            new NormalBlockGenerator(ifBasicBlock, getBlock(ifStmt)).getBackFill().deliverTo(backFill);
+            symbolTable.outBlock();
         }else {
-            backFill = condGenerator.getTrueBackFill();
+            condGenerator.getTrueBackFill().deliverTo(backFill);
         }
         if(ifNode.getElseStmt().isPresent()) {
             Stmt elseStmt = ifNode.getElseStmt().get();
             BasicBlock elseBasicBlock = basicBlockFactory.newBasicBlock();
             condGenerator.getFalseBackFill().fill(elseBasicBlock);
-            if (backFill != null){
-                new NormalBlockGenerator(elseBasicBlock, getBlock(elseStmt)).getBackFill().deliverTo(backFill);
-            }else{
-                backFill = new NormalBlockGenerator(elseBasicBlock, getBlock(elseStmt)).getBackFill();
-            }
+            symbolTable.newBlock();
+            new NormalBlockGenerator(elseBasicBlock, getBlock(elseStmt)).getBackFill().deliverTo(backFill);
+            symbolTable.outBlock();
         }else {
-            if (backFill != null){
-                condGenerator.getFalseBackFill().deliverTo(backFill);
-            }else{
-                backFill = condGenerator.getFalseBackFill();
-            }
+            condGenerator.getFalseBackFill().deliverTo(backFill);
         }
     }
-
-
 
 }

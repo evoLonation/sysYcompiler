@@ -1,3 +1,4 @@
+import common.SemanticException;
 import error.Error;
 import error.ErrorRecorder;
 import lexer.Lexer;
@@ -76,6 +77,14 @@ public class Compiler {
         String codeFile = "midcode.txt";
         ParserResult result = parser(lexer(srcFile));
         Module module = new ModuleGenerator(result.compUnit).getModule();
+        if(ErrorRecorder.getInstance().getErrorSet().size() != 0){
+            for(Error error : ErrorRecorder.getInstance().getErrorSet()){
+                System.out.println(error.detail());
+//            str.append(error.detail()).append("\n");
+            }
+            throw new SemanticException();
+
+        }
         VirtualMachine virtualMachine;
         if(isStdin){
             virtualMachine = new VirtualMachine(module);
@@ -100,6 +109,9 @@ public class Compiler {
         String errorFile = "error.txt";
         ParserResult result = parser(lexer(inputFile));
         Module module = new ModuleGenerator(result.compUnit).getModule();
+        if(ErrorRecorder.getInstance().getErrorSet().size() != 0){
+            throw new SemanticException();
+        }
         StringBuilder str = new StringBuilder();
         ErrorRecorder errorRecorder = ErrorRecorder.getInstance();
         for(Error error : errorRecorder.getErrorSet()){

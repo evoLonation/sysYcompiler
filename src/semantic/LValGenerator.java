@@ -104,7 +104,7 @@ public class LValGenerator extends InstrumentGenerator {
             result = new LValueResult(temp);
         }else{
             SymbolTable.VariableInfo info = infoOptional.get();
-            VarType type = info.type;
+            VarType type = info.getType();
             if(type instanceof IntType) {
                 assert exps.size() == 0;
                 if(info.getConstInteger().isPresent()){

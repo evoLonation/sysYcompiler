@@ -37,7 +37,9 @@ public class WhileGenerator extends BasicBlockGenerator{
             whileStmtDealer.inWhile();
             Stmt whileStmt = whileNode.getStmt().get();
             BasicBlock whileBasicBlock = basicBlockFactory.newBasicBlock();
+            symbolTable.newBlock();
             NormalBlockGenerator whileBlockGenerator = new NormalBlockGenerator(whileBasicBlock, getBlock(whileStmt));
+            symbolTable.outBlock();
             condGenerator.getTrueBackFill().fill(whileBasicBlock);
             whileBlockGenerator.getBackFill().fill(condBasicBlock);
             whileStmtDealer.getContinueBackFill().fill(condBasicBlock);

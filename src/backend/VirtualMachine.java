@@ -13,6 +13,7 @@ import semantic.VoidExecution;
 
 import java.util.*;
 
+//todo stack的默认值是null，是个问题
 public class VirtualMachine {
     private String stdout = "";
     private final Scanner scanner;
@@ -37,6 +38,7 @@ public class VirtualMachine {
         instrumentExecution.inject();
         this.scanner = new Scanner(stdin);
     }
+
     public VirtualMachine(Module module) {
         staticData = new IntValue[module.getStaticData().length];
         for(int i = 0; i < staticData.length; i++){
@@ -186,6 +188,9 @@ public class VirtualMachine {
                 return staticData[((Variable) value).getOffset()];
             }else{
                 ValueValue ret = stack[sp + ((Variable) value).getOffset()];
+                if(ret == null){
+                    ret = new IntValue(0);
+                }
                 assert ret instanceof IntValue;
                 return (IntValue) ret;
             }

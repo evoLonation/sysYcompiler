@@ -44,4 +44,8 @@ public class BasicBlock implements MidCode{
         ret.append("    ").append(lastInstrument.print()).append("\n");
         return ret.toString();
     }
+
+    public Jump getLastInstrument() {
+        return lastInstrument;
+    }
 }

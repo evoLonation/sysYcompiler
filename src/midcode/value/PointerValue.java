@@ -7,21 +7,22 @@ package midcode.value;
  * 对指针做出一定的偏移；
  * 取出指针指向的地址的值；
  * 可以看出对于每个类型是指针（包括数组）的变量，其本身不会变化。
+ *
  */
 public class PointerValue implements Value {
     private String name;
     private RValue offset;
 
     private boolean isGlobal;
-    // 指的是相对于静态区\栈顶的偏移
-    private int memOffset;
+    // staticOffset是在编译器就计算好的，可以用来与 sp/静态base得到基地址；然后再生成与offset相加的指令
+    private int staticOffset;
     private Type type;
 
-    PointerValue(String name, RValue offset, boolean isGlobal, int memOffset, Type type) {
+    PointerValue(String name, RValue offset, boolean isGlobal, int staticOffset, Type type) {
         this.name = name;
         this.offset = offset;
         this.isGlobal = isGlobal;
-        this.memOffset = memOffset;
+        this.staticOffset = staticOffset;
         this.type = type;
     }
 
@@ -50,8 +51,8 @@ public class PointerValue implements Value {
         return isGlobal;
     }
 
-    public int getMemOffset() {
-        return memOffset;
+    public int getStaticOffset() {
+        return staticOffset;
     }
 
     public Type getType() {

@@ -3,7 +3,7 @@ import error.ErrorRecorder;
 import lexer.Lexer;
 import lexer.Terminal;
 import midcode.Module;
-import midcode.VirtualMachine;
+import backend.VirtualMachine;
 import parser.Parser;
 import parser.nonterminal.CompUnit;
 import semantic.ModuleGenerator;
@@ -17,7 +17,7 @@ import java.util.List;
 public class Compiler {
 
     public static void main(String[] args) {
-        lab5();
+        lab5(true, true);
     }
 
     static List<Character> getCharList(String fileName){
@@ -69,20 +69,28 @@ public class Compiler {
         return new ParserResult(parser.analysis(), parser.getPostOrderList());
     }
 
-    static void lab5(){
+    static void lab5(boolean isStdin, boolean isGenerateMidCode){
         String srcFile = "testfile.txt";
         String inputFile = "input.txt";
         String outputFile = "pcoderesult.txt";
         String codeFile = "midcode.txt";
         ParserResult result = parser(lexer(srcFile));
         Module module = new ModuleGenerator(result.compUnit).getModule();
-        String input = "";
-        for(Character c : getCharList(inputFile)){
-            input += c;
+        VirtualMachine virtualMachine;
+        if(isStdin){
+            virtualMachine = new VirtualMachine(module);
+        }else{
+            String input = "";
+            for(Character c : getCharList(inputFile)){
+                input += c;
+            }
+            virtualMachine = new VirtualMachine(module, input);
         }
-        VirtualMachine virtualMachine = new VirtualMachine(module, input);
+
         virtualMachine.run();
-//        printAndWrite(codeFile, module.print());
+        if(isGenerateMidCode){
+            printAndWrite(codeFile, module.print());
+        }
         printAndWrite(outputFile, virtualMachine.getStdout());
     }
 

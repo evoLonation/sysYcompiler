@@ -30,4 +30,8 @@ public class Function implements MidCode{
         ret.append("end ").append(entry.getName()).append("\n");
         return ret.toString();
     }
+
+    public int getOffset() {
+        return offset;
+    }
 }

@@ -23,4 +23,16 @@ public class Module implements MidCode{
         ret.append("\n").append(mainFunc.print());
         return ret.toString();
     }
+
+    public int[] getStaticData() {
+        return staticData;
+    }
+
+    public Function getMainFunc() {
+        return mainFunc;
+    }
+
+    public List<Function> getFunctions() {
+        return functions;
+    }
 }

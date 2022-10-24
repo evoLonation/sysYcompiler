@@ -13,40 +13,35 @@ import java.util.List;
 public class IfGenerator extends BasicBlockGenerator {
     private final If ifNode;
 
-    public IfGenerator(If ifNode) {
+    IfGenerator(If ifNode) {
         this.ifNode = ifNode;
-        generate();
     }
 
-    private final BackFill backFill = new BackFill();
 
-    public BackFill getBackFill() {
-        return backFill;
-    }
-
-    @Override
-    protected void generate() {
-        CondGenerator condGenerator = new CondGenerator(ifNode.getCond());
+    BackFill generate() {
+        BackFill backFill = new BackFill();
+        CondGenerator.CondBackFill condBackFill = new CondGenerator(ifNode.getCond()).generate();
         if(ifNode.getIfStmt().isPresent()) {
             Stmt ifStmt = ifNode.getIfStmt().get();
             BasicBlock ifBasicBlock = basicBlockFactory.newBasicBlock();
-            condGenerator.getTrueBackFill().fill(ifBasicBlock);
+            condBackFill.trueBackFill.fill(ifBasicBlock);
             symbolTable.newBlock();
-            new NormalBlockGenerator(getBlock(ifStmt)).getBackFill().deliverTo(backFill);
+            new NormalBlockGenerator(getBlock(ifStmt)).generate().deliverTo(backFill);
             symbolTable.outBlock();
         }else {
-            condGenerator.getTrueBackFill().deliverTo(backFill);
+            condBackFill.trueBackFill.deliverTo(backFill);
         }
         if(ifNode.getElseStmt().isPresent()) {
             Stmt elseStmt = ifNode.getElseStmt().get();
             BasicBlock elseBasicBlock = basicBlockFactory.newBasicBlock();
-            condGenerator.getFalseBackFill().fill(elseBasicBlock);
+            condBackFill.falseBackFill.fill(elseBasicBlock);
             symbolTable.newBlock();
-            new NormalBlockGenerator(getBlock(elseStmt)).getBackFill().deliverTo(backFill);
+            new NormalBlockGenerator(getBlock(elseStmt)).generate().deliverTo(backFill);
             symbolTable.outBlock();
         }else {
-            condGenerator.getFalseBackFill().deliverTo(backFill);
+            condBackFill.falseBackFill.deliverTo(backFill);
         }
+        return backFill;
     }
 
 }

@@ -13,24 +13,18 @@ import parser.nonterminal.stmt.ReturnNode;
 public class NormalBlockGenerator extends BlockGenerator{
     NormalBlockGenerator(Block block) {
         super(block);
-        generate();
     }
 
-    private final BackFill backFill = new BackFill();
-
-    public BackFill getBackFill() {
-        return backFill;
-    }
-
-    @Override
-    protected void generate() {
+    BackFill generate() {
+        BackFill backFill = new BackFill();
         for(BlockItem item : block.getBlockItems()){
             if(dealBlockItem(item)){
-                return;
+                return backFill;
             }
         }
         // 正常退出，中途没有return或者continue、break
         basicBlockFactory.outBasicBlock(new Goto()).deliverTo(backFill);
+        return backFill;
     }
 
 }

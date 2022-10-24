@@ -18,6 +18,4 @@ public abstract class Generator {
 
     Generator() {}
 
-    protected abstract void generate();
-
 }

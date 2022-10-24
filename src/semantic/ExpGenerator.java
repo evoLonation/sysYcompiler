@@ -27,16 +27,24 @@ public class ExpGenerator extends InstrumentGenerator{
 
     ExpGenerator(Exp exp) {
         this.exp = exp;
-        generate();
+        execution.inject();
     }
 
-    public static abstract class Result{}
+    public static abstract class Result{
+        public RValue getRValueResult(){
+            throw new SemanticException();
+        }
+    }
 
     public static class RValueResult extends Result{
         public RValue rValue;
 
         public RValueResult(RValue rValue) {
             this.rValue = rValue;
+        }
+        @Override
+        public RValue getRValueResult(){
+            return rValue;
         }
     }
 
@@ -67,24 +75,14 @@ public class ExpGenerator extends InstrumentGenerator{
 
     }
 
-    private Result result;
 
-    public Result getResult() {
-        return result;
-    }
-
-    public RValue getRValueResult(){
-        assert result instanceof RValueResult;
-        return ((RValueResult) result).rValue;
-    }
-
-    public void generate() {
-        execution.inject();
-        result = execution.exec(exp);
+    Result generate() {
+        Result result = execution.exec(exp);
         if(result instanceof TempResult){
             PointerValue pointerValue = valueFactory.newPointer(((TempResult) result).ident, ((TempResult) result).offset);
             result = new PointerResult(pointerValue, ((TempResult) result).pointerType);
         }
+        return result;
     }
 
 
@@ -145,7 +143,7 @@ public class ExpGenerator extends InstrumentGenerator{
             inject(Number.class, exp -> new RValueResult(new Constant(exp.getNumber())));
 
             inject(FuncCall.class, exp -> {
-                Optional<LValue> returnValue = new FuncCallGenerator(exp).getResult();
+                Optional<LValue> returnValue = new FuncCallGenerator(exp).generate();
                 if(!returnValue.isPresent()){
                     return new VoidResult();
                 }else{
@@ -154,7 +152,7 @@ public class ExpGenerator extends InstrumentGenerator{
             });
 
             inject(LVal.class, exp -> {
-                LValGenerator.Result lValResult = new LValGenerator(exp).getResult();
+                LValGenerator.Result lValResult = new LValGenerator(exp).generate();
                 if(lValResult instanceof LValGenerator.ConstantResult){
                     return new RValueResult(((LValGenerator.ConstantResult) lValResult).constant);
                 }else if(lValResult instanceof LValGenerator.LValueResult){

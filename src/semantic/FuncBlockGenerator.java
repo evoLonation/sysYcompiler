@@ -14,12 +14,9 @@ public class FuncBlockGenerator extends BlockGenerator{
 
     FuncBlockGenerator(Block block) {
         super(block);
-        generate();
     }
 
-    //todo 最后一行return 的检查
-    @Override
-    protected void generate() {
+    void generate() {
         boolean dropout = false;
         for(BlockItem item : block.getBlockItems()) {
             if(dealBlockItem(item)){

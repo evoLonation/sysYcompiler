@@ -46,7 +46,6 @@ public class LValGenerator extends InstrumentGenerator {
 
     LValGenerator(LVal lVal) {
         this.lVal = lVal;
-        generate();
     }
 
 
@@ -86,14 +85,9 @@ public class LValGenerator extends InstrumentGenerator {
     public static abstract class Result {
     }
 
-    private Result result;
 
-    public Result getResult() {
-        return result;
-    }
-
-    @Override
-    protected void generate() {
+    Result generate() {
+        Result result;
         Ident ident = lVal.getIdent();
         List<Exp> exps = lVal.getExps();
         Optional<SymbolTable.VariableInfo> infoOptional = symbolTable.getVariable(ident);
@@ -138,7 +132,7 @@ public class LValGenerator extends InstrumentGenerator {
                         offsetExp = exps.get(0);
                     }
                 }
-                RValue offset = new ExpGenerator(offsetExp).getRValueResult();
+                RValue offset = new ExpGenerator(offsetExp).generate().getRValueResult();
                 /* 可能有三种情况：
                  * 1、type是int，都是常量
                  * 2、type是int，但是有一个不是常量
@@ -159,5 +153,6 @@ public class LValGenerator extends InstrumentGenerator {
                 throw new SemanticException();
             }
         }
+        return result;
     }
 }

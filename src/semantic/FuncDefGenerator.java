@@ -20,17 +20,11 @@ public class FuncDefGenerator extends Generator{
 
     FuncDefGenerator(FuncDef funcDef) {
         this.funcDef = funcDef;
-        generate();
     }
 
-    private Function function;
 
-    public Function getFunction() {
-        return function;
-    }
-
-    @Override
-    protected void generate() {
+    Function generate() {
+        Function function;
         function = basicBlockFactory.newFunction(funcDef.getIdent().getValue());
         symbolTable.newFuncDomain(function, funcDef.getIdent(), funcDef.isInt());
         for(FuncDef.FuncFParam funcFParam : funcDef.getFuncFParams()){
@@ -39,7 +33,7 @@ public class FuncDefGenerator extends Generator{
             }else if(funcFParam instanceof FuncDef.PointerFParam){
                 Optional<Exp> constExp = ((FuncDef.PointerFParam) funcFParam).getConstExp();
                 if(constExp.isPresent()){
-                    RValue result = new ExpGenerator(constExp.get()).getRValueResult();
+                    RValue result = new ExpGenerator(constExp.get()).generate().getRValueResult();
                     assert result instanceof Constant;
                     symbolTable.addParam(funcFParam.getIdent(), new PointerType(((Constant) result).getNumber()));
                 }else{
@@ -50,8 +44,9 @@ public class FuncDefGenerator extends Generator{
             }
         }
         Block block = funcDef.getBlock();
-        new FuncBlockGenerator(block);
+        new FuncBlockGenerator(block).generate();
         symbolTable.outBlock();
         basicBlockFactory.outFunction(symbolTable.getMaxOffset());
+        return function;
     }
 }

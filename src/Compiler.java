@@ -76,7 +76,7 @@ public class Compiler {
         String outputFile = "pcoderesult.txt";
         String codeFile = "midcode.txt";
         ParserResult result = parser(lexer(srcFile));
-        Module module = new ModuleGenerator(result.compUnit).getModule();
+        Module module = new ModuleGenerator(result.compUnit).generate();
         if(ErrorRecorder.getInstance().getErrorSet().size() != 0){
             for(Error error : ErrorRecorder.getInstance().getErrorSet()){
                 System.out.println(error.detail());
@@ -109,7 +109,7 @@ public class Compiler {
         String outputFile = "output.txt";
         String errorFile = "error.txt";
         ParserResult result = parser(lexer(inputFile));
-        Module module = new ModuleGenerator(result.compUnit).getModule();
+        Module module = new ModuleGenerator(result.compUnit).generate();
         if(ErrorRecorder.getInstance().getErrorSet().size() != 0){
             throw new SemanticException();
         }
@@ -127,7 +127,7 @@ public class Compiler {
         String inputFile = "testfile.txt";
         String outputFile = "output.txt";
         ParserResult result = parser(lexer(inputFile));
-        Module module = new ModuleGenerator(result.compUnit).getModule();
+        Module module = new ModuleGenerator(result.compUnit).generate();
         StringBuilder str = new StringBuilder();
         for(String word: result.postOrderList){
             if(word.equals("<Decl>") || word.equals("<BType>") || word.equals("<BlockItem>")){

@@ -28,11 +28,9 @@ public class DeclGenerator extends InstrumentGenerator{
 
     DeclGenerator(Decl decl) {
         this.decl = decl;
-        generate();
     }
 
-    @Override
-    protected void generate() {
+    void generate() {
         for(Def def : decl.getDefs()){
             Ident ident = def.getIdent();
             List<Integer> lens = getLens(def.getConstExps());
@@ -72,7 +70,7 @@ public class DeclGenerator extends InstrumentGenerator{
     protected List<Integer> getLens(List<Exp> constExps) {
         List<Integer> lens = new ArrayList<>();
         for(Exp exp : constExps){
-            RValue rValue = new ExpGenerator(exp).getRValueResult();
+            RValue rValue = new ExpGenerator(exp).generate().getRValueResult();
             assert rValue instanceof Constant;
             lens.add(((Constant)rValue).getNumber());
         }
@@ -83,7 +81,7 @@ public class DeclGenerator extends InstrumentGenerator{
         if(initVal == null){
             symbolTable.newInteger(ident, false);
         }else{
-            RValue rValue = new ExpGenerator(initVal.getExp()).getRValueResult();
+            RValue rValue = new ExpGenerator(initVal.getExp()).generate().getRValueResult();
             if(isConst){
                 assert rValue instanceof Constant;
                 symbolTable.newInteger(ident, false, ((Constant) rValue).getNumber());
@@ -103,7 +101,7 @@ public class DeclGenerator extends InstrumentGenerator{
             List<RValue> results = new ArrayList<>();
             for(InitVal subInitVal : initVals){
                 assert subInitVal instanceof IntInitVal;
-                results.add(new ExpGenerator(((IntInitVal)subInitVal).getExp()).getRValueResult());
+                results.add(new ExpGenerator(((IntInitVal)subInitVal).getExp()).generate().getRValueResult());
             }
             if(isConst){
                 int[] constValue = new int[firstLen];
@@ -133,7 +131,7 @@ public class DeclGenerator extends InstrumentGenerator{
                 assert secondLen == sub2InitVals.size();
                 for(InitVal sub2InitVal : sub2InitVals) {
                     assert sub2InitVal instanceof IntInitVal;
-                    results.add(new ExpGenerator(((IntInitVal)sub2InitVal).getExp()).getRValueResult());
+                    results.add(new ExpGenerator(((IntInitVal)sub2InitVal).getExp()).generate().getRValueResult());
                 }
             }
             if(isConst){

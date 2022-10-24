@@ -16,37 +16,31 @@ public class WhileGenerator extends BasicBlockGenerator{
 
     WhileGenerator(While whileNode) {
         this.whileNode = whileNode;
-        generate();
     }
 
-    private final BackFill backFill = new BackFill();
-
-    public BackFill getBackFill() {
-        return backFill;
-    }
-
-    @Override
-    protected void generate() {
+    BackFill generate() {
+        BackFill backFill = new BackFill();
         BackFill preBackFill = basicBlockFactory.outBasicBlock(new Goto());
         BasicBlock condBasicBlock = basicBlockFactory.newBasicBlock();
         preBackFill.fill(condBasicBlock);
-        CondGenerator condGenerator = new CondGenerator(whileNode.getCond());
-        condGenerator.getFalseBackFill().deliverTo(backFill);
+        CondGenerator.CondBackFill condBackFill = new CondGenerator(whileNode.getCond()).generate();
+        condBackFill.falseBackFill.deliverTo(backFill);
         if(whileNode.getStmt().isPresent()) {
             whileStmtDealer.inWhile();
             Stmt whileStmt = whileNode.getStmt().get();
             BasicBlock whileBasicBlock = basicBlockFactory.newBasicBlock();
+            condBackFill.trueBackFill.fill(whileBasicBlock);
             symbolTable.newBlock();
-            NormalBlockGenerator whileBlockGenerator = new NormalBlockGenerator(getBlock(whileStmt));
+            BackFill whileBlockBackFill = new NormalBlockGenerator(getBlock(whileStmt)).generate();
             symbolTable.outBlock();
-            condGenerator.getTrueBackFill().fill(whileBasicBlock);
-            whileBlockGenerator.getBackFill().fill(condBasicBlock);
+            whileBlockBackFill.fill(condBasicBlock);
             whileStmtDealer.getContinueBackFill().fill(condBasicBlock);
             whileStmtDealer.getBreakBackFill().deliverTo(backFill);
             whileStmtDealer.outWhile();
         }else {
-            condGenerator.getTrueBackFill().deliverTo(backFill);
+            condBackFill.trueBackFill.deliverTo(backFill);
         }
+        return backFill;
     }
 
 }

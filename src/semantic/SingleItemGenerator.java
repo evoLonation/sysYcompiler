@@ -24,7 +24,6 @@ public class SingleItemGenerator extends InstrumentGenerator{
 
     SingleItemGenerator(BlockItem blockItem) {
         this.blockItem = blockItem;
-        generate();
     }
 
     public void generate(){
@@ -38,16 +37,16 @@ public class SingleItemGenerator extends InstrumentGenerator{
         public void inject() {
             inject(stmt -> {
                 assert stmt instanceof Exp;
-                new ExpGenerator((Exp) stmt);
+                new ExpGenerator((Exp) stmt).generate();
             });
 
             inject(Assign.class, assign -> {
-                LValGenerator.Result lValResult = new LValGenerator(assign.getLVal()).getResult();
+                LValGenerator.Result lValResult = new LValGenerator(assign.getLVal()).generate();
                 if(!(lValResult instanceof LValGenerator.LValueResult || lValResult instanceof LValGenerator.IntPointerResult)){
                     errorRecorder.changeConst(assign.getLVal().getIdent().line(), assign.getLVal().getIdent().getValue());
                     return;
                 }
-                RValue expResult = new ExpGenerator(assign.getExp()).getRValueResult();
+                RValue expResult = new ExpGenerator(assign.getExp()).generate().getRValueResult();
                 if(lValResult instanceof LValGenerator.IntPointerResult){
                     addInstrument(new Store(((LValGenerator.IntPointerResult) lValResult).pointerValue, expResult));
                 }else{
@@ -55,11 +54,11 @@ public class SingleItemGenerator extends InstrumentGenerator{
                 }
             });
 
-            inject(Decl.class, decl -> new DeclGenerator(decl));
+            inject(Decl.class, decl -> new DeclGenerator(decl).generate());
 
             inject(GetIntNode.class, getint->{
                 LVal lVal = getint.getLVal();
-                LValGenerator.Result result = new LValGenerator(lVal).getResult();
+                LValGenerator.Result result = new LValGenerator(lVal).generate();
                 if(!(result instanceof LValGenerator.LValueResult || result instanceof LValGenerator.IntPointerResult)){
                     errorRecorder.changeConst(lVal.getIdent().line(), lVal.getIdent().getValue());
                     return;
@@ -77,8 +76,8 @@ public class SingleItemGenerator extends InstrumentGenerator{
                 List<Exp> exps = printf.getExps();
                 FormatString formatString = printf.getFormatString();
                 List<RValue> rValues = new ArrayList<>();
-                for(Exp exp : exps){
-                    rValues.add(new ExpGenerator(exp).getRValueResult());
+                for(Exp exp : exps) {
+                    rValues.add(new ExpGenerator(exp).generate().getRValueResult());
                 }
                 int real = rValues.size();
                 int need = formatString.getFormatCharNumber();

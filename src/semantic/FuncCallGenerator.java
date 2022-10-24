@@ -17,18 +17,10 @@ public class FuncCallGenerator extends InstrumentGenerator{
 
     FuncCallGenerator(FuncCall funcCall) {
         this.funcCall = funcCall;
-        generate();
     }
 
-    private LValue result = null;
-
-    public Optional<LValue> getResult() {
-        return Optional.ofNullable(result);
-    }
-
-
-    @Override
-    protected void generate() {
+    Optional<LValue> generate() {
+        LValue result = null;
         Ident ident = funcCall.getIdent();
         List<Exp> exps = funcCall.getExps();
         Optional<SymbolTable.FunctionInfo> infoOptional = symbolTable.getFunction(ident);
@@ -50,7 +42,7 @@ public class FuncCallGenerator extends InstrumentGenerator{
                     exp = exps.get(i);
                 }
                 VarType paramType = funcType.getParams().get(i);
-                ExpGenerator.Result expResult = new ExpGenerator(exp).getResult();
+                ExpGenerator.Result expResult = new ExpGenerator(exp).generate();
                 if(expResult instanceof ExpGenerator.RValueResult){
                     if(!paramType.match(new IntType())){
                         errorRecorder.paramTypeNotMatch(ident.line(), ident.getValue(), paramType, new IntType());
@@ -74,6 +66,7 @@ public class FuncCallGenerator extends InstrumentGenerator{
                 addInstrument(new Call(function, exps.size()));
             }
         }
+        return Optional.ofNullable(result);
     }
 
 

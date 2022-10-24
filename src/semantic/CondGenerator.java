@@ -12,8 +12,7 @@ import parser.nonterminal.exp.Exp;
 public class CondGenerator extends BasicBlockGenerator {
     private final Exp exp;
 
-    public CondGenerator(BasicBlock basicBlock, Exp exp) {
-        super(basicBlock);
+    CondGenerator(Exp exp) {
         this.exp = exp;
         generate();
     }
@@ -34,9 +33,9 @@ public class CondGenerator extends BasicBlockGenerator {
         if(exp instanceof BinaryExp){
             BinaryExp binaryExp = (BinaryExp) exp;
             if(binaryExp.getOp() == BinaryOp.OR || binaryExp.getOp() == BinaryOp.AND){
-                CondGenerator condGenerator1 = new CondGenerator(basicBlock, binaryExp.getExp1());
+                CondGenerator condGenerator1 = new CondGenerator(binaryExp.getExp1());
                 BasicBlock rightBasicBlock = basicBlockFactory.newBasicBlock();
-                CondGenerator condGenerator2 = new CondGenerator(rightBasicBlock, binaryExp.getExp2());
+                CondGenerator condGenerator2 = new CondGenerator(binaryExp.getExp2());
                 if(binaryExp.getOp() == BinaryOp.OR) {
                     condGenerator1.getFalseBackFill().fill(rightBasicBlock);
                     condGenerator1.getTrueBackFill().deliverTo(trueBackFill);
@@ -55,7 +54,7 @@ public class CondGenerator extends BasicBlockGenerator {
     }
 
     private void normalGenerate(Exp exp){
-        RValue expResult = new ExpGenerator(basicBlock.getInstruments(), exp).getRValueResult();
+        RValue expResult = new ExpGenerator(exp).getRValueResult();
         CondGoto jump = new CondGoto(expResult);
         BasicBlockFactory.CondGotoBackFill result = basicBlockFactory.outBasicBlock(jump);
         result.trueBackFill.deliverTo(trueBackFill);

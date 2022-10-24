@@ -13,8 +13,7 @@ import java.util.List;
 public class IfGenerator extends BasicBlockGenerator {
     private final If ifNode;
 
-    public IfGenerator(BasicBlock basicBlock, If ifNode) {
-        super(basicBlock);
+    public IfGenerator(If ifNode) {
         this.ifNode = ifNode;
         generate();
     }
@@ -27,13 +26,13 @@ public class IfGenerator extends BasicBlockGenerator {
 
     @Override
     protected void generate() {
-        CondGenerator condGenerator = new CondGenerator(basicBlock, ifNode.getCond());
+        CondGenerator condGenerator = new CondGenerator(ifNode.getCond());
         if(ifNode.getIfStmt().isPresent()) {
             Stmt ifStmt = ifNode.getIfStmt().get();
             BasicBlock ifBasicBlock = basicBlockFactory.newBasicBlock();
             condGenerator.getTrueBackFill().fill(ifBasicBlock);
             symbolTable.newBlock();
-            new NormalBlockGenerator(ifBasicBlock, getBlock(ifStmt)).getBackFill().deliverTo(backFill);
+            new NormalBlockGenerator(getBlock(ifStmt)).getBackFill().deliverTo(backFill);
             symbolTable.outBlock();
         }else {
             condGenerator.getTrueBackFill().deliverTo(backFill);
@@ -43,7 +42,7 @@ public class IfGenerator extends BasicBlockGenerator {
             BasicBlock elseBasicBlock = basicBlockFactory.newBasicBlock();
             condGenerator.getFalseBackFill().fill(elseBasicBlock);
             symbolTable.newBlock();
-            new NormalBlockGenerator(elseBasicBlock, getBlock(elseStmt)).getBackFill().deliverTo(backFill);
+            new NormalBlockGenerator(getBlock(elseStmt)).getBackFill().deliverTo(backFill);
             symbolTable.outBlock();
         }else {
             condGenerator.getFalseBackFill().deliverTo(backFill);

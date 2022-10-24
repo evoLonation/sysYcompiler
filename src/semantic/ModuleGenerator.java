@@ -103,7 +103,7 @@ public class ModuleGenerator extends Generator{
     protected List<Integer> getLens(List<Exp> constExps) {
         List<Integer> lens = new ArrayList<>();
         for(Exp exp : constExps){
-            RValue rValue = new ExpGenerator(new ArrayList<>(), exp).getRValueResult();
+            RValue rValue = new ExpGenerator(exp).getRValueResult();
             assert rValue instanceof Constant;
             lens.add(((Constant)rValue).getNumber());
         }
@@ -116,7 +116,7 @@ public class ModuleGenerator extends Generator{
             symbolTable.newInteger(ident, true);
             return 0;
         }else{
-            RValue rValue = new ExpGenerator(new ArrayList<>(), initVal.getExp()).getRValueResult();
+            RValue rValue = new ExpGenerator(initVal.getExp()).getRValueResult();
             assert rValue instanceof Constant;
             int number = ((Constant) rValue).getNumber();
             if(isConst){
@@ -138,7 +138,7 @@ public class ModuleGenerator extends Generator{
             for(int i = 0; i < firstLen; i++){
                 InitVal subInitVal = initVals.get(i);
                 assert subInitVal instanceof IntInitVal;
-                RValue rvalue = new ExpGenerator(new ArrayList<>(), ((IntInitVal)subInitVal).getExp()).getRValueResult();
+                RValue rvalue = new ExpGenerator(((IntInitVal)subInitVal).getExp()).getRValueResult();
                 assert rvalue instanceof Constant;
                 ret[i] = ((Constant) rvalue).getNumber();
             }
@@ -166,7 +166,7 @@ public class ModuleGenerator extends Generator{
                 for(int j = 0; j < secondLen; j++){
                     InitVal sub2InitVal = sub2InitVals.get(j);
                     assert sub2InitVal instanceof IntInitVal;
-                    RValue rvalue = new ExpGenerator(new ArrayList<>(), ((IntInitVal)sub2InitVal).getExp()).getRValueResult();
+                    RValue rvalue = new ExpGenerator(((IntInitVal)sub2InitVal).getExp()).getRValueResult();
                     assert rvalue instanceof Constant;
                     ret[i*secondLen + j] = ((Constant) rvalue).getNumber();
                 }
@@ -181,13 +181,12 @@ public class ModuleGenerator extends Generator{
     }
     private Function dealMain(MainFuncDef mainFuncDef){
         Function function;
-        function = BasicBlockFactory.getInstance().newMainFunction();
-        BasicBlock funcBasicBlock = function.getEntry();
+        function = basicBlockFactory.newMainFunction();
         Block block = mainFuncDef.getBlock();
         symbolTable.newMain();
-        new FuncBlockGenerator(funcBasicBlock, block);
+        new FuncBlockGenerator(block);
         symbolTable.outBlock();
-        basicBlockFactory.outFunction(function, symbolTable.getMaxOffset());
+        basicBlockFactory.outFunction(symbolTable.getMaxOffset());
         return function;
     }
 }

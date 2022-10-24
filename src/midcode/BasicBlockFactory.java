@@ -1,9 +1,6 @@
 package midcode;
 
-import midcode.instrument.BackFill;
-import midcode.instrument.CondGoto;
-import midcode.instrument.Goto;
-import midcode.instrument.Return;
+import midcode.instrument.*;
 
 public class BasicBlockFactory {
 
@@ -26,10 +23,10 @@ public class BasicBlockFactory {
         return newFunction("main");
     }
 
-    public void outFunction(Function function, int offset){
+    public void outFunction(int offset){
         assert nowFunction != null;
         assert nowBasicBlock == null;
-        function.offset = offset;
+        nowFunction.offset = offset;
         nowFunction = null;
     }
 
@@ -38,6 +35,11 @@ public class BasicBlockFactory {
         nowFunction.basicBlocks.add(newBasicBlock);
         nowBasicBlock = newBasicBlock;
         return newBasicBlock;
+    }
+
+    public void addInstrument(Instrument instrument) {
+        assert nowBasicBlock != null;
+        nowBasicBlock.getInstruments().add(instrument);
     }
 
     public BackFill outBasicBlock(Goto outCode){

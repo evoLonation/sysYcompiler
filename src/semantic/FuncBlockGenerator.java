@@ -12,8 +12,8 @@ import parser.nonterminal.stmt.ReturnNode;
 // 直属于函数的block，需要检查最后一个语句是否有return
 public class FuncBlockGenerator extends BlockGenerator{
 
-    public FuncBlockGenerator(BasicBlock basicBlock, Block block) {
-        super(basicBlock, block);
+    FuncBlockGenerator(Block block) {
+        super(block);
         generate();
     }
 

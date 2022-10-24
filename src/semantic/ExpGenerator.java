@@ -25,8 +25,7 @@ public class ExpGenerator extends InstrumentGenerator{
 
     private final Exp exp;
 
-    public ExpGenerator(List<Instrument> instruments, Exp exp) {
-        super(instruments);
+    ExpGenerator(Exp exp) {
         this.exp = exp;
         generate();
     }
@@ -146,7 +145,7 @@ public class ExpGenerator extends InstrumentGenerator{
             inject(Number.class, exp -> new RValueResult(new Constant(exp.getNumber())));
 
             inject(FuncCall.class, exp -> {
-                Optional<LValue> returnValue = new FuncCallGenerator(instruments, exp).getResult();
+                Optional<LValue> returnValue = new FuncCallGenerator(exp).getResult();
                 if(!returnValue.isPresent()){
                     return new VoidResult();
                 }else{
@@ -155,7 +154,7 @@ public class ExpGenerator extends InstrumentGenerator{
             });
 
             inject(LVal.class, exp -> {
-                LValGenerator.Result lValResult = new LValGenerator(instruments, exp).getResult();
+                LValGenerator.Result lValResult = new LValGenerator(exp).getResult();
                 if(lValResult instanceof LValGenerator.ConstantResult){
                     return new RValueResult(((LValGenerator.ConstantResult) lValResult).constant);
                 }else if(lValResult instanceof LValGenerator.LValueResult){

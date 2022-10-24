@@ -11,25 +11,16 @@ import java.util.List;
 
 public abstract class BasicBlockGenerator extends Generator{
 
-    protected BasicBlock basicBlock;
-
-    public BasicBlockGenerator(BasicBlock basicBlock) {
-        this.basicBlock = basicBlock;
-    }
-
-    public BasicBlock getBasicBlock() {
-        return basicBlock;
-    }
-
-    protected Block getBlock(Stmt elseStmt) {
+    protected Block getBlock(Stmt stmt) {
         Block block;
-        if(elseStmt instanceof Block){
-            block = (Block) elseStmt;
+        if(stmt instanceof Block){
+            block = (Block) stmt;
         }else{
             List<BlockItem> blockItems = new ArrayList<>();
-            blockItems.add(elseStmt);
+            blockItems.add(stmt);
             block = new Block(blockItems, 0);
         }
         return block;
     }
+
 }

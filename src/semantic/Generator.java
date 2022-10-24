@@ -16,7 +16,7 @@ public abstract class Generator {
     protected final ErrorRecorder errorRecorder = ErrorRecorder.getInstance();
     protected final WhileStmtDealer whileStmtDealer = WhileStmtDealer.getInstance();
 
-    public Generator() {}
+    Generator() {}
 
     protected abstract void generate();
 

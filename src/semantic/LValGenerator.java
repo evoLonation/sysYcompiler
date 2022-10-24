@@ -44,8 +44,7 @@ import java.util.Optional;
 public class LValGenerator extends InstrumentGenerator {
     private final LVal lVal;
 
-    public LValGenerator(List<Instrument> instruments, LVal lVal) {
-        super(instruments);
+    LValGenerator(LVal lVal) {
         this.lVal = lVal;
         generate();
     }
@@ -139,7 +138,7 @@ public class LValGenerator extends InstrumentGenerator {
                         offsetExp = exps.get(0);
                     }
                 }
-                RValue offset = new ExpGenerator(instruments, offsetExp).getRValueResult();
+                RValue offset = new ExpGenerator(offsetExp).getRValueResult();
                 /* 可能有三种情况：
                  * 1、type是int，都是常量
                  * 2、type是int，但是有一个不是常量

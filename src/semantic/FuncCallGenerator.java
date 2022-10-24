@@ -15,8 +15,7 @@ import java.util.Optional;
 public class FuncCallGenerator extends InstrumentGenerator{
     private final FuncCall funcCall;
 
-    public FuncCallGenerator(List<Instrument> instruments, FuncCall funcCall) {
-        super(instruments);
+    FuncCallGenerator(FuncCall funcCall) {
         this.funcCall = funcCall;
         generate();
     }
@@ -51,7 +50,7 @@ public class FuncCallGenerator extends InstrumentGenerator{
                     exp = exps.get(i);
                 }
                 VarType paramType = funcType.getParams().get(i);
-                ExpGenerator.Result expResult = new ExpGenerator(instruments, exp).getResult();
+                ExpGenerator.Result expResult = new ExpGenerator(exp).getResult();
                 if(expResult instanceof ExpGenerator.RValueResult){
                     if(!paramType.match(new IntType())){
                         errorRecorder.paramTypeNotMatch(ident.line(), ident.getValue(), paramType, new IntType());

@@ -19,10 +19,6 @@ public class BasicBlock implements MidCode{
     Jump lastInstrument;
 
 
-    public void addInstrument(Instrument instrument){
-        instruments.add(instrument);
-    }
-
     public List<Instrument> getInstruments() {
         return instruments;
     }

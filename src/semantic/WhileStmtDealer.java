@@ -26,7 +26,7 @@ public class WhileStmtDealer {
     /**
      * @return 该basicBlock是否封底了
      */
-    public boolean newBreak(BasicBlock basicBlock, int line){
+    public boolean newBreak(int line){
         if(whileLayer > 0){
             basicBlockFactory.outBasicBlock(new Goto()).deliverTo(breakBackFill);
             return true;
@@ -38,7 +38,7 @@ public class WhileStmtDealer {
     /**
      * @return 该basicBlock是否封底了
      */
-    public boolean newContinue(BasicBlock basicBlock, int line){
+    public boolean newContinue(int line){
         if(whileLayer > 0){
             basicBlockFactory.outBasicBlock(new Goto()).deliverTo(continueBackFill);
             return true;

@@ -16,14 +16,9 @@ import parser.nonterminal.stmt.*;
 public abstract class BlockGenerator extends BasicBlockGenerator{
     protected final Block block;
 
-    public BlockGenerator(BasicBlock basicBlock, Block block) {
-        super(basicBlock);
+    public BlockGenerator(Block block) {
         this.block = block;
-        this.currentBasicBlock = basicBlock;
     }
-
-    protected BasicBlock currentBasicBlock;
-
 
     @Override
     protected abstract void generate();
@@ -33,16 +28,16 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
      */
     protected final boolean dealBlockItem(BlockItem blockItem) {
         if(blockItem instanceof If){
-            BackFill ifBackFill = new IfGenerator(currentBasicBlock, (If) blockItem).getBackFill();
-            currentBasicBlock = basicBlockFactory.newBasicBlock();
-            ifBackFill.fill(currentBasicBlock);
+            BackFill ifBackFill = new IfGenerator((If) blockItem).getBackFill();
+            BasicBlock afterBasicBlock = basicBlockFactory.newBasicBlock();
+            ifBackFill.fill(afterBasicBlock);
         }else if(blockItem instanceof While){
-            BackFill whileBackFill = new WhileGenerator(currentBasicBlock, (While) blockItem).getBackFill();
-            currentBasicBlock = basicBlockFactory.newBasicBlock();
-            whileBackFill.fill(currentBasicBlock);
+            BackFill whileBackFill = new WhileGenerator((While) blockItem).getBackFill();
+            BasicBlock afterBasicBlock = basicBlockFactory.newBasicBlock();
+            whileBackFill.fill(afterBasicBlock);
         }else if(blockItem instanceof Assign || blockItem instanceof GetIntNode || blockItem instanceof PrintfNode ||
                 blockItem instanceof Exp || blockItem instanceof Decl){
-            new SingleItemGenerator(currentBasicBlock, blockItem);
+            new SingleItemGenerator(blockItem);
         }else if(blockItem instanceof ReturnNode) {
             ReturnNode returnNode = (ReturnNode)blockItem;
             if(((ReturnNode) blockItem).getExp().isPresent()){
@@ -51,7 +46,7 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
                     basicBlockFactory.outBasicBlock(new Return());
                 }else{
                     Exp exp = ((ReturnNode) blockItem).getExp().get();
-                    RValue returnValue = new ExpGenerator(currentBasicBlock.getInstruments(), exp).getRValueResult();
+                    RValue returnValue = new ExpGenerator(exp).getRValueResult();
                     basicBlockFactory.outBasicBlock(new Return( returnValue));
                 }
             }else{
@@ -61,9 +56,9 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
         }else if(blockItem instanceof Block){
             dealBlock((Block) blockItem);
         }else if(blockItem instanceof Break){
-            return whileStmtDealer.newBreak(currentBasicBlock, ((Break) blockItem).line());
+            return whileStmtDealer.newBreak(((Break) blockItem).line());
         }else if(blockItem instanceof Continue){
-            return whileStmtDealer.newContinue(currentBasicBlock, ((Continue) blockItem).line());
+            return whileStmtDealer.newContinue(((Continue) blockItem).line());
         }else{
             throw new SemanticException();
         }
@@ -72,12 +67,12 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
 
     protected final void dealBlock(Block block){
         BackFill frontBlockBackFill = basicBlockFactory.outBasicBlock(new Goto());
-        currentBasicBlock = basicBlockFactory.newBasicBlock();
-        frontBlockBackFill.fill(currentBasicBlock);
+        BasicBlock newBasicBlock = basicBlockFactory.newBasicBlock();
+        frontBlockBackFill.fill(newBasicBlock);
         symbolTable.newBlock();
-        BackFill subBackFill = new NormalBlockGenerator(currentBasicBlock, block).getBackFill();
+        BackFill subBackFill = new NormalBlockGenerator(block).getBackFill();
         symbolTable.outBlock();
-        currentBasicBlock = basicBlockFactory.newBasicBlock();
-        subBackFill.fill(currentBasicBlock);
+        BasicBlock backBasicBlock = basicBlockFactory.newBasicBlock();
+        subBackFill.fill(backBasicBlock);
     }
 }

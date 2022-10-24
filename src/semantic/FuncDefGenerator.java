@@ -18,7 +18,7 @@ import java.util.Optional;
 public class FuncDefGenerator extends Generator{
     private final FuncDef funcDef;
 
-    public FuncDefGenerator(FuncDef funcDef) {
+    FuncDefGenerator(FuncDef funcDef) {
         this.funcDef = funcDef;
         generate();
     }
@@ -39,7 +39,7 @@ public class FuncDefGenerator extends Generator{
             }else if(funcFParam instanceof FuncDef.PointerFParam){
                 Optional<Exp> constExp = ((FuncDef.PointerFParam) funcFParam).getConstExp();
                 if(constExp.isPresent()){
-                    RValue result = new ExpGenerator(new ArrayList<>(), constExp.get()).getRValueResult();
+                    RValue result = new ExpGenerator(constExp.get()).getRValueResult();
                     assert result instanceof Constant;
                     symbolTable.addParam(funcFParam.getIdent(), new PointerType(((Constant) result).getNumber()));
                 }else{
@@ -49,11 +49,9 @@ public class FuncDefGenerator extends Generator{
                 throw new SemanticException();
             }
         }
-
-        BasicBlock funcBasicBlock = function.getEntry();
         Block block = funcDef.getBlock();
-        new FuncBlockGenerator(funcBasicBlock, block);
+        new FuncBlockGenerator(block);
         symbolTable.outBlock();
-        basicBlockFactory.outFunction(function, symbolTable.getMaxOffset());
+        basicBlockFactory.outFunction(symbolTable.getMaxOffset());
     }
 }

@@ -11,12 +11,12 @@ import parser.nonterminal.stmt.ReturnNode;
 
 // 普通的block，包括单独的一个block或者if、else里面的block，不接受continue和break
 public class NormalBlockGenerator extends BlockGenerator{
-    public NormalBlockGenerator(BasicBlock basicBlock, Block block) {
-        super(basicBlock, block);
+    NormalBlockGenerator(Block block) {
+        super(block);
         generate();
     }
 
-    private BackFill backFill = new BackFill();
+    private final BackFill backFill = new BackFill();
 
     public BackFill getBackFill() {
         return backFill;

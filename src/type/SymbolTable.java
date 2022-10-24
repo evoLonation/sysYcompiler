@@ -6,6 +6,7 @@ import midcode.Function;
 
 import java.util.*;
 
+// 管理作用域与作用域中的符号
 public class SymbolTable {
     private final Stack<Map<String, VariableInfo>> localVariableStack = new Stack<>();
     private final Stack<Integer> offsetStack = new Stack<>();
@@ -17,7 +18,12 @@ public class SymbolTable {
     private int currentBlockOffset = 0;
     private int currentMaxOffset = 0;
 
-    private String currentFunction;
+    private FunctionInfo currentFunction;
+
+    public boolean nowIsReturn(){
+        assert !localVariableStack.empty();
+        return currentFunction.type.isReturn;
+    }
 
 
     private final ErrorRecorder errorRecorder = ErrorRecorder.getInstance();
@@ -189,20 +195,28 @@ public class SymbolTable {
         currentMaxOffset = 0;
         String symbol = ident.getValue();
         int line = ident.line();
+        FunctionInfo functionInfo = new FunctionInfo(new FuncType(isReturn), function);
         if(isGlobalConflict(symbol)){
             errorRecorder.redefined(line, symbol);
-        }else {
-            FuncType type = new FuncType(isReturn);
-            functionMap.put(symbol, new FunctionInfo(type, function));
+            functionMap.replace(symbol, functionInfo);
+        }else{
+            functionMap.put(symbol, functionInfo);
         }
-        currentFunction = symbol;
+        currentFunction = functionInfo;
         newBlock();
     }
 
     public void addParam(Ident ident, VarType type){
         assert ! (type instanceof ArrayType);
-        functionMap.get(currentFunction).type.addParam(type);
+        currentFunction.type.addParam(type);
         addVariable(ident, new VariableInfo(type, computeLayer(false)), false);
+    }
+
+    public void newMain() {
+        assert localVariableStack.isEmpty();
+        currentMaxOffset = 0;
+        currentFunction = new FunctionInfo(new FuncType(true), null);
+        newBlock();
     }
 
     public void newBlock() {
@@ -219,7 +233,7 @@ public class SymbolTable {
     }
 
     public int getMaxOffset() {
-        assert localVariableStack.isEmpty();
+        assert localVariableStack.empty();
         return currentMaxOffset;
     }
 

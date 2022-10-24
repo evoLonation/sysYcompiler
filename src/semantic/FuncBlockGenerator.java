@@ -27,7 +27,7 @@ public class FuncBlockGenerator extends BlockGenerator{
                 break;
             }
         }
-        if(isReturn){
+        if(symbolTable.nowIsReturn()){
             if(block.getBlockItems().size() == 0){
                 errorRecorder.returnLack(block.endLine());
                 return;

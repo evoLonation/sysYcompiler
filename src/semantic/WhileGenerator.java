@@ -28,7 +28,7 @@ public class WhileGenerator extends BasicBlockGenerator{
 
     @Override
     protected void generate() {
-        BackFill preBackFill = basicBlockFactory.outBasicBlock(basicBlock, new Goto());
+        BackFill preBackFill = basicBlockFactory.outBasicBlock(new Goto());
         BasicBlock condBasicBlock = basicBlockFactory.newBasicBlock();
         preBackFill.fill(condBasicBlock);
         CondGenerator condGenerator = new CondGenerator(condBasicBlock, whileNode.getCond());

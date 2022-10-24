@@ -85,6 +85,9 @@ public class Compiler {
             throw new SemanticException();
 
         }
+        if(isGenerateMidCode){
+            printAndWrite(codeFile, module.print());
+        }
         VirtualMachine virtualMachine;
         if(isStdin){
             virtualMachine = new VirtualMachine(module);
@@ -97,9 +100,7 @@ public class Compiler {
         }
 
         virtualMachine.run();
-        if(isGenerateMidCode){
-            printAndWrite(codeFile, module.print());
-        }
+
         printAndWrite(outputFile, virtualMachine.getStdout());
     }
 

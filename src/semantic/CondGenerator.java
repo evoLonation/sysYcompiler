@@ -57,7 +57,7 @@ public class CondGenerator extends BasicBlockGenerator {
     private void normalGenerate(Exp exp){
         RValue expResult = new ExpGenerator(basicBlock.getInstruments(), exp).getRValueResult();
         CondGoto jump = new CondGoto(expResult);
-        BasicBlockFactory.CondGotoBackFill result = basicBlockFactory.outBasicBlock(basicBlock, jump);
+        BasicBlockFactory.CondGotoBackFill result = basicBlockFactory.outBasicBlock(jump);
         result.trueBackFill.deliverTo(trueBackFill);
         result.falseBackFill.deliverTo(falseBackFill);
     }

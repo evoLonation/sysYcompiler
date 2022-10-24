@@ -30,7 +30,7 @@ public class NormalBlockGenerator extends BlockGenerator{
             }
         }
         // 正常退出，中途没有return或者continue、break
-        basicBlockFactory.outBasicBlock(currentBasicBlock, new Goto()).deliverTo(backFill);
+        basicBlockFactory.outBasicBlock(new Goto()).deliverTo(backFill);
     }
 
 }

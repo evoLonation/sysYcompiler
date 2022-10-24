@@ -35,6 +35,7 @@ public abstract class VoidExecution<T>  {
                 return;
             }
         }
+
         ((Executor<T>)map.get(nowClass)).innerExec(ast);
     }
 

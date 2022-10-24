@@ -28,7 +28,7 @@ public class WhileStmtDealer {
      */
     public boolean newBreak(BasicBlock basicBlock, int line){
         if(whileLayer > 0){
-            basicBlockFactory.outBasicBlock(basicBlock, new Goto()).deliverTo(breakBackFill);
+            basicBlockFactory.outBasicBlock(new Goto()).deliverTo(breakBackFill);
             return true;
         }else{
             errorRecorder.wrongBreak(line);
@@ -40,7 +40,7 @@ public class WhileStmtDealer {
      */
     public boolean newContinue(BasicBlock basicBlock, int line){
         if(whileLayer > 0){
-            basicBlockFactory.outBasicBlock(basicBlock, new Goto()).deliverTo(continueBackFill);
+            basicBlockFactory.outBasicBlock(new Goto()).deliverTo(continueBackFill);
             return true;
         }else {
             errorRecorder.wrongContinue(line);

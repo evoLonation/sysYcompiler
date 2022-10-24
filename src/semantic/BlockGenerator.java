@@ -46,16 +46,16 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
         }else if(blockItem instanceof ReturnNode) {
             ReturnNode returnNode = (ReturnNode)blockItem;
             if(((ReturnNode) blockItem).getExp().isPresent()){
-                if(!isReturn){
+                if(!symbolTable.nowIsReturn()){
                     errorRecorder.voidFuncReturnValue(returnNode.line());
-                    basicBlockFactory.outBasicBlock(currentBasicBlock, new Return());
+                    basicBlockFactory.outBasicBlock(new Return());
                 }else{
                     Exp exp = ((ReturnNode) blockItem).getExp().get();
                     RValue returnValue = new ExpGenerator(currentBasicBlock.getInstruments(), exp).getRValueResult();
-                    basicBlockFactory.outBasicBlock(currentBasicBlock, new Return( returnValue));
+                    basicBlockFactory.outBasicBlock(new Return( returnValue));
                 }
             }else{
-                basicBlockFactory.outBasicBlock(currentBasicBlock, new Return());
+                basicBlockFactory.outBasicBlock(new Return());
             }
             return true;
         }else if(blockItem instanceof Block){
@@ -71,7 +71,7 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
     }
 
     protected final void dealBlock(Block block){
-        BackFill frontBlockBackFill = basicBlockFactory.outBasicBlock(currentBasicBlock, new Goto());
+        BackFill frontBlockBackFill = basicBlockFactory.outBasicBlock(new Goto());
         currentBasicBlock = basicBlockFactory.newBasicBlock();
         frontBlockBackFill.fill(currentBasicBlock);
         symbolTable.newBlock();

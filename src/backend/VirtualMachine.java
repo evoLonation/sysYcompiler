@@ -18,13 +18,51 @@ public class VirtualMachine {
     private String stdout = "";
     private final Scanner scanner;
     private final IntValue[] staticData;
-    private final ValueValue[] stack = new ValueValue[102400];
+//    private final ValueValue[] stack = new ValueValue[102400];
+    private final FuncStack funcStack = new FuncStack(102400);
     private int sp;
     private final Stack<Map<Temp, IntValue>> tempStack = new Stack<>();
 
     private final Stack<ValueValue> paramStack = new Stack<>();
     private final Stack<Function> functionStack = new Stack<>();
 
+
+    static class FuncStack{
+        private final int[] valueStack;
+        private final boolean[] isGlobalStack;
+        private final boolean[] isAddressStack;
+        private final int size;
+
+        public FuncStack(int size) {
+            valueStack = new int[size];
+            isGlobalStack = new boolean[size];
+            isAddressStack = new boolean[size];
+            this.size = size;
+        }
+
+        public ValueValue get(int i){
+            assert i < size;
+            if(isAddressStack[i]){
+                return new Address(valueStack[i], isGlobalStack[i]);
+            }else{
+                return new IntValue(valueStack[i]);
+            }
+        }
+
+        public void set(ValueValue valueValue, int i){
+            assert i < size;
+            if(valueValue instanceof Address){
+                isAddressStack[i] = true;
+                valueStack[i] = ((Address) valueValue).address;
+                isGlobalStack[i] = ((Address) valueValue).isGlobal;
+            }else if(valueValue instanceof IntValue){
+                isAddressStack[i] = false;
+                valueStack[i] = ((IntValue) valueValue).value;
+            }else{
+                throw new SemanticException();
+            }
+        }
+    }
 
 
     private final Module module;
@@ -61,7 +99,7 @@ public class VirtualMachine {
         functionStack.push(function);
         tempStack.push(new HashMap<>());
         for(int i = paramNumber - 1; i >= 0; i--){
-            stack[sp + i] = paramStack.pop();
+            funcStack.set(paramStack.pop(), sp + i);
         }
         run(function.getEntry());
         tempStack.pop();
@@ -86,8 +124,8 @@ public class VirtualMachine {
             }
         }else if(last instanceof Return){
             // main函数时sp为0
-            if(sp > 1) {
-                stack[sp - 1] = ((Return) last).getReturnValue().map(this::getIntValue).orElse(new IntValue(0));
+            if(sp > 0) {
+                funcStack.set(((Return) last).getReturnValue().map(this::getIntValue).orElse(new IntValue(0)), sp - 1);
             }
         }else{
             throw new SemanticException();
@@ -109,7 +147,7 @@ public class VirtualMachine {
             inject(Call.class, call -> {
                 run(call.getFunction(), call.getParamNumber());
                 if(call.getRet().isPresent()){
-                    ValueValue ret = stack[sp + functionStack.peek().getOffset()];
+                    ValueValue ret = funcStack.get(sp + functionStack.peek().getOffset());
                     assert ret instanceof IntValue;
                     saveValueToLValue(call.getRet().get(), (IntValue) ret);
                 }
@@ -159,7 +197,7 @@ public class VirtualMachine {
             if(variable.isGlobal()){
                 staticData[variable.getOffset()] = value;
             }else{
-                stack[sp + variable.getOffset()] = value;
+                funcStack.set(value, sp + variable.getOffset());
             }
         }else if(lValue instanceof Temp) {
             tempStack.peek().put((Temp) lValue, value);
@@ -172,7 +210,7 @@ public class VirtualMachine {
         if(address.isGlobal){
             staticData[address.address] = value;
         }else{
-            stack[address.address] = value;
+            funcStack.set(value, address.address);
         }
     }
 
@@ -187,7 +225,7 @@ public class VirtualMachine {
             if(variable.isGlobal()){
                 return staticData[((Variable) value).getOffset()];
             }else{
-                ValueValue ret = stack[sp + ((Variable) value).getOffset()];
+                ValueValue ret = funcStack.get(sp + ((Variable) value).getOffset());
                 if(ret == null){
                     ret = new IntValue(0);
                 }
@@ -214,7 +252,7 @@ public class VirtualMachine {
                     base = sp + pointerValue.getStaticOffset();
                     break;
                 case pointer:
-                    ValueValue ret = stack[sp + pointerValue.getStaticOffset()];
+                    ValueValue ret = funcStack.get(sp + pointerValue.getStaticOffset());
                     assert ret instanceof Address;
                     base = ((Address) ret).address;
                     isGlobal = ((Address) ret).isGlobal;
@@ -229,7 +267,7 @@ public class VirtualMachine {
         if(address.isGlobal){
             return staticData[address.address];
         }else{
-            return stack[address.address];
+            return funcStack.get(address.address);
         }
     }
 

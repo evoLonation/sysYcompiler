@@ -31,8 +31,7 @@ public class FuncDefGenerator extends Generator{
 
     @Override
     protected void generate() {
-        isReturn = funcDef.isInt();
-        function = basicBlockFactory.newFunction(funcDef.getIdent(), funcDef.isInt());
+        function = basicBlockFactory.newFunction(funcDef.getIdent().getValue());
         symbolTable.newFuncDomain(function, funcDef.getIdent(), funcDef.isInt());
         for(FuncDef.FuncFParam funcFParam : funcDef.getFuncFParams()){
             if(funcFParam instanceof FuncDef.IntFParam){
@@ -55,6 +54,6 @@ public class FuncDefGenerator extends Generator{
         Block block = funcDef.getBlock();
         new FuncBlockGenerator(funcBasicBlock, block);
         symbolTable.outBlock();
-        basicBlockFactory.outFunction(function);
+        basicBlockFactory.outFunction(function, symbolTable.getMaxOffset());
     }
 }

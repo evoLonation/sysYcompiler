@@ -1,47 +1,50 @@
 package midcode;
 
-import lexer.Ident;
 import midcode.instrument.BackFill;
 import midcode.instrument.CondGoto;
 import midcode.instrument.Goto;
 import midcode.instrument.Return;
-import type.SymbolTable;
 
 public class BasicBlockFactory {
 
-    private int notFuncBasicBlockNumber = 0;
+    private int basicBlockNumber = 0;
     private Function nowFunction;
 
-    public Function newFunction(Ident ident, boolean isReturn){
+    private BasicBlock nowBasicBlock;
+
+    public Function newFunction(String symbol){
         assert nowFunction == null;
+        assert nowBasicBlock == null;
         Function ret = new Function();
-        ret.entry = new BasicBlock("function$" + ident.getValue());
+        ret.entry = new BasicBlock("function$" + symbol);
         nowFunction = ret;
+        nowBasicBlock = nowFunction.entry;
         return ret;
     }
 
-    public Function newMainFunction(){
-        assert nowFunction == null;
-        Function ret = new Function();
-        ret.entry = new BasicBlock("function$main");
-        nowFunction = ret;
-        return ret;
+    public Function newMainFunction() {
+        return newFunction("main");
     }
-    public void outFunction(Function function){
-        function.offset = SymbolTable.getInstance().getMaxOffset();
+
+    public void outFunction(Function function, int offset){
+        assert nowFunction != null;
+        assert nowBasicBlock == null;
+        function.offset = offset;
         nowFunction = null;
     }
 
     public BasicBlock newBasicBlock(){
-        BasicBlock newBasicBlock = new BasicBlock("basicBlock$" + ++notFuncBasicBlockNumber);
+        BasicBlock newBasicBlock = new BasicBlock("basicBlock$" + ++basicBlockNumber);
         nowFunction.basicBlocks.add(newBasicBlock);
+        nowBasicBlock = newBasicBlock;
         return newBasicBlock;
     }
 
-    public BackFill outBasicBlock(BasicBlock basicBlock, Goto outCode){
-        basicBlock.lastInstrument = outCode;
+    public BackFill outBasicBlock(Goto outCode){
+        nowBasicBlock.lastInstrument = outCode;
         BackFill backFill = new BackFill();
         backFill.add(outCode);
+        nowBasicBlock = null;
         return backFill;
     }
 
@@ -55,17 +58,19 @@ public class BasicBlockFactory {
         }
     }
 
-    public CondGotoBackFill outBasicBlock(BasicBlock basicBlock, CondGoto outCode){
-        basicBlock.lastInstrument = outCode;
+    public CondGotoBackFill outBasicBlock(CondGoto outCode){
+        nowBasicBlock.lastInstrument = outCode;
         BackFill trueBackFill = new BackFill();
         BackFill falseBackFill = new BackFill();
         trueBackFill.add(outCode, true);
         falseBackFill.add(outCode, false);
+        nowBasicBlock = null;
         return new CondGotoBackFill(trueBackFill, falseBackFill);
     }
 
-    public void outBasicBlock(BasicBlock basicBlock, Return outCode){
-        basicBlock.lastInstrument = outCode;
+    public void outBasicBlock(Return outCode){
+        nowBasicBlock.lastInstrument = outCode;
+        nowBasicBlock = null;
     }
 
     private BasicBlockFactory() {}

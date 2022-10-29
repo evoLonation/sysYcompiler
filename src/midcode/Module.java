@@ -1,11 +1,12 @@
 package midcode;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Module implements MidCode{
-    public int[] staticData;
-    public Function mainFunc;
-    public List<Function> functions;
+     int[] staticData;
+     Function mainFunc;
+     List<Function> functions = new ArrayList<>();
 
 
     @Override
@@ -35,4 +36,5 @@ public class Module implements MidCode{
     public List<Function> getFunctions() {
         return functions;
     }
+
 }

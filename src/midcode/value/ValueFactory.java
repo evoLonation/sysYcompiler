@@ -1,10 +1,10 @@
 package midcode.value;
 
-import lexer.Ident;
-import type.ArrayType;
-import type.IntType;
-import type.PointerType;
-import type.SymbolTable;
+import frontend.lexer.Ident;
+import frontend.type.ArrayType;
+import frontend.type.IntType;
+import frontend.type.PointerType;
+import frontend.type.SymbolTable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +20,7 @@ public class ValueFactory {
     }
 
     private final Map<SymbolTable.VariableInfo, Integer> numberMap = new HashMap<>();
+    // todo need clean
     private final Map<SymbolTable.VariableInfo, Variable> variableMap = new HashMap<>();
 
     /**
@@ -41,23 +42,35 @@ public class ValueFactory {
         return new PointerValue(symbol + "#" + variableInfo.getLayer(), offset, variableInfo.isGlobal(), variableInfo.getOffset(), pointerType);
     }
 
+
+    // todo ssa
+    // now is not ssa
+    // the same local variable will return the same variable object
     public Variable newVariable(Ident ident) {
         String symbol = ident.getValue();
         Optional<SymbolTable.VariableInfo> optionalVariableInfo = symbolTable.getVariable(ident);
         assert optionalVariableInfo.isPresent();
         SymbolTable.VariableInfo variableInfo = optionalVariableInfo.get();
         assert variableInfo.getType() instanceof IntType;
-        int number;
-        if(numberMap.containsKey(variableInfo)){
-            number = numberMap.get(variableInfo) + 1;
+        if(variableMap.containsKey(variableInfo)){
+            return variableMap.get(variableInfo);
         }else{
-            number = 1;
+            Variable ret = new Variable(symbol + "#" + variableInfo.getLayer(), variableInfo.isGlobal(), variableInfo.getOffset());
+            variableMap.put(variableInfo, ret);
+            return ret;
         }
-        numberMap.replace(variableInfo, number);
-        Variable ret = new Variable(symbol + "%" + number + "#" + variableInfo.getLayer(), variableInfo.isGlobal(), variableInfo.getOffset());
-        variableMap.replace(variableInfo, ret);
-        return ret;
+//        int number;
+//        if(numberMap.containsKey(variableInfo)){
+//            number = numberMap.get(variableInfo) + 1;
+//        }else{
+//            number = 1;
+//        }
+//        numberMap.put(variableInfo, number);
+//        Variable ret = new Variable(symbol + "#" + variableInfo.getLayer() + "%" + number, variableInfo.isGlobal(), variableInfo.getOffset());
+//        variableMap.put(variableInfo, ret);
+//        return ret;
     }
+
 
     public Variable getNewestVariable(Ident ident){
         Optional<SymbolTable.VariableInfo> optionalVariableInfo = symbolTable.getVariable(ident);

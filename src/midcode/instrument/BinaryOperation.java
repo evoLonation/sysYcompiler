@@ -3,9 +3,10 @@ package midcode.instrument;
 import common.SemanticException;
 import midcode.value.LValue;
 import midcode.value.RValue;
-import midcode.value.Temp;
-import parser.nonterminal.exp.BinaryOp;
+import frontend.parser.nonterminal.exp.BinaryOp;
 
+
+// todo 实际上没有||和&&，甚至==或者!=
 /**
  * 考虑到实际机器码的计算是将结果放在寄存器，因此result限制为Temp
  */
@@ -13,9 +14,10 @@ public class BinaryOperation implements Instrument{
     private RValue left;
     private RValue right;
     private BinaryOp op;
-    private Temp result;
+    // todo change to lvalue
+    private LValue result;
 
-    public BinaryOperation(RValue left, RValue right, BinaryOp op, Temp result) {
+    public BinaryOperation(RValue left, RValue right, BinaryOp op, LValue result) {
         this.left = left;
         this.right = right;
         this.op = op;
@@ -56,7 +58,7 @@ public class BinaryOperation implements Instrument{
         return op;
     }
 
-    public Temp getResult() {
+    public LValue getResult() {
         return result;
     }
 }

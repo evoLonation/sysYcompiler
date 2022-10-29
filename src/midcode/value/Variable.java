@@ -20,4 +20,5 @@ public class Variable extends LValue{
     public int getOffset() {
         return offset;
     }
+
 }

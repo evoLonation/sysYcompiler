@@ -2,7 +2,6 @@ package midcode;
 
 import midcode.instrument.Instrument;
 import midcode.instrument.Jump;
-import type.SymbolTable;
 
 import java.util.ArrayList;
 import java.util.List;

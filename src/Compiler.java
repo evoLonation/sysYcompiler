@@ -1,13 +1,14 @@
+import backend.Generator;
+import backend.MipsSegment;
 import common.SemanticException;
-import error.Error;
-import error.ErrorRecorder;
-import lexer.Lexer;
-import lexer.Terminal;
+import frontend.error.Error;
+import frontend.error.ErrorRecorder;
+import frontend.lexer.Lexer;
+import frontend.lexer.Terminal;
 import midcode.Module;
-import backend.VirtualMachine;
-import parser.Parser;
-import parser.nonterminal.CompUnit;
-import semantic.ModuleGenerator;
+import frontend.parser.Parser;
+import frontend.parser.nonterminal.CompUnit;
+import frontend.semantic.ModuleGenerator;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -75,12 +76,13 @@ public class Compiler {
         String inputFile = "input.txt";
         String outputFile = "pcoderesult.txt";
         String codeFile = "midcode.txt";
+        String mipsFile = "mips.txt";
         ParserResult result = parser(lexer(srcFile));
         Module module = new ModuleGenerator(result.compUnit).generate();
         if(ErrorRecorder.getInstance().getErrorSet().size() != 0){
             for(Error error : ErrorRecorder.getInstance().getErrorSet()){
                 System.out.println(error.detail());
-//            str.append(error.detail()).append("\n");
+//            str.append(frontend.error.detail()).append("\n");
             }
             throw new SemanticException();
 
@@ -88,26 +90,29 @@ public class Compiler {
         if(isGenerateMidCode){
             printAndWrite(codeFile, module.print());
         }
-        VirtualMachine virtualMachine;
-        if(isStdin){
-            virtualMachine = new VirtualMachine(module);
-        }else{
-            String input = "";
-            for(Character c : getCharList(inputFile)){
-                input += c;
-            }
-            virtualMachine = new VirtualMachine(module, input);
-        }
+//        VirtualMachine virtualMachine;
+//        if(isStdin){
+//            virtualMachine = new VirtualMachine(module);
+//        }else{
+//            String input = "";
+//            for(Character c : getCharList(inputFile)){
+//                input += c;
+//            }
+//            virtualMachine = new VirtualMachine(module, input);
+//        }
 
-        virtualMachine.run();
+//        virtualMachine.run();
 
-        printAndWrite(outputFile, virtualMachine.getStdout());
+//        printAndWrite(outputFile, virtualMachine.getStdout());
+        MipsSegment mipsSegment = new MipsSegment();
+        new Generator(module, mipsSegment).generate();
+        printAndWrite(mipsFile, mipsSegment.print());
     }
 
     static void lab4(){
         String inputFile = "testfile.txt";
         String outputFile = "output.txt";
-        String errorFile = "error.txt";
+        String errorFile = "frontend.error.txt";
         ParserResult result = parser(lexer(inputFile));
         Module module = new ModuleGenerator(result.compUnit).generate();
         if(ErrorRecorder.getInstance().getErrorSet().size() != 0){
@@ -117,7 +122,7 @@ public class Compiler {
         ErrorRecorder errorRecorder = ErrorRecorder.getInstance();
         for(Error error : errorRecorder.getErrorSet()){
             str.append(error.simple()).append("\n");
-//            str.append(error.detail()).append("\n");
+//            str.append(frontend.error.detail()).append("\n");
         }
         printAndWrite(outputFile, module.print());
         printAndWrite(errorFile, str.toString());

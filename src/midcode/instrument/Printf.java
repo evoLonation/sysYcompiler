@@ -1,6 +1,6 @@
 package midcode.instrument;
 
-import lexer.FormatString;
+import frontend.lexer.FormatString;
 import midcode.value.RValue;
 
 import java.util.List;

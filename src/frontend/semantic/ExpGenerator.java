@@ -14,6 +14,7 @@ import util.Execution;
 import java.util.Optional;
 
 /**
+ * 没有||和&&的exp
  * 保证返回的rvalue取值操作得到的是exp的值。
  * 1、要作为调用函数的参数。这时LVal不能是指向常量数组的，类型为指针的PointerType。
  * 2、用于赋值等等。这时得到的Type必须是IntType。
@@ -59,12 +60,12 @@ public class ExpGenerator extends InstrumentGenerator{
     private static class TempResult extends Result{
         public PointerType pointerType;
         public Ident ident;
-        public RValue offset;
+        public Exp offsetExp;
 
-        public TempResult(PointerType pointerType, Ident ident, RValue offset) {
+        public TempResult(PointerType pointerType, Ident ident, Exp offsetExp) {
             this.pointerType = pointerType;
             this.ident = ident;
-            this.offset = offset;
+            this.offsetExp = offsetExp;
         }
     }
 
@@ -76,7 +77,7 @@ public class ExpGenerator extends InstrumentGenerator{
     Result generate() {
         Result result = execution.exec(exp);
         if(result instanceof TempResult){
-            PointerValue pointerValue = valueFactory.newPointer(((TempResult) result).ident, ((TempResult) result).offset);
+            PointerValue pointerValue = valueFactory.newPointer(((TempResult) result).ident, new ExpGenerator(((TempResult) result).offsetExp).generate().getRValueResult());
             result = new PointerResult(pointerValue, ((TempResult) result).pointerType);
         }
         return result;
@@ -87,14 +88,12 @@ public class ExpGenerator extends InstrumentGenerator{
         @Override
         public void inject() {
             inject(BinaryExp.class,  exp -> {
-
                 Result result1 = exec(exp.getExp1());
-                Result result2 = exec(exp.getExp2());
-                BinaryOp op = exp.getOp();
-
-                assert result2 instanceof RValueResult;
-                RValue value2 = ((RValueResult) result2).rValue;
                 if(result1 instanceof RValueResult){
+                    Result result2 = exec(exp.getExp2());
+                    BinaryOperation.BinaryOp op = mapOp(exp.getOp());
+                    assert result2 instanceof RValueResult;
+                    RValue value2 = ((RValueResult) result2).rValue;
                     RValue value1 = ((RValueResult) result1).rValue;
                     if(value1 instanceof Constant && value2 instanceof Constant){
                         return new RValueResult(new Constant(compute(((Constant) value1).getNumber(), op, ((Constant) value2).getNumber())));
@@ -104,19 +103,17 @@ public class ExpGenerator extends InstrumentGenerator{
                         return new RValueResult(result);
                     }
                 }else if(result1 instanceof TempResult) {
-                    //todo 指针减去int？
+                    BinaryOp op = exp.getOp();
                     assert op == BinaryOp.PLUS || op == BinaryOp.MINU;
                     PointerType lvalType = ((TempResult) result1).pointerType;
-                    RValue offset = ((TempResult) result1).offset;
-                    Temp newOffset = valueFactory.newTemp();
+                    Exp offsetExp = ((TempResult) result1).offsetExp;
+                    Exp newOffsetExp;
                     if(lvalType.getSecondLen().isPresent()){
-                        Temp temp1 = valueFactory.newTemp();
-                        addInstrument(new BinaryOperation(value2, new Constant(lvalType.getSecondLen().get()), BinaryOp.MULT, temp1));
-                        addInstrument(new BinaryOperation(offset, temp1, BinaryOp.PLUS, newOffset));
+                        newOffsetExp = new BinaryExp(offsetExp, op, new BinaryExp(new Number(lvalType.getSecondLen().get()), BinaryOp.MULT, exp.getExp2()));
                     }else{
-                        addInstrument(new BinaryOperation(offset, value2, BinaryOp.PLUS, newOffset));
+                        newOffsetExp = new BinaryExp(offsetExp, op, exp.getExp2());
                     }
-                    return new TempResult(lvalType, ((TempResult) result1).ident, newOffset);
+                    return new TempResult(lvalType, ((TempResult) result1).ident, newOffsetExp);
                 }else{
                     throw new SemanticException();
                 }
@@ -125,7 +122,7 @@ public class ExpGenerator extends InstrumentGenerator{
 
             inject(UnaryExp.class,  exp -> {
                 Result result = exec(exp.getExp());
-                UnaryOp op = exp.getOp();
+                UnaryOperation.UnaryOp op = mapOp(exp.getOp());
                 assert result instanceof RValueResult;
                 RValue value = ((RValueResult) result).rValue;
                 if(value instanceof Constant){
@@ -159,7 +156,7 @@ public class ExpGenerator extends InstrumentGenerator{
                     addInstrument(new Load(ret, ((LValGenerator.IntPointerResult) lValResult).pointerValue) );
                     return new RValueResult(ret);
                 }else if(lValResult instanceof LValGenerator.ArrayPointerResult){
-                    return new TempResult(((LValGenerator.ArrayPointerResult) lValResult).pointerType, ((LValGenerator.ArrayPointerResult) lValResult).ident, ((LValGenerator.ArrayPointerResult) lValResult).offset);
+                    return new TempResult(((LValGenerator.ArrayPointerResult) lValResult).pointerType, ((LValGenerator.ArrayPointerResult) lValResult).ident, ((LValGenerator.ArrayPointerResult) lValResult).offsetExp);
                 }else{
                     throw new SemanticException();
                 }
@@ -167,7 +164,32 @@ public class ExpGenerator extends InstrumentGenerator{
         }
     };
 
-    private int compute(int a, BinaryOp op, int b){
+    private UnaryOperation.UnaryOp mapOp(UnaryOp unaryOp){
+        switch (unaryOp){
+            case NOT: return UnaryOperation.UnaryOp.NOT;
+            case MINU: return UnaryOperation.UnaryOp.MINU;
+            case PLUS: return UnaryOperation.UnaryOp.PLUS;
+        }
+        throw new SemanticException();
+    }
+    private BinaryOperation.BinaryOp mapOp(BinaryOp binaryOp){
+        switch (binaryOp){
+            case PLUS: return BinaryOperation.BinaryOp.PLUS;
+            case MINU: return BinaryOperation.BinaryOp.MINU;
+            case EQL: return BinaryOperation.BinaryOp.EQL;
+            case NEQ: return BinaryOperation.BinaryOp.NEQ;
+            case MULT: return BinaryOperation.BinaryOp.MULT;
+            case MOD: return BinaryOperation.BinaryOp.MOD;
+            case LSS: return BinaryOperation.BinaryOp.LSS;
+            case DIV: return BinaryOperation.BinaryOp.DIV;
+            case GRE: return BinaryOperation.BinaryOp.GRE;
+            case GEQ: return BinaryOperation.BinaryOp.GEQ;
+            case LEQ: return BinaryOperation.BinaryOp.LEQ;
+        }
+        throw new SemanticException();
+    }
+
+    private int compute(int a, BinaryOperation.BinaryOp op, int b){
         switch (op){
             case PLUS: return a + b;
             case MINU: return a - b;
@@ -179,16 +201,16 @@ public class ExpGenerator extends InstrumentGenerator{
             case GEQ: return a >= b ? 1 : 0;
             case LSS: return a < b ? 1 : 0;
             case NEQ: return a != b ? 1 : 0;
-            case AND: return a != 0 && b != 0 ? 1 : 0;
-            case OR: return a != 0 || b != 0 ? 1 : 0;
             case EQL: return a == b ? 1 : 0;
             default: throw new SemanticException();
         }
     }
-    private boolean toBool(int a ){
+
+    private boolean toBool(int a){
         return a != 0;
     }
-    private int compute(int a, UnaryOp op){
+
+    private int compute(int a, UnaryOperation.UnaryOp op){
         switch (op){
             case MINU: a = - a; break;
             case NOT: a = a != 0 ? 0 : 1; break;

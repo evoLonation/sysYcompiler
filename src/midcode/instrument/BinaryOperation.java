@@ -3,19 +3,27 @@ package midcode.instrument;
 import common.SemanticException;
 import midcode.value.LValue;
 import midcode.value.RValue;
-import frontend.parser.nonterminal.exp.BinaryOp;
 
 
-// todo 实际上没有||和&&，甚至==或者!=
-/**
- * 考虑到实际机器码的计算是将结果放在寄存器，因此result限制为Temp
- */
 public class BinaryOperation implements Instrument{
     private RValue left;
     private RValue right;
     private BinaryOp op;
-    // todo change to lvalue
     private LValue result;
+
+    public enum BinaryOp {
+        PLUS,
+        MINU,
+        MULT,
+        DIV,
+        MOD,
+        LSS,
+        LEQ,
+        GRE,
+        GEQ,
+        EQL,
+        NEQ,
+    }
 
     public BinaryOperation(RValue left, RValue right, BinaryOp op, LValue result) {
         this.left = left;
@@ -34,8 +42,6 @@ public class BinaryOperation implements Instrument{
             case GEQ: opStr = ">="; break;
             case GRE: opStr = ">"; break;
             case EQL: opStr = "=="; break;
-            case OR: opStr = "||"; break;
-            case AND: opStr = "&&"; break;
             case DIV: opStr = "/"; break;
             case LSS: opStr = "<"; break;
             case MOD: opStr = "%"; break;

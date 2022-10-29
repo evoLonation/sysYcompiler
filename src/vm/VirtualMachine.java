@@ -297,7 +297,7 @@ public class VirtualMachine {
         return stdout;
     }
 
-    private int compute(int a, BinaryOp op, int b){
+    private int compute(int a, BinaryOperation.BinaryOp op, int b){
         switch (op){
             case PLUS: return a + b;
             case MINU: return a - b;
@@ -309,13 +309,11 @@ public class VirtualMachine {
             case GEQ: return a >= b ? 1 : 0;
             case LSS: return a < b ? 1 : 0;
             case NEQ: return a != b ? 1 : 0;
-            case AND: return a != 0 && b != 0 ? 1 : 0;
-            case OR: return a != 0 || b != 0 ? 1 : 0;
             case EQL: return a == b ? 1 : 0;
             default: throw new SemanticException();
         }
     }
-    private int compute(int a, UnaryOp op){
+    private int compute(int a, UnaryOperation.UnaryOp op){
         switch (op){
             case MINU: a = - a; break;
             case NOT: a = a != 0 ? 0 : 1; break;

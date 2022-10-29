@@ -72,12 +72,12 @@ public class LValGenerator extends InstrumentGenerator {
     public static class ArrayPointerResult extends Result{
         public PointerType pointerType;
         public Ident ident;
-        public RValue offset;
+        public Exp offsetExp;
 
-        ArrayPointerResult(PointerType pointerType, Ident ident, RValue offset) {
+        ArrayPointerResult(PointerType pointerType, Ident ident, Exp offsetExp) {
             this.pointerType = pointerType;
             this.ident = ident;
-            this.offset = offset;
+            this.offsetExp = offsetExp;
         }
     }
 
@@ -111,16 +111,24 @@ public class LValGenerator extends InstrumentGenerator {
                 if(((PointerType) type).getSecondLen().isPresent()){
                     int secondLen;
                     secondLen = ((PointerType) type).getSecondLen().get();
-                    Exp exp1 = exps.size() >= 1 ? exps.get(0) : new Number(0);
-                    Exp exp2 = exps.size() == 2 ? exps.get(1) : new Number(0);
-
                     switch (exps.size()){
-                        case 0 : resultType = new PointerType(secondLen); break;
-                        case 1 : resultType = new PointerType(); break;
-                        case 2 : resultType = new IntType(); break;
+                        case 0 : {
+                            resultType = new PointerType(secondLen);
+                            offsetExp = new Number(0);
+                            break;
+                        }
+                        case 1 : {
+                            resultType = new PointerType();
+                            offsetExp =  new BinaryExp(exps.get(0), BinaryOp.MULT, new Number(secondLen));
+                            break;
+                        }
+                        case 2 : {
+                            resultType = new IntType();
+                            offsetExp =  new BinaryExp(new BinaryExp(exps.get(0), BinaryOp.MULT, new Number(secondLen)), BinaryOp.PLUS, exps.get(1));
+                            break;
+                        }
+                        default:throw new SemanticException();
                     }
-
-                    offsetExp =  new BinaryExp(new BinaryExp(exp1, BinaryOp.MULT, new Number(secondLen)), BinaryOp.PLUS, exp2);
                 }else{
                     assert exps.size() <= 1;
                     if(exps.size() == 0){
@@ -131,13 +139,14 @@ public class LValGenerator extends InstrumentGenerator {
                         offsetExp = exps.get(0);
                     }
                 }
-                RValue offset = new ExpGenerator(offsetExp).generate().getRValueResult();
+
                 /* 可能有三种情况：
                  * 1、type是int，都是常量
                  * 2、type是int，但是有一个不是常量
                  * 3、type不是int，这时数组必须不是常量
                  */
                 if(resultType instanceof IntType) {
+                    RValue offset = new ExpGenerator(offsetExp).generate().getRValueResult();
                     if(offset instanceof Constant && info.getConstArray().isPresent() ){
                         int[] constValue = info.getConstArray().get();
                         result = new ConstantResult(new Constant(constValue[((Constant) offset).getNumber()]));
@@ -146,7 +155,7 @@ public class LValGenerator extends InstrumentGenerator {
                     }
                 } else {
                     assert !info.getConstArray().isPresent();
-                    result = new ArrayPointerResult((PointerType) resultType, ident, offset);
+                    result = new ArrayPointerResult((PointerType) resultType, ident, offsetExp);
                 }
             }else{
                 throw new SemanticException();

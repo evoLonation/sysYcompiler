@@ -4,11 +4,15 @@ import midcode.instrument.BackFill;
 import midcode.BasicBlock;
 import midcode.BasicBlockFactory;
 import midcode.instrument.CondGoto;
+import midcode.instrument.Goto;
+import midcode.value.Constant;
+import midcode.value.LValue;
 import midcode.value.RValue;
 import frontend.parser.nonterminal.exp.BinaryExp;
 import frontend.parser.nonterminal.exp.BinaryOp;
 import frontend.parser.nonterminal.exp.Exp;
-// todo 添加对于or和and的编译期常量计算
+import util.Execution;
+
 public class CondGenerator extends BasicBlockGenerator {
     private final Exp exp;
 
@@ -19,7 +23,7 @@ public class CondGenerator extends BasicBlockGenerator {
     private final BackFill trueBackFill = new BackFill();
     private final BackFill falseBackFill = new BackFill();
 
-    public static class CondBackFill{
+    public static class CondBackFill {
         public BackFill trueBackFill;
         public BackFill falseBackFill;
 
@@ -56,10 +60,20 @@ public class CondGenerator extends BasicBlockGenerator {
 
     private void normalGenerate(Exp exp){
         RValue expResult = new ExpGenerator(exp).generate().getRValueResult();
-        CondGoto jump = new CondGoto(expResult);
-        BasicBlockFactory.CondGotoBackFill result = basicBlockFactory.outBasicBlock(jump);
-        result.trueBackFill.deliverTo(trueBackFill);
-        result.falseBackFill.deliverTo(falseBackFill);
+        if(expResult instanceof Constant){
+            BackFill result = basicBlockFactory.outBasicBlock(new Goto());
+            if(((Constant) expResult).getNumber() == 0){
+                result.deliverTo(falseBackFill);
+            }else{
+                result.deliverTo(trueBackFill);
+            }
+        }else{
+            assert expResult instanceof LValue;
+            CondGoto jump = new CondGoto((LValue) expResult);
+            BasicBlockFactory.CondGotoBackFill result = basicBlockFactory.outBasicBlock(jump);
+            result.falseBackFill.deliverTo(falseBackFill);
+            result.trueBackFill.deliverTo(trueBackFill);
+        }
     }
 
 }

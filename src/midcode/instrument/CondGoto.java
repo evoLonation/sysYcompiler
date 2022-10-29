@@ -1,14 +1,15 @@
 package midcode.instrument;
 
 import midcode.BasicBlock;
+import midcode.value.LValue;
 import midcode.value.RValue;
 
 public class CondGoto implements Jump{
     BasicBlock trueBasicBlock;
     BasicBlock falseBasicBlock;
-    private final RValue cond;
+    private final LValue cond;
 
-    public CondGoto(RValue cond) {
+    public CondGoto(LValue cond) {
         this.cond = cond;
     }
 
@@ -28,7 +29,7 @@ public class CondGoto implements Jump{
         return falseBasicBlock;
     }
 
-    public RValue getCond() {
+    public LValue getCond() {
         return cond;
     }
 

@@ -17,5 +17,6 @@ public class Generator {
         LocalActive localActive = new LocalActive(basicBlock);
         RegisterAllocator registerAllocator = new RegisterAllocator(basicBlock, localActive, mipsSegment, module.getMainFunc().getOffset());
         new BasicBlockGenerator(basicBlock, mipsSegment, registerAllocator).generate();
+
     }
 }

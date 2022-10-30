@@ -1,59 +1,63 @@
 package backend;
 
-import midcode.instrument.Assignment;
-import midcode.instrument.BinaryOperation;
-import midcode.instrument.Instrument;
-import midcode.instrument.UnaryOperation;
+import midcode.MidCode;
+import midcode.instrument.*;
 import midcode.value.LValue;
+import midcode.value.PointerValue;
 import midcode.value.RValue;
-import midcode.value.Value;
 import util.Execution;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ValueGetter {
     // repeatable
-    List<RValue> getAllValues(Instrument instrument){
-        return allValueExecution.exec(instrument);
+    List<RValue> getAllValues(MidCode midCode){
+        List<RValue> ret = new ArrayList<>(useValueExecution.exec(midCode));
+        ret.addAll(defValueExecution.exec(midCode).map(Collections::singletonList).orElse(new ArrayList<>()));
+        return ret;
     }
-    List<RValue> getUseValues(Instrument instrument){
-        return useValueExecution.exec(instrument);
+    List<RValue> getUseValues(MidCode midCode){
+        return useValueExecution.exec(midCode);
     }
-    Optional<LValue> getDefValue(Instrument instrument){
-        return defValueExecution.exec(instrument);
+    Optional<LValue> getDefValue(MidCode midCode){
+        return defValueExecution.exec(midCode);
     }
 
-    private final Execution<Instrument, List<RValue>> allValueExecution = new Execution<Instrument, List<RValue>>() {
+    private final Execution<MidCode, List<RValue>> useValueExecution = new Execution<MidCode, List<RValue>>() {
         @Override
         public void inject() {
-            inject(BinaryOperation.class , param -> Arrays.asList(param.getLeft(), param.getRight(), param.getResult()));
-            inject(UnaryOperation.class, param -> Arrays.asList(param.getValue(), param.getResult()));
-            inject(Assignment.class, param -> Arrays.asList(param.getLeft(), param.getRight()));
-        }
-    };
-    private final Execution<Instrument, List<RValue>> useValueExecution = new Execution<Instrument, List<RValue>>() {
-        @Override
-        public void inject() {
+            inject(param -> new ArrayList<>());
             inject(BinaryOperation.class , param -> Arrays.asList(param.getLeft(), param.getRight()));
             inject(UnaryOperation.class, param -> Collections.singletonList(param.getValue()));
             inject(Assignment.class, param -> Collections.singletonList(param.getRight()));
+            inject(Return.class, param -> param.getReturnValue().map(Collections::singletonList).orElse(new ArrayList<>()));
+            inject(CondGoto.class, param -> Collections.singletonList(param.getCond()));
+            inject(Call.class, param ->
+               param.getParams().stream().map(value -> {
+                   if (value instanceof RValue) {
+                       return (RValue) value;
+                   } else {
+                       assert value instanceof PointerValue;
+                       return ((PointerValue) value).getOffset();
+                   }
+               }).collect(Collectors.toList())
+            );
         }
     };
-    private final Execution<Instrument, Optional<LValue>> defValueExecution = new Execution<Instrument, Optional<LValue>>() {
+    private final Execution<MidCode, Optional<LValue>> defValueExecution = new Execution<MidCode, Optional<LValue>>() {
         @Override
         public void inject() {
+            inject(param -> Optional.empty());
             inject(BinaryOperation.class , param -> Optional.of(param.getResult()));
             inject(UnaryOperation.class, param -> Optional.of(param.getResult()));
             inject(Assignment.class, param -> Optional.of(param.getLeft()));
+            inject(Call.class, param -> param.getRet().map(value -> (LValue) value));
         }
     };
 
 
     private ValueGetter() {
-        allValueExecution.inject();
         useValueExecution.inject();
         defValueExecution.inject();
     }

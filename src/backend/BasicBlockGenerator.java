@@ -3,9 +3,7 @@ package backend;
 import common.SemanticException;
 import midcode.BasicBlock;
 import midcode.instrument.*;
-import midcode.value.Constant;
-import midcode.value.LValue;
-import midcode.value.RValue;
+import midcode.value.*;
 import util.Execution;
 import util.VoidExecution;
 
@@ -18,18 +16,26 @@ public class BasicBlockGenerator {
     private final BasicBlock basicBlock;
     private final MipsSegment mipsSegment;
     private final RegisterAllocator registerAllocator;
+    private int paramOffset = 0;
 
     public BasicBlockGenerator(BasicBlock basicBlock, MipsSegment mipsSegment, RegisterAllocator registerAllocator) {
         this.basicBlock = basicBlock;
         this.mipsSegment = mipsSegment;
         this.registerAllocator = registerAllocator;
         instrumentExecution.inject();
+        jumpExecution.inject();
     }
 
     public void generate(){
+        mipsSegment.addInstrument(basicBlock.getName() + ": ");
+        mipsSegment.addInstrument("sw $ra, 4($sp)");
         for(Instrument instrument : basicBlock.getInstruments()){
             instrumentExecution.exec(instrument);
         }
+        // 结束时对于所有没有在自己的内存中的，存在内存中
+        registerAllocator.saveAllVariable();
+        // 然后生成跳转指令
+        jumpExecution.exec(basicBlock.getLastInstrument());
     }
 
 
@@ -118,17 +124,55 @@ public class BasicBlockGenerator {
                 }
             });
 
+            inject(Call.class, param -> {
+                int index = 0;
+                for(Value value : param.getParams()){
+                    RegisterAllocator.Register register;
+                    if(value instanceof PointerValue){
+                        register = registerAllocator.getPointerValue((PointerValue) value, param);
+                    }else{
+                        register = registerAllocator.getFactorReg((LValue) value, param);
+                        registerAllocator.loadLValue((LValue) value, register);
+                    }
+                    registerAllocator.storeParam(index, register);
+                    index ++;
+                }
+                registerAllocator.pushSp();
+                mipsSegment.addInstrument(String.format("jal %s", param.getFunction().getEntry().getName()));
+                registerAllocator.popSp();
+                param.getRet().ifPresent(temp -> {
+                    RegisterAllocator.Register register = registerAllocator.getResultReg(temp, new ArrayList<>(), param);
+                    registerAllocator.clearReg(register);
+                    registerAllocator.defLValue(temp, register);
+                    mipsSegment.addInstrument(String.format("addi %s, $v0, 0", register.print()));
+                });
+            });
+
+
         }
     };
 
 
-    private final Execution<Jump, String> jumpExecution = new Execution<Jump, String>() {
+    private final VoidExecution<Jump> jumpExecution = new VoidExecution<Jump>() {
         @Override
         public void inject() {
-            inject(param -> null);
-            inject(Goto.class, go -> "j" + go.getBasicBlock().getName());
-            inject(CondGoto.class, go ->{
-                return null;
+            inject(param -> {});
+            inject(Goto.class, go -> mipsSegment.addInstrument("j " + go.getBasicBlock().getName()));
+            inject(CondGoto.class, go -> {
+                mipsSegment.addInstrument(String.format("bne %s, $0, %s", registerAllocator.findLValue(go.getCond(), go), go.getTrueBasicBlock().getName()));
+                mipsSegment.addInstrument(String.format("j %s", go.getFalseBasicBlock().getName()));
+            });
+            inject(Return.class, param -> {
+                param.getReturnValue().ifPresent(value -> {
+                    if(value instanceof Constant){
+                        mipsSegment.addInstrument(String.format("li $v0, %d", ((Constant) value).getNumber()));
+                    }else{
+                        assert value instanceof LValue;
+                        mipsSegment.addInstrument(String.format("addi $v0, %s, $0", registerAllocator.findLValue((LValue) value, param).print()));
+                    }
+                });
+                mipsSegment.addInstrument("lw %ra, 4($sp)");
+                mipsSegment.addInstrument("jr $ra");
             });
         }
     };

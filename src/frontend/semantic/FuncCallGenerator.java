@@ -8,6 +8,7 @@ import frontend.parser.nonterminal.exp.*;
 import frontend.parser.nonterminal.exp.Number;
 import frontend.type.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,6 +34,7 @@ public class FuncCallGenerator extends InstrumentGenerator{
             if(funcType.getParamNumber() != exps.size()){
                 errorRecorder.paramNumNotMatch(ident.line(), ident.getValue(), funcType.getParamNumber(), exps.size());
             }
+            List<Value> params = new ArrayList<>();
             for(int i = 0; i < funcType.getParamNumber(); i++){
                 Exp exp;
                 if(exps.size() <= i){
@@ -46,23 +48,26 @@ public class FuncCallGenerator extends InstrumentGenerator{
                     if(!paramType.match(new IntType())){
                         errorRecorder.paramTypeNotMatch(ident.line(), ident.getValue(), paramType, new IntType());
                     }
-                    addInstrument(new Param(((ExpGenerator.RValueResult) expResult).rValue));
+                    params.add(((ExpGenerator.RValueResult) expResult).rValue);
+//                    addInstrument(new Param(((ExpGenerator.RValueResult) expResult).rValue));
                 }else if(expResult instanceof ExpGenerator.PointerResult){
                     if(!paramType.match(((ExpGenerator.PointerResult) expResult).type)){
                         errorRecorder.paramTypeNotMatch(ident.line(), ident.getValue(), paramType, ((ExpGenerator.PointerResult) expResult).type);
                     }
-                    addInstrument(new Param(((ExpGenerator.PointerResult) expResult).value));
+                    params.add(((ExpGenerator.PointerResult) expResult).value);
+//                    addInstrument(new Param(((ExpGenerator.PointerResult) expResult).value));
                 }else{
                     errorRecorder.paramTypeNotMatch(ident.line(), ident.getValue(), paramType);
-                    addInstrument(new Param(new Constant(0)));
+                    params.add(new Constant(0));
+//                    addInstrument(new Param(new Constant(0)));
                 }
             }
             if(funcType.isReturn()){
                 Temp ret = valueFactory.newTemp();
-                addInstrument(new Call(function, exps.size(), ret));
+                addInstrument(new Call(function, params, ret));
                 result = ret;
-            }else{
-                addInstrument(new Call(function, exps.size()));
+            } else {
+                addInstrument(new Call(function, params));
             }
         }
         return Optional.ofNullable(result);

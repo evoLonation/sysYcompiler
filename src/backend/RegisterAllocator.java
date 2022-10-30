@@ -2,13 +2,12 @@ package backend;
 
 import common.SemanticException;
 import midcode.BasicBlock;
+import midcode.MidCode;
 import midcode.instrument.Assignment;
 import midcode.instrument.BinaryOperation;
+import midcode.instrument.Call;
 import midcode.instrument.Instrument;
-import midcode.value.LValue;
-import midcode.value.RValue;
-import midcode.value.Temp;
-import midcode.value.Variable;
+import midcode.value.*;
 import util.Execution;
 
 import java.util.*;
@@ -17,12 +16,18 @@ import java.util.*;
 public class RegisterAllocator {
     private final LocalActive localActive;
     private final MipsSegment mipsSegment;
-    private final ValueGetter valueGetter = ValueGetter.getInstance();
 
     private static final int regNum = 5;
     private final Map<Register, Set<LValue>> registerDescriptors = new HashMap<>();
     private final Map<LValue, AddressDescriptor> addressDescriptors = new HashMap<>();
+    private final Set<Variable> variables = new HashSet<>();
     private int nowMaxOffset;
+    private final Register tempRegister = new Register(24);
+    // 用于计算指针时左移两位
+    private final Register tempRegister2 = new Register(25);
+    private final int dataAddress = 0x10010000;
+    private final Register stackRegister = new Register(29);
+    private final Register returnRegister = new Register(2);
 
     static class Register {
         private final int no;
@@ -57,11 +62,11 @@ public class RegisterAllocator {
     }
 
     static class AddressDescriptor {
-        Set<Memory> memories;
+        Memory memory;
         Set<Register> registers;
 
-        AddressDescriptor(Set<Memory> memories, Set<Register> registers) {
-            this.memories = memories;
+        AddressDescriptor(Memory memory, Set<Register> registers) {
+            this.memory = memory;
             this.registers = registers;
         }
     }
@@ -72,13 +77,13 @@ public class RegisterAllocator {
         this.nowMaxOffset = functionOffset;
         // init addressDescriptors
         for(Instrument instrument : basicBlock.getInstruments()) {
+            ValueGetter valueGetter = ValueGetter.getInstance();
             for(RValue rValue : valueGetter.getAllValues(instrument)){
                 if(rValue instanceof Variable){
-                    Set<Memory> memories = new HashSet<>();
-                    memories.add(new Memory((Variable) rValue));
-                    addressDescriptors.put((LValue) rValue, new AddressDescriptor(memories, new HashSet<>()));
+                    addressDescriptors.put((LValue) rValue, new AddressDescriptor(new Memory((Variable) rValue), new HashSet<>()));
+                    variables.add((Variable) rValue);
                 }else if(rValue instanceof Temp){
-                    addressDescriptors.put((LValue) rValue, new AddressDescriptor(new HashSet<>(), new HashSet<>()));
+                    addressDescriptors.put((LValue) rValue, new AddressDescriptor(null, new HashSet<>()));
                 }
             }
         }
@@ -90,6 +95,12 @@ public class RegisterAllocator {
 
 
     // 相比于factor，result在这个指令中肯定是要变化的
+
+    /**
+     * @return 为存储结果的地方分配一个寄存器，保证该寄存器中的其他值：
+     * 要不就是 被操作数
+     * 要不就是 在别的地方存着
+     */
     Register getResultReg(LValue result, List<RValue> factors, Instrument instrument) {
         // 先需要实现相比于getFactorReg要多考虑的可能性
         // 优先寻找只存放了x的寄存器
@@ -115,19 +126,21 @@ public class RegisterAllocator {
         return getFactorReg(result, instrument);
     }
 
-    Register getFactorReg(LValue factor, Instrument instrument){
-        return getFactorReg(factor, null, instrument);
+    Register getFactorReg(LValue factor, MidCode midCode){
+        return getFactorReg(factor, null, midCode);
     }
 
     // factor 指 x = y + z 中的y，z
-    // factor 在该指令中可能是不变的
+    // factor 在该指令中是被操作数
     // 还没有将factor存在register中
     /**
      * @param mustKeep nullable 绝对不能分配的寄存器
+     * @return 分配一个寄存器，保证该寄存器中的其他值在别的地方存着
      */
-    Register getFactorReg(LValue factor, Register mustKeep, Instrument instrument){
+    Register getFactorReg(LValue factor, Register mustKeep, MidCode midCode){
         AddressDescriptor leftAddressDescriptor = addressDescriptors.get(factor);
         if(!leftAddressDescriptor.registers.isEmpty()){
+            // todo 如果factor要改变了，寄存器里的其他值怎么办？
             return leftAddressDescriptor.registers.iterator().next();
         } else {
             Optional<Register> emptyReg = getEmptyReg();
@@ -154,7 +167,7 @@ public class RegisterAllocator {
                     // second check if all lvalue never used after
                     boolean isAllNeverUse = true;
                     for(LValue lValue : lValues) {
-                        if(localActive.isStillUse(lValue, instrument)){
+                        if(localActive.isStillUse(lValue, midCode)){
                             isAllNeverUse = false;
                             break;
                         }
@@ -165,7 +178,8 @@ public class RegisterAllocator {
                     // 需要计算把该寄存器中的变量都存起来需要几条store指令
                     int storeNumber = 0;
                     for(LValue lValue : lValues){
-                        if(addressDescriptors.get(lValue).registers.size() <= 1){
+                        AddressDescriptor addressDescriptor = addressDescriptors.get(lValue);
+                        if(addressDescriptor.registers.size() <= 1 && addressDescriptor.memory == null){
                             storeNumber++;
                         }
                     }
@@ -186,6 +200,7 @@ public class RegisterAllocator {
     }
 
     // 清除所有与目标寄存器的绑定
+    // todo 如果没地方了需要存在内存里？
     void clearReg(Register register){
         registerDescriptors.get(register).clear();
         for(AddressDescriptor descriptor : addressDescriptors.values()){
@@ -203,27 +218,20 @@ public class RegisterAllocator {
     }
 
     private void storeLValue(LValue lValue){
+        if(addressDescriptors.get(lValue).memory != null) return;
+        Register register = addressDescriptors.get(lValue).registers.iterator().next();
+        Memory memory;
         if(lValue instanceof Temp){
-            storeTemp((Temp) lValue);
+            Temp temp = (Temp) lValue;
+            memory = new Memory(nowMaxOffset, false);
+            nowMaxOffset += 1;
         }else {
             assert lValue instanceof Variable;
-            storeVariable((Variable) lValue);
+            Variable variable = (Variable) lValue;
+            memory = new Memory(variable);
         }
-    }
-
-    private void storeTemp(Temp temp){
-        Register register = addressDescriptors.get(temp).registers.iterator().next();
-        Memory memory = new Memory(nowMaxOffset, false);
-        addSaveInstrument(register, memory, temp);
-        addressDescriptors.get(temp).memories.add(memory);
-        nowMaxOffset += 1;
-    }
-
-    private void storeVariable(Variable variable){
-        Register register = addressDescriptors.get(variable).registers.iterator().next();
-        Memory memory = new Memory(variable);
-        addSaveInstrument(register, memory, variable);
-        addressDescriptors.get(variable).memories.add(memory);
+        addSaveInstrument(register, memory, lValue);
+        addressDescriptors.get(lValue).memory = memory;
     }
 
     boolean isRegContain(Register register, LValue lValue){
@@ -235,7 +243,7 @@ public class RegisterAllocator {
         if(isRegContain(register, lValue)){
             return;
         }
-        Memory memory = addressDescriptors.get(lValue).memories.iterator().next();
+        Memory memory = addressDescriptors.get(lValue).memory;
         addLoadInstrument(register, memory, lValue);
         clearReg(register);
         linkValueReg(register, lValue);
@@ -250,7 +258,7 @@ public class RegisterAllocator {
 
     // lvalue 变化了，并且变化后的新值在register寄存器中
     void defLValue(LValue lValue, Register register) {
-        addressDescriptors.get(lValue).memories.clear();
+        addressDescriptors.get(lValue).memory = null;
         addressDescriptors.get(lValue).registers.clear();
         for(Set<LValue> lValues : registerDescriptors.values()){
             lValues.remove(lValue);
@@ -259,6 +267,23 @@ public class RegisterAllocator {
         linkValueReg(register, lValue);
     }
 
+    void saveAllVariable(){
+        for(Variable variable : variables){
+            if(addressDescriptors.get(variable).memory == null){
+                storeLValue(variable);
+            }
+        }
+    }
+    Register findLValue(LValue lValue, MidCode midCode){
+        if(addressDescriptors.get(lValue).registers.isEmpty()){
+            loadLValue(lValue, getFactorReg(lValue, midCode));
+        }
+        return addressDescriptors.get(lValue).registers.iterator().next();
+    }
+
+    /**
+     * @param lValue just for debug
+     */
     void addLoadInstrument(Register register, Memory memory, LValue lValue){
         if(Generator.DEBUG){
             mipsSegment.addInstrument("lw " + register.print() + ", " + memory.print() + "  : load " + lValue.print() + " to " + register.print());
@@ -266,14 +291,78 @@ public class RegisterAllocator {
             mipsSegment.addInstrument("lw " + register.print() + ", " + memory.print());
         }
     }
+
+    /**
+     * @param lValue just for debug
+     */
     void addSaveInstrument(Register register, Memory memory, LValue lValue){
         if(Generator.DEBUG){
             mipsSegment.addInstrument("sw " + register.print() + ", " + memory.print() + "  : save " + register.print() + " to " + lValue.print());
         }else{
             mipsSegment.addInstrument("sw " + register.print() + ", " + memory.print());
         }
-
     }
 
 
+
+    /**
+     * pointer value store in temp register
+     */
+    Register getPointerValue(PointerValue pointerValue, Instrument pointerInstrument){
+        int staticOffset = pointerValue.getStaticOffset();
+        if(pointerValue.isGlobal()){
+            if(pointerValue.getOffset() instanceof Constant){
+                // li %s 0x1000f0+staticOffset
+                mipsSegment.addInstrument(String.format("li %s, %d", tempRegister.print(), dataAddress + (staticOffset + ((Constant) pointerValue.getOffset()).getNumber()) * 4));
+            }else {
+                assert pointerValue.getOffset() instanceof LValue;
+                // li %s 0x1000 + staticOffset
+                // addi %s, %s, %s
+                LValue offset = (LValue) pointerValue.getOffset();
+                Register offsetRegister = getFactorReg(offset, pointerInstrument);
+                loadLValue(offset, offsetRegister);
+                mipsSegment.addInstrument(String.format("sll %s, %s, 2", tempRegister2.print(), offsetRegister.print()));
+                mipsSegment.addInstrument(String.format("li %s, %d", tempRegister.print(), dataAddress + staticOffset * 4));
+                mipsSegment.addInstrument(String.format("add %s, %s, %s", tempRegister.print(), tempRegister.print(), tempRegister2.print()));
+            }
+        }else{
+            if(pointerValue.getType() == PointerValue.Type.array){
+                if(pointerValue.getOffset() instanceof Constant){
+                    mipsSegment.addInstrument(String.format("addi %s, %s, %d", tempRegister.print(), stackRegister.print(), staticOffset + (((Constant) pointerValue.getOffset()).getNumber()) * 4));
+                }else {
+                    assert pointerValue.getOffset() instanceof LValue;
+                    LValue offset = (LValue) pointerValue.getOffset();
+                    Register offsetRegister = getFactorReg(offset, pointerInstrument);
+                    loadLValue(offset, offsetRegister);
+                    mipsSegment.addInstrument(String.format("sll %s, %s, 2", tempRegister2.print(), offsetRegister.print()));
+                    mipsSegment.addInstrument(String.format("addi %s, %s, %d", tempRegister.print(), stackRegister.print(), staticOffset * 4));
+                    mipsSegment.addInstrument(String.format("add %s, %s, %s", tempRegister.print(), tempRegister.print(), tempRegister2.print()));
+                }
+            }else{
+                mipsSegment.addInstrument(String.format("lw %s, %d(%s)", tempRegister.print(), staticOffset * 4, stackRegister.print()));
+                if(pointerValue.getOffset() instanceof Constant){
+                    mipsSegment.addInstrument(String.format("addi %s, %s, %d", tempRegister.print(), tempRegister.print(), ((Constant) pointerValue.getOffset()).getNumber() * 4));
+                }else {
+                    assert pointerValue.getOffset() instanceof LValue;
+                    LValue offset = (LValue) pointerValue.getOffset();
+                    Register offsetRegister = getFactorReg(offset, pointerInstrument);
+                    loadLValue(offset, offsetRegister);
+                    mipsSegment.addInstrument(String.format("sll %s, %s, 2", tempRegister2.print(), offsetRegister.print()));
+                    mipsSegment.addInstrument(String.format("add %s, %s, %s", tempRegister.print(), tempRegister.print(), tempRegister2.print()));
+                }
+            }
+        }
+        return tempRegister;
+    }
+
+    void storeParam(int index, Register register){
+        addSaveInstrument(register, new Memory(nowMaxOffset + index, false), null);
+    }
+
+    void pushSp(){
+        mipsSegment.addInstrument(String.format("addi %s, %s, %d", stackRegister.print(), stackRegister.print(), -((nowMaxOffset + 1) * 4)));
+    }
+    void popSp(){
+        mipsSegment.addInstrument(String.format("addi %s, %s, %d", stackRegister.print(), stackRegister.print(), ((nowMaxOffset + 1) * 4)));
+    }
 }

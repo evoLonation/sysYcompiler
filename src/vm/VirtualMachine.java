@@ -23,7 +23,7 @@ public class VirtualMachine {
     private int sp;
     private final Stack<Map<Temp, IntValue>> tempStack = new Stack<>();
 
-    private final Stack<ValueValue> paramStack = new Stack<>();
+//    private final Stack<ValueValue> paramStack = new Stack<>();
     private final Stack<Function> functionStack = new Stack<>();
 
 
@@ -88,18 +88,27 @@ public class VirtualMachine {
     }
 
     public void run(){
-        run(module.getMainFunc(), 0);
+        run(module.getMainFunc(), new ArrayList<>());
     }
 
-    private void run(Function function, int paramNumber) {
+    private void run(Function function, List<Value> params) {
         if(!functionStack.isEmpty()){
             // 多一个用来存储返回值
             sp += functionStack.peek().getOffset() + 1;
         }
         functionStack.push(function);
         tempStack.push(new HashMap<>());
-        for(int i = paramNumber - 1; i >= 0; i--){
-            funcStack.set(paramStack.pop(), sp + i);
+        for(int i = params.size() - 1; i >= 0; i--){
+            Value paramValue = params.get(i);
+            ValueValue valueValue ;
+            if(paramValue instanceof RValue){
+                valueValue = getIntValue((RValue) paramValue);
+            }else if(paramValue instanceof PointerValue){
+                valueValue = getAddress((PointerValue) paramValue);
+            }else{
+                throw new SemanticException();
+            }
+            funcStack.set(valueValue, sp + i);
         }
         run(function.getEntry());
         tempStack.pop();
@@ -145,7 +154,7 @@ public class VirtualMachine {
             inject(BinaryOperation.class, operation -> saveValueToLValue(operation.getResult(), new IntValue(compute(getIntValue(operation.getLeft()).value, operation.getOp(), getIntValue(operation.getRight()).value))));
 
             inject(Call.class, call -> {
-                run(call.getFunction(), call.getParamNumber());
+                run(call.getFunction(), call.getParams());
                 if(call.getRet().isPresent()){
                     ValueValue ret = funcStack.get(sp + functionStack.peek().getOffset());
                     assert ret instanceof IntValue;
@@ -157,16 +166,16 @@ public class VirtualMachine {
 
             inject(Load.class, load -> saveValueToLValue(load.getLeft(), (IntValue) getValue(getAddress(load.getRight()))));
 
-            inject(Param.class, param ->{
-                Value paramValue = param.getValue();
-                if(paramValue instanceof RValue){
-                    paramStack.push(getIntValue((RValue) paramValue));
-                }else if(paramValue instanceof PointerValue){
-                    paramStack.push(getAddress((PointerValue) paramValue));
-                }else{
-                    throw new SemanticException();
-                }
-            });
+//            inject(Param.class, param ->{
+//                Value paramValue = param.getValue();
+//                if(paramValue instanceof RValue){
+//                    paramStack.push(getIntValue((RValue) paramValue));
+//                }else if(paramValue instanceof PointerValue){
+//                    paramStack.push(getAddress((PointerValue) paramValue));
+//                }else{
+//                    throw new SemanticException();
+//                }
+//            });
 
             inject(Printf.class, printf ->{
                 List<RValue> rValues = printf.getRValues();

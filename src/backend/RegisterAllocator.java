@@ -5,245 +5,274 @@ import midcode.BasicBlock;
 import midcode.instrument.Assignment;
 import midcode.instrument.BinaryOperation;
 import midcode.instrument.Instrument;
-import midcode.instrument.UnaryOperation;
 import midcode.value.LValue;
 import midcode.value.RValue;
 import midcode.value.Temp;
 import midcode.value.Variable;
 import util.Execution;
-import util.VoidExecution;
 
 import java.util.*;
 
 // 保存基本快中寄存器和栈内存的使用信息
-// todo 现在只是假设所有variable都是局部变量，没有考虑全局变量
 public class RegisterAllocator {
-    private final LocalActive activeInfo;
+    private final LocalActive localActive;
     private final MipsSegment mipsSegment;
+    private final ValueGetter valueGetter = ValueGetter.getInstance();
 
-    private static final int regNum = 10;
-    private final List<Set<LValue>> registerDescriptors = new ArrayList<>(regNum);
-    //todo need init
+    private static final int regNum = 5;
+    private final Map<Register, Set<LValue>> registerDescriptors = new HashMap<>();
     private final Map<LValue, AddressDescriptor> addressDescriptors = new HashMap<>();
     private int nowMaxOffset;
 
+    static class Register {
+        private final int no;
 
-    RegisterAllocator(BasicBlock basicBlock, LocalActive activeInfo, MipsSegment mipsSegment){
-        this.activeInfo = activeInfo;
-        this.mipsSegment = mipsSegment;
-        variableInitial.inject();
-        for(Instrument instrument : basicBlock.getInstruments()) {
-            variableInitial.exec(instrument);
+        public Register(int no) {
+            this.no = no;
         }
-        for(int i = 0; i < regNum; i++){
-            registerDescriptors.add(new HashSet<>());
+        public int getNo() {
+            return no;
         }
-        getRegExecution.inject();
+        String print(){
+            return "$" + no;
+        }
     }
-
-    private final VoidExecution<Instrument> variableInitial = new VoidExecution<Instrument>() {
-        @Override
-        public void inject() {
-            inject(BinaryOperation.class, instrument -> addVariable(instrument.getResult(), instrument.getRight(), instrument.getLeft()));
-            inject(UnaryOperation.class, param -> addVariable(param.getValue(), param.getResult()));
+    static class Memory {
+        int offset;
+        boolean isGlobal;
+        Memory(int offset, boolean isGlobal) {
+            this.offset = offset;
+            this.isGlobal = isGlobal;
         }
-    };
-
-    private void addVariable(RValue... rValues){
-        for(RValue rValue : rValues){
-            if(rValue instanceof Variable){
-                Set<Integer> memories = new HashSet<>();
-                memories.add(((Variable) rValue).getOffset());
-                addressDescriptors.put((LValue) rValue, new AddressDescriptor(memories, new HashSet<>()));
-            }else if(rValue instanceof Temp){
-                addressDescriptors.put((LValue) rValue, new AddressDescriptor(new HashSet<>(), new HashSet<>()));
+        Memory(Variable variable){
+            this(variable.getOffset(), variable.isGlobal());
+        }
+        String print(){
+            if(isGlobal){
+                throw new SemanticException();
+            }else{
+                return  -(offset * 4) + "($sp)";
             }
         }
     }
 
     static class AddressDescriptor {
-        Set<Integer> memories;
-        Set<Integer> registers;
+        Set<Memory> memories;
+        Set<Register> registers;
 
-        AddressDescriptor(Set<Integer> memories, Set<Integer> registers) {
+        AddressDescriptor(Set<Memory> memories, Set<Register> registers) {
             this.memories = memories;
             this.registers = registers;
         }
     }
 
-
-    Map<LValue, Integer> getReg(Instrument instrument){
-        return getRegExecution.exec(instrument);
+    RegisterAllocator(BasicBlock basicBlock, LocalActive localActive, MipsSegment mipsSegment, int functionOffset){
+        this.localActive = localActive;
+        this.mipsSegment = mipsSegment;
+        this.nowMaxOffset = functionOffset;
+        // init addressDescriptors
+        for(Instrument instrument : basicBlock.getInstruments()) {
+            for(RValue rValue : valueGetter.getAllValues(instrument)){
+                if(rValue instanceof Variable){
+                    Set<Memory> memories = new HashSet<>();
+                    memories.add(new Memory((Variable) rValue));
+                    addressDescriptors.put((LValue) rValue, new AddressDescriptor(memories, new HashSet<>()));
+                }else if(rValue instanceof Temp){
+                    addressDescriptors.put((LValue) rValue, new AddressDescriptor(new HashSet<>(), new HashSet<>()));
+                }
+            }
+        }
+        // init registerDescriptors
+        for(int i = 0; i < regNum; i++) {
+            registerDescriptors.put(new Register(i + 7), new HashSet<>());
+        }
     }
 
 
-
-    // 注意，这个操作并不改变寄存器描述符本身，只是找到一个寄存器
-    private final Execution<Instrument, Map<LValue, Integer>> getRegExecution = new Execution<Instrument, Map<LValue, Integer>>() {
-        @Override
-        public void inject() {
-            inject(BinaryOperation.class, operation -> {
-                Map<LValue, Integer> ret = new HashMap<>();
-                LValue result = operation.getResult();
-                RValue left = operation.getLeft();
-                RValue right = operation.getRight();
-                // choose left
-                if(left instanceof LValue){
-                    ret.put((LValue) left, getFactorReg((LValue) left, result, right, operation));
-                }
-                if(right instanceof LValue) {
-                    ret.put((LValue) right, getFactorReg((LValue) right, result, left, operation));
-                }
-                ret.put(result, getResultReg(result, left, right, operation));
-                return ret;
-            });
-
-            inject(Assignment.class, assign -> {
-                Map<LValue, Integer> ret = new HashMap<>();
-                LValue left = assign.getLeft();
-                RValue right = assign.getRight();
-                if(right instanceof LValue){
-                    int no = getFactorReg((LValue) right, left, null, assign);
-                    ret.put((LValue) right, no);
-                    ret.put(left, no);
-                }else{
-                    ret.put(left, getResultReg(left, null, null, assign));
-                }
-                return ret;
-            });
-        }
-    };
-
-    private int getResultReg(LValue result, RValue firstFactor, RValue secondFactor, Instrument instrument){
+    // 相比于factor，result在这个指令中肯定是要变化的
+    Register getResultReg(LValue result, List<RValue> factors, Instrument instrument) {
         // 先需要实现相比于getFactorReg要多考虑的可能性
-        // 寻找只存放了x的寄存器
-        for(Integer no : addressDescriptors.get(result).registers){
-            if(registerDescriptors.get(no).size() == 1){
-                return no;
+        // 优先寻找只存放了x的寄存器
+        for(Register register : addressDescriptors.get(result).registers){
+            if(registerDescriptors.get(register).size() == 1){
+                return register;
             }
         }
-        if(firstFactor instanceof LValue && !activeInfo.isActiveAfter((LValue) firstFactor, instrument)){
-            // 寻找只放了y的寄存器
-            for(Integer no : addressDescriptors.get(firstFactor).registers){
-                if(registerDescriptors.get(no).size() == 1){
-                    return no;
+        // 寻找factor不会再使用且只存放了factor的寄存器
+        for(RValue factor : factors){
+            if(factor instanceof LValue){
+                LValue lValue = (LValue) factor;
+                if(!localActive.isStillUseAfter(lValue, instrument)){
+                    // 寻找只放了factor的寄存器
+                    for(Register register : addressDescriptors.get(lValue).registers){
+                        if(registerDescriptors.get(register).size() == 1){
+                            return register;
+                        }
+                    }
                 }
             }
         }
-        if(secondFactor instanceof LValue && !activeInfo.isActiveAfter((LValue) secondFactor, instrument)){
-            // 寻找只放了z的寄存器
-            for(Integer no : addressDescriptors.get(secondFactor).registers){
-                if(registerDescriptors.get(no).size() == 1){
-                    return no;
-                }
-            }
-        }
-        return getFactorReg(result, null, null, instrument);
+        return getFactorReg(result, instrument);
+    }
+
+    Register getFactorReg(LValue factor, Instrument instrument){
+        return getFactorReg(factor, null, instrument);
     }
 
     // factor 指 x = y + z 中的y，z
-    // other factor and result is nullable
-    private int getFactorReg(LValue factor, LValue result, RValue otherFactor, Instrument instrument){
-        if(!(otherFactor instanceof LValue)){
-            otherFactor = null;
-        }
+    // factor 在该指令中可能是不变的
+    // 还没有将factor存在register中
+    /**
+     * @param mustKeep nullable 绝对不能分配的寄存器
+     */
+    Register getFactorReg(LValue factor, Register mustKeep, Instrument instrument){
         AddressDescriptor leftAddressDescriptor = addressDescriptors.get(factor);
-        if(leftAddressDescriptor.registers.isEmpty()){
-            Optional<Integer> emptyReg = getEmptyReg();
+        if(!leftAddressDescriptor.registers.isEmpty()){
+            return leftAddressDescriptor.registers.iterator().next();
+        } else {
+            Optional<Register> emptyReg = getEmptyReg();
             if(emptyReg.isPresent()){
                 return emptyReg.get();
             }else{
                 int minStoreNumber = 0x3fffffff;
-                int minRegisterNo = -1;
-                for(int i = 0; i < registerDescriptors.size(); i++){
-                    LValue lValue = registerDescriptors.get(i).iterator().next();
-                    if(addressDescriptors.get(lValue).registers.size() > 1 || !addressDescriptors.get(lValue).memories.isEmpty()){
-                        return i;
-                    }else if(lValue == result && result != otherFactor){
-                        return i;
-                    } else if(!activeInfo.isActiveAfter(factor, instrument)) {
-                        return i;
-                    } else{
-                        // 需要计算把该寄存器中的变量都存起来需要几条store指令
-                        int storeNumber = registerDescriptors.get(i).size();
-                        if(storeNumber < minStoreNumber){
-                            minStoreNumber = storeNumber;
-                            minRegisterNo = i;
+                Register minRegister = null;
+                for(Map.Entry<Register, Set<LValue>> registerDescriptor : registerDescriptors.entrySet()){
+                    Set<LValue> lValues = registerDescriptor.getValue();
+                    Register register = registerDescriptor.getKey();
+                    if(register == mustKeep) continue;
+                    // first check if all lvalue are in another register
+                    boolean isAllInAnother = true;
+                    for(LValue lValue : lValues){
+                        if(addressDescriptors.get(lValue).registers.size() <= 1){
+                            isAllInAnother = false;
+                            break;
                         }
                     }
-                }
-                for(LValue needStore : registerDescriptors.get(minRegisterNo)){
-                    if(needStore instanceof Variable){
-                        storeVariable((Variable) needStore);
-                    }else if(needStore instanceof Temp){
-                        storeTemp((Temp) needStore);
-                    }else {
-                        throw new SemanticException();
+                    if(isAllInAnother){
+                        return register;
+                    }
+                    // second check if all lvalue never used after
+                    boolean isAllNeverUse = true;
+                    for(LValue lValue : lValues) {
+                        if(localActive.isStillUse(lValue, instrument)){
+                            isAllNeverUse = false;
+                            break;
+                        }
+                    }
+                    if(isAllNeverUse){
+                        return register;
+                    }
+                    // 需要计算把该寄存器中的变量都存起来需要几条store指令
+                    int storeNumber = 0;
+                    for(LValue lValue : lValues){
+                        if(addressDescriptors.get(lValue).registers.size() <= 1){
+                            storeNumber++;
+                        }
+                    }
+                    if(storeNumber < minStoreNumber){
+                        minStoreNumber = storeNumber;
+                        minRegister = register;
                     }
                 }
-                return minRegisterNo;
+                assert minRegister != null;
+                for(LValue lValue : registerDescriptors.get(minRegister)){
+                    if(addressDescriptors.get(lValue).registers.size() <= 1){
+                        storeLValue(lValue);
+                    }
+                }
+                return minRegister;
             }
-        }else{
-            return leftAddressDescriptor.registers.iterator().next();
         }
     }
 
-    private Optional<Integer> getEmptyReg(){
-        int index = 0;
-        for(Set<LValue> lValues : registerDescriptors){
-            if(lValues.isEmpty()){
-                return Optional.of(index);
+    // 清除所有与目标寄存器的绑定
+    void clearReg(Register register){
+        registerDescriptors.get(register).clear();
+        for(AddressDescriptor descriptor : addressDescriptors.values()){
+            descriptor.registers.remove(register);
+        }
+    }
+
+    private Optional<Register> getEmptyReg(){
+        for(Map.Entry<Register, Set<LValue>> registerDescriptor : registerDescriptors.entrySet()){
+            if(registerDescriptor.getValue().isEmpty()){
+                return Optional.of(registerDescriptor.getKey());
             }
-            index ++;
         }
         return Optional.empty();
     }
 
+    private void storeLValue(LValue lValue){
+        if(lValue instanceof Temp){
+            storeTemp((Temp) lValue);
+        }else {
+            assert lValue instanceof Variable;
+            storeVariable((Variable) lValue);
+        }
+    }
+
     private void storeTemp(Temp temp){
-        int registerNo = addressDescriptors.get(temp).registers.iterator().next();
-        String address = -(nowMaxOffset * 4) + "($sp)";
-        mipsSegment.addInstrument("sw " + getRealRegister(registerNo) + ", " + address);
-        addressDescriptors.get(temp).memories.add(nowMaxOffset);
+        Register register = addressDescriptors.get(temp).registers.iterator().next();
+        Memory memory = new Memory(nowMaxOffset, false);
+        addSaveInstrument(register, memory, temp);
+        addressDescriptors.get(temp).memories.add(memory);
         nowMaxOffset += 1;
     }
 
     private void storeVariable(Variable variable){
-        int registerNo = addressDescriptors.get(variable).registers.iterator().next();
-        String address = -(variable.getOffset() * 4) + "($sp)";
-        mipsSegment.addInstrument("sw " + getRealRegister(registerNo) + ", " + address);
-        addressDescriptors.get(variable).memories.add(nowMaxOffset);
+        Register register = addressDescriptors.get(variable).registers.iterator().next();
+        Memory memory = new Memory(variable);
+        addSaveInstrument(register, memory, variable);
+        addressDescriptors.get(variable).memories.add(memory);
     }
 
-    String getRealRegister(int no){
-        if(no <= 7){
-            return "$" + (no + 8);
-        }else {
-            return "$" + (no + 16);
-        }
-    }
-
-    boolean isRegContain(int register, LValue lValue){
+    boolean isRegContain(Register register, LValue lValue){
         return registerDescriptors.get(register).contains(lValue);
     }
 
     // if lvalue in register, do nothing
-    void loadLValue(LValue lValue, int register){
+    void loadLValue(LValue lValue, Register register){
         if(isRegContain(register, lValue)){
             return;
         }
-        int memory = addressDescriptors.get(lValue).memories.iterator().next();
-        String address = -(memory * 4) + "($sp)";
-        mipsSegment.addInstrument("lw " + getRealRegister(register) + ", " + address);
-        registerDescriptors.get(register).clear();
-        registerDescriptors.get(register).add(lValue);
+        Memory memory = addressDescriptors.get(lValue).memories.iterator().next();
+        addLoadInstrument(register, memory, lValue);
+        clearReg(register);
+        linkValueReg(register, lValue);
     }
 
-    void changeLValue(LValue lValue, int register) {
-        registerDescriptors.get(register).clear();
+    private void linkValueReg(Register register, LValue lValue){
         registerDescriptors.get(register).add(lValue);
+        addressDescriptors.get(lValue).registers.add(register);
+    }
+
+
+
+    // lvalue 变化了，并且变化后的新值在register寄存器中
+    void defLValue(LValue lValue, Register register) {
         addressDescriptors.get(lValue).memories.clear();
         addressDescriptors.get(lValue).registers.clear();
-        addressDescriptors.get(lValue).registers.add(register);
+        for(Set<LValue> lValues : registerDescriptors.values()){
+            lValues.remove(lValue);
+        }
+
+        linkValueReg(register, lValue);
+    }
+
+    void addLoadInstrument(Register register, Memory memory, LValue lValue){
+        if(Generator.DEBUG){
+            mipsSegment.addInstrument("lw " + register.print() + ", " + memory.print() + "  : load " + lValue.print() + " to " + register.print());
+        }else{
+            mipsSegment.addInstrument("lw " + register.print() + ", " + memory.print());
+        }
+    }
+    void addSaveInstrument(Register register, Memory memory, LValue lValue){
+        if(Generator.DEBUG){
+            mipsSegment.addInstrument("sw " + register.print() + ", " + memory.print() + "  : save " + register.print() + " to " + lValue.print());
+        }else{
+            mipsSegment.addInstrument("sw " + register.print() + ", " + memory.print());
+        }
+
     }
 
 

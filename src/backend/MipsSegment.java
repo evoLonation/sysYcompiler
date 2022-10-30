@@ -2,7 +2,7 @@ package backend;
 
 public class MipsSegment {
 
-    private String content;
+    private String content = "";
 
     void addInstrument(String instrument){
         content += instrument + "\n";

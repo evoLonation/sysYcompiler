@@ -18,6 +18,7 @@ import java.util.List;
 
 public class Compiler {
 
+
     public static void main(String[] args) {
         lab5(true, true);
     }

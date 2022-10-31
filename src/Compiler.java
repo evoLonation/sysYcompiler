@@ -105,9 +105,7 @@ public class Compiler {
 //        virtualMachine.run();
 
 //        printAndWrite(outputFile, virtualMachine.getStdout());
-        MipsSegment mipsSegment = new MipsSegment();
-        new Generator(module, mipsSegment).generate();
-        printAndWrite(mipsFile, mipsSegment.print());
+        printAndWrite(mipsFile, new Generator(module).generate());
     }
 
     static void lab4(){

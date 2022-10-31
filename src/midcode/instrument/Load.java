@@ -1,17 +1,16 @@
 package midcode.instrument;
 
 import midcode.value.LValue;
-import midcode.value.PointerValue;
-import midcode.value.RValue;
+import midcode.value.AddressValue;
 
 /**
  * 将right的值看做一个地址，把地址对应的值传给left
  */
 public class Load implements Instrument{
     private LValue left;
-    private PointerValue right;
+    private AddressValue right;
 
-    public Load(LValue left, PointerValue right) {
+    public Load(LValue left, AddressValue right) {
         this.left = left;
         this.right = right;
     }
@@ -25,7 +24,7 @@ public class Load implements Instrument{
         return left;
     }
 
-    public PointerValue getRight() {
+    public AddressValue getRight() {
         return right;
     }
 }

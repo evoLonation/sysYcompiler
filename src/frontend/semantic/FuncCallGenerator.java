@@ -67,6 +67,7 @@ public class FuncCallGenerator extends InstrumentGenerator{
                 addInstrument(new Call(function, params, ret));
                 result = ret;
             } else {
+
                 addInstrument(new Call(function, params));
             }
         }

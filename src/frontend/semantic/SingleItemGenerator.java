@@ -47,7 +47,7 @@ public class SingleItemGenerator extends InstrumentGenerator{
                 }
                 RValue expResult = new ExpGenerator(assign.getExp()).generate().getRValueResult();
                 if(lValResult instanceof LValGenerator.IntPointerResult){
-                    addInstrument(new Store(((LValGenerator.IntPointerResult) lValResult).pointerValue, expResult));
+                    addInstrument(new Store(((LValGenerator.IntPointerResult) lValResult).addressValue, expResult));
                 }else{
                     addInstrument(new Assignment(((LValGenerator.LValueResult) lValResult).lVal, expResult));
                 }
@@ -65,7 +65,7 @@ public class SingleItemGenerator extends InstrumentGenerator{
                 if(result instanceof LValGenerator.IntPointerResult){
                     Temp temp = valueFactory.newTemp();
                     addInstrument(new GetInt(temp));
-                    addInstrument(new Store(((LValGenerator.IntPointerResult) result).pointerValue, temp));
+                    addInstrument(new Store(((LValGenerator.IntPointerResult) result).addressValue, temp));
                 }else{
                     addInstrument(new GetInt(((LValGenerator.LValueResult) result).lVal));
                 }

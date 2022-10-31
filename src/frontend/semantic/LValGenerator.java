@@ -63,11 +63,11 @@ public class LValGenerator extends InstrumentGenerator {
         public Constant constant;
     }
     public static class IntPointerResult extends Result{
-        IntPointerResult(PointerValue pointerValue) {
-            this.pointerValue = pointerValue;
+        IntPointerResult(AddressValue addressValue) {
+            this.addressValue = addressValue;
         }
 
-        public PointerValue pointerValue;
+        public AddressValue addressValue;
     }
     public static class ArrayPointerResult extends Result{
         public PointerType pointerType;

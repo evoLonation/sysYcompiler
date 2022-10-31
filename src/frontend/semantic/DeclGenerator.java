@@ -5,7 +5,7 @@ import frontend.lexer.Ident;
 import midcode.instrument.Assignment;
 import midcode.instrument.Store;
 import midcode.value.Constant;
-import midcode.value.PointerValue;
+import midcode.value.AddressValue;
 import midcode.value.RValue;
 import frontend.parser.nonterminal.decl.*;
 import frontend.parser.nonterminal.exp.Exp;
@@ -145,7 +145,7 @@ public class DeclGenerator extends InstrumentGenerator{
 
     private void initArray(Ident ident, List<RValue> results) {
         for(int i = 0; i < results.size(); i++){
-            PointerValue address = valueFactory.newPointer(ident, new Constant(i));
+            AddressValue address = valueFactory.newPointer(ident, new Constant(i));
             addInstrument(new Store(address, results.get(i)));
         }
     }

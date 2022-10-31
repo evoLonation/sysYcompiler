@@ -48,10 +48,10 @@ public class ExpGenerator extends InstrumentGenerator{
 
     // 该类不会在中间产生，只会在generate方法中进行转化
     public static class PointerResult extends Result{
-        public PointerValue value;
+        public AddressValue value;
         public PointerType type;
 
-        public PointerResult(PointerValue value, PointerType type) {
+        public PointerResult(AddressValue value, PointerType type) {
             this.value = value;
             this.type = type;
         }
@@ -77,8 +77,8 @@ public class ExpGenerator extends InstrumentGenerator{
     Result generate() {
         Result result = execution.exec(exp);
         if(result instanceof TempResult){
-            PointerValue pointerValue = valueFactory.newPointer(((TempResult) result).ident, new ExpGenerator(((TempResult) result).offsetExp).generate().getRValueResult());
-            result = new PointerResult(pointerValue, ((TempResult) result).pointerType);
+            AddressValue addressValue = valueFactory.newPointer(((TempResult) result).ident, new ExpGenerator(((TempResult) result).offsetExp).generate().getRValueResult());
+            result = new PointerResult(addressValue, ((TempResult) result).pointerType);
         }
         return result;
     }
@@ -153,7 +153,7 @@ public class ExpGenerator extends InstrumentGenerator{
                     return new RValueResult(((LValGenerator.LValueResult) lValResult).lVal);
                 }else if(lValResult instanceof LValGenerator.IntPointerResult){
                     Temp ret = valueFactory.newTemp();
-                    addInstrument(new Load(ret, ((LValGenerator.IntPointerResult) lValResult).pointerValue) );
+                    addInstrument(new Load(ret, ((LValGenerator.IntPointerResult) lValResult).addressValue) );
                     return new RValueResult(ret);
                 }else if(lValResult instanceof LValGenerator.ArrayPointerResult){
                     return new TempResult(((LValGenerator.ArrayPointerResult) lValResult).pointerType, ((LValGenerator.ArrayPointerResult) lValResult).ident, ((LValGenerator.ArrayPointerResult) lValResult).offsetExp);

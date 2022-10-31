@@ -7,8 +7,6 @@ import midcode.Function;
 import midcode.Module;
 import midcode.instrument.*;
 import midcode.value.*;
-import frontend.parser.nonterminal.exp.BinaryOp;
-import frontend.parser.nonterminal.exp.UnaryOp;
 import util.VoidExecution;
 
 import java.util.*;
@@ -103,8 +101,8 @@ public class VirtualMachine {
             ValueValue valueValue ;
             if(paramValue instanceof RValue){
                 valueValue = getIntValue((RValue) paramValue);
-            }else if(paramValue instanceof PointerValue){
-                valueValue = getAddress((PointerValue) paramValue);
+            }else if(paramValue instanceof AddressValue){
+                valueValue = getAddress((AddressValue) paramValue);
             }else{
                 throw new SemanticException();
             }
@@ -246,29 +244,26 @@ public class VirtualMachine {
         }
     }
 
-    private Address getAddress(PointerValue pointerValue){
-        int offset = getIntValue(pointerValue.getOffset()).value;
+    private Address getAddress(AddressValue addressValue){
+        int offset = getIntValue(addressValue.getOffset()).value;
         int base;
         boolean isGlobal;
-        if(pointerValue.isGlobal()){
-            isGlobal = true;
-            assert pointerValue.getType() == PointerValue.Type.array;
-            base = pointerValue.getStaticOffset();
+        if(addressValue instanceof PointerValue){
+            ValueValue ret = funcStack.get(sp + addressValue.getStaticOffset());
+            assert ret instanceof Address;
+            base = ((Address) ret).address;
+            isGlobal = ((Address) ret).isGlobal;
         }else{
-            switch (pointerValue.getType()){
-                case array:
-                    isGlobal = false;
-                    base = sp + pointerValue.getStaticOffset();
-                    break;
-                case pointer:
-                    ValueValue ret = funcStack.get(sp + pointerValue.getStaticOffset());
-                    assert ret instanceof Address;
-                    base = ((Address) ret).address;
-                    isGlobal = ((Address) ret).isGlobal;
-                    break;
-                default: throw new SemanticException();
+            ArrayValue arrayValue = (ArrayValue) addressValue;
+            if(arrayValue.isGlobal()){
+                isGlobal = true;
+                base = arrayValue.getStaticOffset();
+            }else{
+                isGlobal = false;
+                base = sp + arrayValue.getStaticOffset();
             }
         }
+
         return new Address(base + offset, isGlobal);
     }
 

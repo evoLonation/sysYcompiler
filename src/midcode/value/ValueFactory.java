@@ -26,20 +26,18 @@ public class ValueFactory {
     /**
      * 指针类型变量并不会被改变，因此不用重新赋值（非SSA形式）
      */
-    public PointerValue newPointer(Ident ident, RValue offset){
+    public AddressValue newPointer(Ident ident, RValue offset){
         String symbol = ident.getValue();
         Optional<SymbolTable.VariableInfo> optionalVariableInfo = symbolTable.getVariable(ident);
         assert optionalVariableInfo.isPresent();
         SymbolTable.VariableInfo variableInfo = optionalVariableInfo.get();
         assert variableInfo.getType() instanceof PointerType;
         PointerType type = (PointerType) variableInfo.getType();
-        PointerValue.Type pointerType;
         if(type instanceof ArrayType){
-            pointerType = PointerValue.Type.array;
+            return new ArrayValue(symbol + "#" + variableInfo.getLayer(), variableInfo.getOffset(), offset, variableInfo.isGlobal());
         }else{
-            pointerType = PointerValue.Type.pointer;
+            return new PointerValue(symbol + "#" + variableInfo.getLayer(), variableInfo.getOffset(), offset);
         }
-        return new PointerValue(symbol + "#" + variableInfo.getLayer(), offset, variableInfo.isGlobal(), variableInfo.getOffset(), pointerType);
     }
 
 

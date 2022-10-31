@@ -4,19 +4,15 @@ import midcode.BasicBlock;
 import midcode.Module;
 
 public class Generator {
-    static final boolean DEBUG = false;
-    MipsSegment mipsSegment;
+    static final boolean DEBUG = true;
     Module module;
-    public Generator(Module module, MipsSegment mipsSegment){
+    public Generator(Module module){
         this.module = module;
-        this.mipsSegment = mipsSegment;
     }
 
-    public void generate(){
+    public String generate(){
         BasicBlock basicBlock = module.getMainFunc().getEntry();
-        LocalActive localActive = new LocalActive(basicBlock);
-        RegisterAllocator registerAllocator = new RegisterAllocator(basicBlock, localActive, mipsSegment, module.getMainFunc().getOffset());
-        new BasicBlockGenerator(basicBlock, mipsSegment, registerAllocator).generate();
+        return new BasicBlockGenerator(basicBlock, module.getMainFunc().getOffset()).generate();
 
     }
 }

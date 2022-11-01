@@ -38,17 +38,7 @@ public class ValueGetter {
             inject(Assignment.class, param -> Collections.singletonList(param.getRight()));
             inject(Return.class, param -> param.getReturnValue().map(r -> Collections.singletonList((Value)r)).orElse(new ArrayList<>()));
             inject(CondGoto.class, param -> Collections.singletonList(param.getCond()));
-            inject(Call.class, param ->
-               param.getParams().stream().flatMap(value -> {
-                   if (value instanceof RValue) {
-                       return Stream.of(value);
-                   } else {
-                       assert value instanceof AddressValue;
-                       // address value 不仅自己是个value，它还包含了一个value
-                       return getAddressValue((AddressValue) value);
-                   }
-               }).collect(Collectors.toList())
-            );
+            inject(Param.class, param -> Collections.singletonList(param.getValue()));
             inject(Printf.class, param -> new ArrayList<>(param.getRValues()));
             inject(Store.class, param -> getAddressValue(param.getLeft()).collect(Collectors.toList()));
             inject(Load.class, param -> getAddressValue(param.getRight()).collect(Collectors.toList()));

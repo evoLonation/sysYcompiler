@@ -11,12 +11,10 @@ import java.util.Optional;
 public class Call implements Instrument{
     private Function function;
     private Temp ret;
-    private List<Value> params;
 
-    public Call(Function function, List<Value> params, Temp ret) {
+    public Call(Function function, Temp ret) {
         this.function = function;
         this.ret = ret;
-        this.params = params;
     }
 
     public Call(Function function, List<Value> params) {
@@ -32,18 +30,13 @@ public class Call implements Instrument{
         return Optional.ofNullable(ret);
     }
 
-    public List<Value> getParams() {
-        return params;
-    }
 
     @Override
     public String print() {
-        StringBuilder paramsStr = new StringBuilder();
-        params.forEach(p -> paramsStr.append(p.print()).append(", "));
         if(ret == null){
-            return "call " + function.getEntry().getName() + " params " + paramsStr;
+            return "call " + function.getEntry().getName() ;
         }else {
-            return ret.print() +  " = call " + function.getEntry().getName() + " params " + paramsStr;
+            return ret.print() +  " = call " + function.getEntry().getName() ;
         }
     }
 }

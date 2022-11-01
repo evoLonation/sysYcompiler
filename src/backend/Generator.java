@@ -4,7 +4,7 @@ import midcode.BasicBlock;
 import midcode.Module;
 
 public class Generator {
-    static final boolean DEBUG = true;
+    static final boolean DEBUG = false;
     Module module;
     public Generator(Module module){
         this.module = module;

@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 // 保存基本快中通用寄存器使用信息
-public class RegisterManager {
+public class StorageManager {
     private final LocalActive localActive;
     private final ValueGetter valueGetter = ValueGetter.getInstance();
     private final MipsSegment mipsSegment;
@@ -42,7 +42,7 @@ public class RegisterManager {
     }
 
 
-    RegisterManager(LocalActive localActive, MipsSegment mipsSegment, int offset){
+    StorageManager(LocalActive localActive, MipsSegment mipsSegment, int offset){
         this.mipsSegment = mipsSegment;
         this.localActive = localActive;
         this.nowMaxOffset = offset;
@@ -254,7 +254,7 @@ public class RegisterManager {
     }
 
     void storeValue(Value value) {
-        mipsSegment.debug(String.format("store %s", value.print()));
+//        mipsSegment.comment(String.format("store %s", value.print()));
         if(anyMemory(value).isPresent()) return;
         Register register = anyRegister(value).orElseThrow(SemanticException::new);
         Memory memory;
@@ -272,7 +272,7 @@ public class RegisterManager {
     }
 
     Register loadValue(Value value){
-        mipsSegment.debug(String.format("load %s", value.print()));
+//        mipsSegment.comment(String.format("load %s", value.print()));
         return anyRegister(value).orElseGet(() -> {
             Memory memory = anyMemory(value).orElseThrow(SemanticException::new);
             Register register = getFactorReg(value);
@@ -291,7 +291,7 @@ public class RegisterManager {
      * pointer value store in temp register
      */
     Register loadAddressValue(AddressValue addressValue){
-        mipsSegment.debug(String.format("load %s", addressValue.print()));
+//        mipsSegment.comment(String.format("load %s", addressValue.print()));
         int staticOffset = addressValue.getStaticOffset();
         if(addressValue instanceof ArrayValue){
             boolean isGlobal = ((ArrayValue) addressValue).isGlobal();

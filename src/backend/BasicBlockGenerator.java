@@ -9,7 +9,7 @@ import util.VoidExecution;
 public class BasicBlockGenerator {
     private final MipsSegment mipsSegment;
     private final LocalActive localActive;
-    private final RegisterManager registerManager;
+    private final StorageManager storageManager;
 
     private int paramOffset = 0;
 
@@ -17,13 +17,22 @@ public class BasicBlockGenerator {
     public BasicBlockGenerator(BasicBlock basicBlock, int offset) {
         this.localActive = new LocalActive(basicBlock);
         this.mipsSegment = new MipsSegment(basicBlock.getName());
-        this.registerManager = new RegisterManager(localActive, mipsSegment, offset);
+        this.storageManager = new StorageManager(localActive, mipsSegment, offset);
         instrumentExecution.inject();
         jumpExecution.inject();
     }
 
     public String generate(){
-        localActive.forEach(instrumentExecution::exec, registerManager::saveAllVariable, jumpExecution::exec);
+        mipsSegment.sw(Register.getRa(), Register.getSp(), 4);
+        localActive.forEach(instrument -> {
+            mipsSegment.comment(instrument.print());
+            instrumentExecution.exec(instrument);
+        },
+        storageManager::saveAllVariable,
+        instrument-> {
+            mipsSegment.comment(instrument.print());
+            jumpExecution.exec(instrument);
+        });
         return mipsSegment.print();
     }
 
@@ -38,7 +47,7 @@ public class BasicBlockGenerator {
                 Register leftRegister = null;
                 if(param.getLeft() instanceof LValue){
                     LValue left = (LValue)param.getLeft();
-                    leftRegister = registerManager.loadValue(left);
+                    leftRegister = storageManager.loadValue(left);
                 }else{
                     assert param.getLeft() instanceof Constant;
                     leftConst = ((Constant) param.getLeft()).getNumber();
@@ -47,18 +56,17 @@ public class BasicBlockGenerator {
                 Register rightRegister = null;
                 if(param.getRight() instanceof LValue){
                     LValue right = (LValue)param.getRight();
-                    rightRegister = registerManager.loadValue(right);
+                    rightRegister = storageManager.loadValue(right);
                 }else{
                     assert param.getRight() instanceof Constant;
                     rightConst = ((Constant) param.getRight()).getNumber();
                 }
 
                 LValue resultLValue = param.getResult();
-                Register resultReg = registerManager.getResultReg();
+                Register resultReg = storageManager.getResultReg();
                 // resultReg中的值要变化，因此它与之前的lvalue都取消了绑定
                 assert leftRegister != null || rightRegister != null;
 //                if(Generator.DEBUG) mipsSegment.addInstrument(param.print());
-                mipsSegment.debug(param.print());
                 if(leftRegister == null || rightRegister == null){
                     Register factor1;
                     int factor2;
@@ -84,7 +92,7 @@ public class BasicBlockGenerator {
                         default: throw new SemanticException();
                     }
                 }
-                registerManager.change(resultReg, resultLValue);
+                storageManager.change(resultReg, resultLValue);
             });
 
             inject(Assignment.class, param -> {
@@ -92,39 +100,37 @@ public class BasicBlockGenerator {
                 LValue left = param.getLeft();
                 RValue right = param.getRight();
 //                if(Generator.DEBUG) mipsSegment.addInstrument(param.print());
-                mipsSegment.debug(param.print());
                 if (right instanceof LValue) {
-                    register = registerManager.loadValue(right);
-                    registerManager.assign(left, register);
+                    register = storageManager.loadValue(right);
+                    storageManager.assign(left, register);
                 } else {
                     assert right instanceof Constant;
-                    register = registerManager.getResultReg();
+                    register = storageManager.getResultReg();
                     mipsSegment.li(register, ((Constant) right).getNumber());
-                    registerManager.change(register, left);
+                    storageManager.change(register, left);
                 }
             });
 
             inject(Call.class, param -> {
-                mipsSegment.addi(Register.getSp(), Register.getSp(), -(registerManager.getNowMaxOffset() + 1) * 4);
+                mipsSegment.addi(Register.getSp(), Register.getSp(), -(storageManager.getNowMaxOffset() + 1) * 4);
                 mipsSegment.jal(param.getFunction().getEntry().getName());
-                mipsSegment.addi(Register.getSp(), Register.getSp(), (registerManager.getNowMaxOffset() + 1) * 4);
+                mipsSegment.addi(Register.getSp(), Register.getSp(), (storageManager.getNowMaxOffset() + 1) * 4);
                 param.getRet().ifPresent(temp -> {
-                    Register register = registerManager.getResultReg();
+                    Register register = storageManager.getResultReg();
                     mipsSegment.addi(register, Register.getV0(), 0);
-                    registerManager.change(register, temp);
+                    storageManager.change(register, temp);
                 });
             });
 
             inject(Param.class, param -> {
                 Register register;
-                mipsSegment.debug(param.print());
                 Value value = param.getValue();
                 if(value instanceof AddressValue){
-                    register = registerManager.loadAddressValue((AddressValue) value);
+                    register = storageManager.loadAddressValue((AddressValue) value);
                 }else{
-                    register = registerManager.loadValue(value);
+                    register = storageManager.loadValue(value);
                 }
-                mipsSegment.sw(register, Register.getSp(), -(registerManager.getNowMaxOffset() + paramOffset) * 4);
+                mipsSegment.sw(register, Register.getSp(), -(storageManager.getNowMaxOffset() + paramOffset) * 4);
                 paramOffset ++;
             });
 
@@ -140,19 +146,17 @@ public class BasicBlockGenerator {
             inject(Goto.class, go -> mipsSegment.j(go.getBasicBlock().getName()));
             inject(CondGoto.class, go -> {
                 LValue cond = go.getCond();
-                Register register = registerManager.loadValue(cond);
-                mipsSegment.debug(go.print());
+                Register register = storageManager.loadValue(cond);
                 mipsSegment.bne(register, Register.getZero(), go.getTrueBasicBlock().getName());
                 mipsSegment.j(go.getFalseBasicBlock().getName());
             });
             inject(Return.class, param -> {
-                mipsSegment.debug(param.print());
                 param.getReturnValue().ifPresent(value -> {
                     if(value instanceof Constant){
                         mipsSegment.li(Register.getV0() ,((Constant) value).getNumber());
                     }else{
                         assert value instanceof LValue;
-                        Register register = registerManager.loadValue(value);
+                        Register register = storageManager.loadValue(value);
                         mipsSegment.addi(Register.getV0(), register, 0);
                     }
                 });

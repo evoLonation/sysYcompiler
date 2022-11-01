@@ -34,7 +34,7 @@ public class Register {
 
 
     static Set<Register> getLocalRegister(){
-        return registers.values().stream().filter(r -> r.no >= 8 && r.no <= 11).collect(Collectors.toSet());
+        return registers.values().stream().filter(r -> r.no >= 8 && r.no <= 15).collect(Collectors.toSet());
     }
     // 用于存储栈指针
     static Register getSp(){

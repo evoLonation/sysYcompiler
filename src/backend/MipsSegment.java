@@ -50,7 +50,7 @@ public class MipsSegment {
     }
 
     void li(Register register, int number){
-        addLine(String.format("lw %s, %d", register.print(), number));
+        addLine(String.format("li %s, %d", register.print(), number));
     }
     void sll(Register register1, Register register2, int number){
         addLine(String.format("sll %s, %s, %d", register1.print(), register2.print(), number));

@@ -36,7 +36,7 @@ public class SymbolTable {
 
         public VariableInfo(VarType type, int layer) {
             this.type = type;
-            this.offset = layer == 0 ? currentGlobalOffset : currentTotalOffset;
+            this.offset = layer == 0 ? currentGlobalOffset : currentTotalOffset + type.getSize() - 1;
             this.layer = layer;
         }
 

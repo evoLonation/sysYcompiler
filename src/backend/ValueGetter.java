@@ -21,9 +21,10 @@ public class ValueGetter {
      * 这里面包括了lvalue和addressValue，没有包括constant（因为一般constant不需要存到寄存器里）
       */
     List<Value> getUseValues(MidCode midCode){
-        return useValueExecution.exec(midCode).stream()
-                .filter(value -> !(value instanceof Constant))
-                .collect(Collectors.toList());
+        return new ArrayList<>(useValueExecution.exec(midCode));
+//        return useValueExecution.exec(midCode).stream()
+//                .filter(value -> !(value instanceof Constant))
+//                .collect(Collectors.toList());
     }
     Optional<LValue> getDefValue(MidCode midCode){
         return defValueExecution.exec(midCode);
@@ -40,7 +41,7 @@ public class ValueGetter {
             inject(CondGoto.class, param -> Collections.singletonList(param.getCond()));
             inject(Param.class, param -> Collections.singletonList(param.getValue()));
             inject(Printf.class, param -> new ArrayList<>(param.getRValues()));
-            inject(Store.class, param -> getAddressValue(param.getLeft()).collect(Collectors.toList()));
+            inject(Store.class, param -> Stream.concat(getAddressValue(param.getLeft()), Stream.of(param.getRight())).collect(Collectors.toList()));
             inject(Load.class, param -> getAddressValue(param.getRight()).collect(Collectors.toList()));
         }
     };

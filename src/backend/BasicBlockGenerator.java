@@ -63,7 +63,7 @@ public class BasicBlockGenerator {
                 }
 
                 LValue resultLValue = param.getResult();
-                Register resultReg = storageManager.getResultReg();
+                Register resultReg = storageManager.toComputeValue(resultLValue);
                 // resultReg中的值要变化，因此它与之前的lvalue都取消了绑定
                 assert leftRegister != null || rightRegister != null;
 //                if(Generator.DEBUG) mipsSegment.addInstrument(param.print());
@@ -92,7 +92,6 @@ public class BasicBlockGenerator {
                         default: throw new SemanticException();
                     }
                 }
-                storageManager.change(resultReg, resultLValue);
             });
 
             inject(Assignment.class, param -> {
@@ -102,12 +101,11 @@ public class BasicBlockGenerator {
 //                if(Generator.DEBUG) mipsSegment.addInstrument(param.print());
                 if (right instanceof LValue) {
                     register = storageManager.loadValue(right);
-                    storageManager.assign(left, register);
+                    storageManager.toAssign(left, register);
                 } else {
                     assert right instanceof Constant;
-                    register = storageManager.getResultReg();
+                    register = storageManager.toComputeValue(left);
                     mipsSegment.li(register, ((Constant) right).getNumber());
-                    storageManager.change(register, left);
                 }
             });
 
@@ -116,9 +114,8 @@ public class BasicBlockGenerator {
                 mipsSegment.jal(param.getFunction().getEntry().getName());
                 mipsSegment.addi(Register.getSp(), Register.getSp(), (storageManager.getNowMaxOffset() + 1) * 4);
                 param.getRet().ifPresent(temp -> {
-                    Register register = storageManager.getResultReg();
+                    Register register = storageManager.toComputeValue(temp);
                     mipsSegment.addi(register, Register.getV0(), 0);
-                    storageManager.change(register, temp);
                 });
             });
 
@@ -126,13 +123,23 @@ public class BasicBlockGenerator {
                 Register register;
                 Value value = param.getValue();
                 if(value instanceof AddressValue){
-                    register = storageManager.loadAddressValue((AddressValue) value);
+                    register = storageManager.loadAddress((AddressValue) value);
                 }else{
                     register = storageManager.loadValue(value);
                 }
                 mipsSegment.sw(register, Register.getSp(), -(storageManager.getNowMaxOffset() + paramOffset) * 4);
                 paramOffset ++;
             });
+
+            inject(Load.class, load -> {
+                storageManager.loadFromAddressValue(load.getLeft(), load.getRight());
+            });
+
+            inject(Store.class, store -> {
+                storageManager.storeToAddressValue(store.getRight(), store.getLeft());
+            });
+
+
 
 
 

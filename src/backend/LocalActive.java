@@ -64,7 +64,7 @@ public class LocalActive {
                 activeInfoMap.put(outInstrument, lastActiveInfo);
                 activeInfosMap.put(value, activeInfoMap);
                 firstActiveInfos.put(value, lastActiveInfo);
-            }else if(value instanceof Temp){
+            }else {
                 activeInfosMap.put(value, new HashMap<>());
             }
         }

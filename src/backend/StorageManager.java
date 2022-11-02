@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 public class StorageManager {
     private final LocalActive localActive;
     private final ValueGetter valueGetter = ValueGetter.getInstance();
-    private final MipsSegment mipsSegment;
+    private final MipsSegment mipsSegment = MipsSegment.getInstance();
 
 
     // 包括lvalue和addressValue
@@ -20,11 +20,10 @@ public class StorageManager {
     // 包括lvalue和addressValue
     private final Map<Value, Set<Register>> valueRegisterMap;
 
-    private final Map<Value, Set<Memory>> valueMemoryMap;
-    private final Map<Memory, Set<Value>> memoryDescriptors;
+    private final Map<Value, Memory> valueMemoryMap;
 
-    private final Map<Variable, Memory> variableMemoryMap;
-    private final Set<Memory> tempMemoryMap;
+    private final Set<Memory> otherMemories;
+    private final Map<Variable, Memory> variableMemories;
 
 
     private final int dataAddress = 0x10010000;
@@ -42,23 +41,18 @@ public class StorageManager {
     }
 
 
-    StorageManager(LocalActive localActive, MipsSegment mipsSegment, int offset){
-        this.mipsSegment = mipsSegment;
+    StorageManager(LocalActive localActive, int offset){
         this.localActive = localActive;
         this.nowMaxOffset = offset;
-
-
-        this.variableMemoryMap = new HashMap<>();
-        this.valueMemoryMap = localActive.getAllValues().stream().collect(Collectors.toMap(value -> value, value -> new HashSet<>()));
-        this.memoryDescriptors = new HashMap<>();
-        this.tempMemoryMap = new HashSet<>();
+        this.variableMemories = new HashMap<>();
+        this.valueMemoryMap = new HashMap<>();
+        this.otherMemories = new HashSet<>();
         localActive.getAllValues().stream()
                 .filter(lValue -> lValue instanceof Variable)
                 .forEach(value -> {
                     Memory variableMemory = new Memory((Variable) value);
-                    variableMemoryMap.put((Variable) value, variableMemory);
-                    valueMemoryMap.put(value, Stream.of(variableMemory).collect(Collectors.toSet()));
-                    memoryDescriptors.put(variableMemory, Stream.of(value).collect(Collectors.toSet()));
+                    variableMemories.put((Variable) value, variableMemory);
+                    valueMemoryMap.put(value, variableMemory);
                 });
 
         valueRegisterMap = localActive.getAllValues().stream().collect(Collectors.toMap(value -> value, value -> new HashSet<>()));
@@ -80,25 +74,10 @@ public class StorageManager {
     }
 
 
-    //
-    // 状态的变化（类比为图的边的建立和解除）
-    //
 
     private void bind(Register register, Value value) {
         registerDescriptors.get(register).add(value);
         valueRegisterMap.get(value).add(register);
-    }
-
-    private void bind(Memory memory, Value value){
-        memoryDescriptors.get(memory).add(value);
-        valueMemoryMap.get(value).add(memory);
-    }
-
-    private void unBind(Value value){
-        valueRegisterMap.get(value).clear();
-        registerDescriptors.values().forEach(lValues -> lValues.remove(value));
-        valueMemoryMap.get(value).clear();
-        memoryDescriptors.values().forEach(values -> values.remove(value));
     }
 
     private void unBind(Register register){
@@ -106,46 +85,47 @@ public class StorageManager {
         valueRegisterMap.values().forEach(registers -> registers.remove(register));
     }
 
-    private void unBind(Memory memory){
-        memoryDescriptors.get(memory).clear();
-        valueMemoryMap.values().forEach(memories-> memories.remove(memory));
+    private void store(Value value){
+        if(value instanceof Variable){
+            valueMemoryMap.put(value, variableMemories.get((Variable) value));
+        }else{
+            if(!valueMemoryMap.containsKey(value)){
+                // 查找空闲tempMemory
+                Memory tempMemory =
+                        otherMemories.stream()
+                                .filter(memory -> !valueMemoryMap.containsValue(memory)).findAny()
+                                .orElseGet(() -> new Memory(nowMaxOffset++, false));
+                valueMemoryMap.put(value, tempMemory);
+            }
+        }
     }
 
-    private Optional<Memory> anyMemory(Value value){
-        return valueMemoryMap.get(value).stream().findAny();
+    private void unBind(Value value){
+        valueRegisterMap.get(value).clear();
+        registerDescriptors.values().forEach(lValues -> lValues.remove(value));
+        valueMemoryMap.remove(value);
     }
+
+    private boolean isStore(Value value){
+        return valueMemoryMap.containsKey(value);
+    }
+
     private Optional<Register> anyRegister(Value value){
         return valueRegisterMap.get(value).stream().findAny();
     }
 
-    private Set<Value> getNeedStore(Register register, boolean excludeCurrentInstrument){
+    /**
+     * @return 获得寄存器中从下一条中间指令开始还需要使用的且没在内存中的值的集合
+     */
+    private Set<Value> getNeedStore(Register register){
         return registerDescriptors.get(register).stream()
-                .filter(value -> !anyMemory(value).isPresent())
-                .filter(value -> localActive.isStillUse(value, excludeCurrentInstrument))
+                .filter(value -> !isStore(value))
+                .filter(value -> localActive.isStillUse(value, true))
                 .collect(Collectors.toSet());
     }
 
-    // 某个内存的值载入寄存器，则内存中的值要与寄存器绑定
-    private void load(Memory memory, Register register) {
-        unBind(register);
-        // 内存中的所有值绑定到寄存器
-        memoryDescriptors.get(memory).forEach(value -> bind(register, value));
-    }
-
-
-    // 某个寄存器被存入内存，则内存中的值要与寄存器绑定
-    private void store(Register register, Memory memory){
-        unBind(memory);
-        registerDescriptors.get(register).forEach(value -> bind(memory, value));
-    }
-
-    // 某个寄存器被指令改变，则要与之前绑定的值取消绑定
-    private void change(Register register) {
-        unBind(register);
-    }
-
-    // 寄存器改变后将值绑定到寄存器
-    private void change(Register register, Value value){
+    // 寄存器经过指令操作被改变，用来表征value这个值
+    private void operate(Register register, Value value){
         unBind(register);
         unBind(value);
         bind(register ,value);
@@ -154,40 +134,13 @@ public class StorageManager {
     /**
      * 寄存器不变，将value的值改变为寄存器的值
      */
-    void toAssign(Value value, Register register){
+    void assign(Value value, Register register){
         unBind(value);
         bind(register, value);
-        registerDescriptors.get(register).forEach(otherValue -> {
-            valueMemoryMap.get(otherValue).forEach(memory -> bind(memory, value));
-        });
     }
-
-    // 分配一个给temp的空闲的空间
-    // 可以直接store
-    private Memory getTempMemory() {
-        return memoryDescriptors.entrySet().parallelStream()
-                .filter(entry ->entry.getValue().isEmpty())
-                .map(Map.Entry::getKey)
-                .filter(tempMemoryMap::contains)
-                .findAny().orElseGet(() -> {
-                    Memory memory = new Memory(nowMaxOffset, false);
-                    nowMaxOffset ++;
-                    memoryDescriptors.put(memory, new HashSet<>());
-                    tempMemoryMap.add(memory);
-                    return memory;
-                });
-    }
-
-    // 获得variable对应的memory，提前保存占用的
-    private Memory getVariableMemory(Variable variable){
-        Memory variableMemory = variableMemoryMap.get(variable);
-        memoryDescriptors.get(variableMemory).stream().filter(value -> value != variable).forEach(this::storeValue);
-        return variableMemory;
-    }
-
-
 
     /**
+     * 仅仅用于为一个中间代码的def值分配寄存器时！因为该方法会考虑分配当前中间代码的use值
      * @return 启发式的为目标指令要定义的值（产生的结果）分配一个寄存器
      * 值得注意的是，本指令中正在使用的寄存器只要之后不再使用就是允许的
      */
@@ -196,24 +149,24 @@ public class StorageManager {
     }
 
     /**
-     * 启发式的为指定的value分配一个寄存器
+     * 启发式的为当前中间代码的一个use值分配一个寄存器
      */
     private Register getFactorReg(Value factor) {
+        assert valueGetter.getUseValues(localActive.getNowMidCode()).contains(factor);
         // 先找已经有的
         return anyRegister(factor).orElseGet(() -> getReg(false));
     }
 
-    // 分配一个寄存器，该寄存器可以直接与其他值绑定，因为寄存器存的值已经存到内存了
-
     /**
-     * @param isResult 指要分配的寄存器在指令中是以输入还是输出
+     * 分配一个寄存器，该寄存器可以直接与其他值绑定，因为寄存器存的值已经存到内存了
+     * @param couldBeCurrentUse 指是否可以从当前指令的use值中拿寄存器
      */
-    private Register getReg(boolean isResult){
+    private Register getReg(boolean couldBeCurrentUse){
         Register register = registerDescriptors.entrySet().stream()
                 .filter(entry-> {
                     // 所有的value从这条指令之后都不再使用
                     return entry.getValue().stream()
-                            .noneMatch(value -> localActive.isStillUse(value, isResult));
+                            .noneMatch(value -> localActive.isStillUse(value, couldBeCurrentUse));
                 }).findAny().map(Map.Entry::getKey)
                 // 再找空闲的reg
                 .orElseGet(() -> getEmptyReg().orElse(null));
@@ -229,15 +182,16 @@ public class StorageManager {
             // 排除掉包含了本指令要使用的值的register
             .filter(entry ->
                     // 如果是结果，则不需要排除
-                    isResult ||
+                    couldBeCurrentUse ||
                             // 在所有的值都不包含在本指令要使用的值中时，保留
                             entry.getValue().stream()
                                     .noneMatch(value -> valueGetter.getUseValues(localActive.getNowMidCode()).contains(value))
-            ).forEach(entry -> {
-                Set<Value> nowNeedStore = needStore(entry.getValue());
+            ).map(Map.Entry::getKey)
+            .forEach(register1 -> {
+                Set<Value> nowNeedStore = getNeedStore(register1);
                 if(needStoreReference.get() == null || needStoreReference.get().size() > nowNeedStore.size()){
                     needStoreReference.set(nowNeedStore);
-                    registerReference.set(entry.getKey());
+                    registerReference.set(register1);
                 }
             });
             needStoreReference.get().forEach(this::storeValue);
@@ -245,43 +199,36 @@ public class StorageManager {
         }
     }
 
-    // 保证所有的value都不是本指令要使用的
-    private Set<Value> needStore(Set<Value> values){
-        return values.stream()
-                .filter(value -> localActive.isStillUse(value, true))
-                .filter(value -> !anyMemory(value).isPresent())
-                .collect(Collectors.toSet());
-    }
 
     void storeValue(Value value) {
 //        mipsSegment.comment(String.format("store %s", value.print()));
-        if(anyMemory(value).isPresent()) return;
+        if(valueMemoryMap.containsKey(value)) return;
         Register register = anyRegister(value).orElseThrow(SemanticException::new);
-        Memory memory;
-        if(value instanceof Temp){
-            memory = getTempMemory();
-        }else {
-            memory = getVariableMemory((Variable) value);
-        }
+        store(value);
+        Memory memory = valueMemoryMap.get(value);
         if(memory.isGlobal){
             mipsSegment.sw(register, dataAddress + memory.offset * 4);
         }else{
             mipsSegment.sw(register, Register.getSp(), -memory.offset * 4);
         }
-        store(register, memory);
     }
 
-    Register loadValue(Value value){
-//        mipsSegment.comment(String.format("load %s", value.print()));
-        return anyRegister(value).orElseGet(() -> {
-            if(value instanceof Constant){
-                Register register = toComputeValue(value);
-                mipsSegment.li(register, ((Constant) value).getNumber());
+    Register loadValue(Value useValue) {
+//        mipsSegment.comment(String.format("load %s", value.print()));\
+        return anyRegister(useValue).orElseGet(() -> {
+            if(useValue instanceof Constant){
+                Register register = getFactorReg(useValue);
+                operate(register, useValue);
+                mipsSegment.li(register, ((Constant) useValue).getNumber());
                 return register;
             }else{
-                assert value instanceof LValue;
-                Memory memory = anyMemory(value).orElseThrow(SemanticException::new);
-                Register register = toComputeValue(value);
+                Memory memory = valueMemoryMap.get(useValue);
+                Objects.requireNonNull(memory);
+                Register register = getFactorReg(useValue);
+                // todo bug: 不应该将usevalue和memory解绑，但是这里的operate解绑了
+//                operate(register, useValue);
+                unBind(register);
+                bind(register, useValue);
                 if(memory.isGlobal){
                     mipsSegment.lw(register, dataAddress + memory.offset * 4);
                 }else{
@@ -329,14 +276,14 @@ public class StorageManager {
                 LValue offset = (LValue) addressValue.getOffset();
                 Register offsetRegister = loadValue(offset);
                 mipsSegment.sll(offsetRegister, offsetRegister, 2);
-                change(offsetRegister, offset);
+                operate(offsetRegister, offset);
 
                 if(isGlobal){
                     return new Address(offsetRegister, dataAddress + staticOffset * 4);
                 }else{
                     Register register = getReg(false);
                     mipsSegment.add(register, Register.getSp() ,offsetRegister);
-                    change(register);
+                    unBind(register);
                     return new Address(register, -staticOffset*4);
                 }
             }
@@ -344,7 +291,7 @@ public class StorageManager {
             assert addressValue instanceof PointerValue;
             Register register = getReg(false);
             mipsSegment.lw(register, Register.getSp(),-staticOffset * 4);
-            change(register, addressValue);
+            operate(register, addressValue);
             if(addressValue.getOffset() instanceof Constant){
                 return new Address(register, ((Constant) addressValue.getOffset()).getNumber() * 4);
             }else {
@@ -352,9 +299,9 @@ public class StorageManager {
                 LValue offset = (LValue) addressValue.getOffset();
                 Register offsetRegister = loadValue(offset);
                 mipsSegment.sll(offsetRegister, offsetRegister, 2);
-                change(offsetRegister, offset);
+                operate(offsetRegister, offset);
                 mipsSegment.add(register, register, offsetRegister);
-                change(register, addressValue);
+                operate(register, addressValue);
                 return new Address(register);
             }
         }
@@ -365,7 +312,8 @@ public class StorageManager {
      */
     Register loadAddress(AddressValue addressValue){
         Address address = getAddress(addressValue);
-        Register register = toComputeValue(addressValue);
+        Register register = getFactorReg(addressValue);
+        operate(register, addressValue);
         if(address.register == null){
              mipsSegment.li(register, address.offset);
         }else{
@@ -376,7 +324,7 @@ public class StorageManager {
 
     Register toComputeValue(Value value){
         Register register = getResultReg();
-        change(register, value);
+        operate(register, value);
         return register;
     }
 
@@ -385,19 +333,30 @@ public class StorageManager {
                 .filter(lValue -> lValue instanceof Variable)
                 .forEach(this::storeValue);
     }
+    void storeAllValue(){
+        localActive.getAllValues().stream()
+                .filter(value -> localActive.isStillUse(value, true))
+                .filter(value -> !(value instanceof Constant) && !(value instanceof ArrayValue))
+                .forEach(this::storeValue);
+    }
+    void clearRegister(){
+        registerDescriptors.forEach(((register, values) -> values.clear()));
+        valueRegisterMap.forEach(((value, registers) -> registers.clear()));
+    }
 
     void loadFromAddressValue(Value value, AddressValue addressValue){
         Address address = getAddress(addressValue);
         Register register = toComputeValue(value);
-        if(address.register==null){
+        if(address.register == null) {
             address.register = Register.getZero();
         }
         mipsSegment.lw(register, address.register, address.offset);
     }
+
     void storeToAddressValue(Value value, AddressValue addressValue){
         Address address = getAddress(addressValue);
         Register register = loadValue(value);
-        if(address.register==null){
+        if(address.register == null) {
             address.register = Register.getZero();
         }
         mipsSegment.sw(register, address.register, address.offset);

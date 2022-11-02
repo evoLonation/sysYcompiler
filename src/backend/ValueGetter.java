@@ -40,7 +40,7 @@ public class ValueGetter {
             inject(Return.class, param -> param.getReturnValue().map(r -> Collections.singletonList((Value)r)).orElse(new ArrayList<>()));
             inject(CondGoto.class, param -> Collections.singletonList(param.getCond()));
             inject(Param.class, param -> Collections.singletonList(param.getValue()));
-            inject(Printf.class, param -> new ArrayList<>(param.getRValues()));
+            inject(PrintInt.class, param -> Collections.singletonList(param.getRValue()));
             inject(Store.class, param -> Stream.concat(getAddressValue(param.getLeft()), Stream.of(param.getRight())).collect(Collectors.toList()));
             inject(Load.class, param -> getAddressValue(param.getRight()).collect(Collectors.toList()));
         }

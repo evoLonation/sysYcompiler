@@ -7,23 +7,33 @@ import midcode.value.*;
 import util.VoidExecution;
 
 public class BasicBlockGenerator {
-    private final MipsSegment mipsSegment;
+    private final MipsSegment mipsSegment = MipsSegment.getInstance();
     private final LocalActive localActive;
     private final StorageManager storageManager;
+    private final StringRepo stringRepo = StringRepo.getInstance();
+    private final BasicBlock basicBlock;
 
-    private int paramOffset = 0;
+    private int paramOffset = 1;
+    private boolean isStartParam;
+    private final boolean isMain;
+    private final boolean isEntry;
 
 
-    public BasicBlockGenerator(BasicBlock basicBlock, int offset) {
+    public BasicBlockGenerator(BasicBlock basicBlock, int offset, boolean isMain, boolean isEntry) {
+        this.isMain = isMain;
+        this.isEntry = isEntry;
+        this.basicBlock = basicBlock;
+        this.isStartParam = false;
         this.localActive = new LocalActive(basicBlock);
-        this.mipsSegment = new MipsSegment(basicBlock.getName());
-        this.storageManager = new StorageManager(localActive, mipsSegment, offset);
+        this.storageManager = new StorageManager(localActive, offset);
+        stringRepo.scanBasicBlock(basicBlock);
         instrumentExecution.inject();
         jumpExecution.inject();
     }
 
     public String generate(){
-        mipsSegment.sw(Register.getRa(), Register.getSp(), 4);
+        mipsSegment.newSegment(basicBlock.getName());
+        if(!isMain && isEntry) mipsSegment.sw(Register.getRa(), Register.getSp(), 4);
         localActive.forEach(instrument -> {
             mipsSegment.comment(instrument.print());
             instrumentExecution.exec(instrument);
@@ -41,56 +51,45 @@ public class BasicBlockGenerator {
     private final VoidExecution<Instrument> instrumentExecution = new VoidExecution<Instrument>() {
         @Override
         public void inject() {
-            inject(param -> {});
+            // todo 待优化：常量计算
             inject(BinaryOperation.class,  param ->{
-                int leftConst = 0;
-                Register leftRegister = null;
-                if(param.getLeft() instanceof LValue){
-                    LValue left = (LValue)param.getLeft();
-                    leftRegister = storageManager.loadValue(left);
-                }else{
-                    assert param.getLeft() instanceof Constant;
-                    leftConst = ((Constant) param.getLeft()).getNumber();
+                Register leftRegister = storageManager.loadValue(param.getLeft());
+                Register rightRegister = storageManager.loadValue(param.getRight());
+                Register resultReg = storageManager.toComputeValue(param.getResult());
+                switch (param.getOp()) {
+                    case PLUS: mipsSegment.add(resultReg, leftRegister, rightRegister); break;
+                    case MINU: mipsSegment.sub(resultReg, leftRegister, rightRegister); break;
+                    case MULT: mipsSegment.mul(resultReg, leftRegister, rightRegister); break;
+                    case DIV: mipsSegment.div(resultReg, leftRegister, rightRegister); break;
+                    case MOD: mipsSegment.mod(resultReg, leftRegister, rightRegister); break;
+                    case LEQ: mipsSegment.sle(resultReg, leftRegister, rightRegister);break;
+                    case GEQ: mipsSegment.sge(resultReg, leftRegister, rightRegister);break;
+                    case GRE: mipsSegment.sgt(resultReg, leftRegister, rightRegister); break;
+                    case LSS: mipsSegment.slt(resultReg, leftRegister, rightRegister); break;
+                    case NEQ: mipsSegment.sne(resultReg, leftRegister, rightRegister);break;
+                    case EQL: mipsSegment.seq(resultReg, leftRegister, rightRegister);break;
+                    default: throw new SemanticException();
                 }
-                int rightConst = 0;
-                Register rightRegister = null;
-                if(param.getRight() instanceof LValue){
-                    LValue right = (LValue)param.getRight();
-                    rightRegister = storageManager.loadValue(right);
-                }else{
-                    assert param.getRight() instanceof Constant;
-                    rightConst = ((Constant) param.getRight()).getNumber();
-                }
+            });
 
-                LValue resultLValue = param.getResult();
-                Register resultReg = storageManager.toComputeValue(resultLValue);
-                // resultReg中的值要变化，因此它与之前的lvalue都取消了绑定
-                assert leftRegister != null || rightRegister != null;
-//                if(Generator.DEBUG) mipsSegment.addInstrument(param.print());
-                if(leftRegister == null || rightRegister == null){
-                    Register factor1;
-                    int factor2;
-                    if(leftRegister == null) {
-                        factor1 = rightRegister;
-                        factor2 = leftConst;
-                    }else{
-                        factor1 = leftRegister;
-                        factor2 = rightConst;
+            inject(UnaryOperation.class, ope -> {
+                Register register = storageManager.loadValue(ope.getValue());
+                switch (ope.getOp()) {
+                    case PLUS: {
+                        storageManager.assign(ope.getResult(), register);
+                        break;
                     }
-                    switch (param.getOp()) {
-                        case PLUS:  mipsSegment.addi(resultReg, factor1, factor2); break;
-                        case MINU: mipsSegment.addi(resultReg, factor1, -factor2); break;
-                        // todo mult 和 div 可以移位计算
-                        case MULT: break;
-                        default: throw new SemanticException();
+                    case MINU: {
+                        Register resultReg = storageManager.toComputeValue(ope.getResult());
+                        mipsSegment.sub(resultReg, Register.getZero(), register);
+                        break;
                     }
-                } else{
-                    switch (param.getOp()) {
-                        case PLUS: mipsSegment.add(resultReg, leftRegister, rightRegister); break;
-                        case MINU: mipsSegment.sub(resultReg, leftRegister, rightRegister); break;
-                        case MULT: break;
-                        default: throw new SemanticException();
+                    case NOT: {
+                        Register resultReg = storageManager.toComputeValue(ope.getResult());
+                        mipsSegment.seq(resultReg, Register.getZero(), register);
+                        break;
                     }
+                    default: throw new SemanticException();
                 }
             });
 
@@ -101,7 +100,7 @@ public class BasicBlockGenerator {
 //                if(Generator.DEBUG) mipsSegment.addInstrument(param.print());
                 if (right instanceof LValue) {
                     register = storageManager.loadValue(right);
-                    storageManager.toAssign(left, register);
+                    storageManager.assign(left, register);
                 } else {
                     assert right instanceof Constant;
                     register = storageManager.toComputeValue(left);
@@ -110,6 +109,16 @@ public class BasicBlockGenerator {
             });
 
             inject(Call.class, param -> {
+//                storageManager.storeAllValue();
+                if(!isStartParam){
+                    // todo 重大bug：param之后有可能会存储temp，导致本函数的maxoffset上升，从而导致目标函数读不到param
+                    //前提假设：所有的param都紧挨着对应的funccall之前
+                    storageManager.storeAllValue();
+                    isStartParam = true;
+                }
+                isStartParam = false;
+                storageManager.clearRegister();
+                paramOffset = 1;
                 mipsSegment.addi(Register.getSp(), Register.getSp(), -(storageManager.getNowMaxOffset() + 1) * 4);
                 mipsSegment.jal(param.getFunction().getEntry().getName());
                 mipsSegment.addi(Register.getSp(), Register.getSp(), (storageManager.getNowMaxOffset() + 1) * 4);
@@ -120,6 +129,12 @@ public class BasicBlockGenerator {
             });
 
             inject(Param.class, param -> {
+                if(!isStartParam){
+                    // todo 重大bug：param之后有可能会存储temp，导致本函数的maxoffset上升，从而导致目标函数读不到param
+                    //前提假设：所有的param都紧挨着对应的funccall之前
+                    storageManager.storeAllValue();
+                    isStartParam = true;
+                }
                 Register register;
                 Value value = param.getValue();
                 if(value instanceof AddressValue){
@@ -139,9 +154,23 @@ public class BasicBlockGenerator {
                 storageManager.storeToAddressValue(store.getRight(), store.getLeft());
             });
 
+            inject(GetInt.class, getInt -> {
+                mipsSegment.li(Register.getV0(), 5);
+                mipsSegment.syscall();
+                mipsSegment.move(storageManager.toComputeValue(getInt.getlValue()), Register.getV0());
+            });
 
+            inject(PrintInt.class, printf -> {
+                mipsSegment.move(Register.getA0(), storageManager.loadValue(printf.getRValue()));
+                mipsSegment.li(Register.getV0(), 1);
+                mipsSegment.syscall();
+            });
 
-
+            inject(PrintString.class, printf->{
+                mipsSegment.la(Register.getA0(), stringRepo.getStringLabel(printf));
+                mipsSegment.li(Register.getV0(), 4);
+                mipsSegment.syscall();
+            });
 
         }
     };
@@ -149,7 +178,6 @@ public class BasicBlockGenerator {
     private final VoidExecution<Jump> jumpExecution = new VoidExecution<Jump>() {
         @Override
         public void inject() {
-            inject(param -> {});
             inject(Goto.class, go -> mipsSegment.j(go.getBasicBlock().getName()));
             inject(CondGoto.class, go -> {
                 LValue cond = go.getCond();
@@ -158,22 +186,24 @@ public class BasicBlockGenerator {
                 mipsSegment.j(go.getFalseBasicBlock().getName());
             });
             inject(Return.class, param -> {
-                param.getReturnValue().ifPresent(value -> {
-                    if(value instanceof Constant){
-                        mipsSegment.li(Register.getV0() ,((Constant) value).getNumber());
-                    }else{
-                        assert value instanceof LValue;
-                        Register register = storageManager.loadValue(value);
-                        mipsSegment.addi(Register.getV0(), register, 0);
-                    }
-                });
-                mipsSegment.lw(Register.getRa(), Register.getSp(), 4);
-                mipsSegment.jr(Register.getRa());
+                if(isMain) {
+                    mipsSegment.li(Register.getV0(), 10);
+                    mipsSegment.syscall();
+                }else{
+                    param.getReturnValue().ifPresent(value -> {
+                        if(value instanceof Constant){
+                            mipsSegment.li(Register.getV0() ,((Constant) value).getNumber());
+                        }else{
+                            assert value instanceof LValue;
+                            Register register = storageManager.loadValue(value);
+                            mipsSegment.addi(Register.getV0(), register, 0);
+                        }
+                    });
+                    mipsSegment.lw(Register.getRa(), Register.getSp(), 4);
+                    mipsSegment.jr(Register.getRa());
+                }
             });
         }
     };
-
-
-
 
 }

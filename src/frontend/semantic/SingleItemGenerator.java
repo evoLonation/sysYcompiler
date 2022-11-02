@@ -13,6 +13,8 @@ import frontend.parser.nonterminal.stmt.*;
 import util.VoidExecution;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -91,7 +93,27 @@ public class SingleItemGenerator extends InstrumentGenerator{
                         }
                     }
                 }
-                addInstrument(new Printf(formatString, rValues));
+                Iterator<RValue> iterator = rValues.iterator();
+                StringBuilder str = null;
+                for(FormatString.Char c : formatString.getCharList()){
+                    if(c instanceof FormatString.NormalChar){
+                        if(str != null){
+                            str.append(c);
+                        }else{
+                            str = new StringBuilder(c.toString());
+                        }
+                    }else{
+                        if(str != null){
+                            addInstrument(new PrintString(str.toString()));
+                            str = null;
+                        }
+                        addInstrument(new PrintInt(iterator.next()));
+                    }
+                }
+                if(str != null){
+                    addInstrument(new PrintString(str.toString()));
+                }
+//                addInstrument(new Printf(formatString, rValues));
             });
 
 

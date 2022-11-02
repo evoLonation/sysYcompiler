@@ -166,19 +166,8 @@ public class VirtualMachine {
                 }
             });
 
-            inject(Printf.class, printf ->{
-                List<RValue> rValues = printf.getRValues();
-                int i = 0;
-                for(FormatString.Char chr : printf.getFormatString().getCharList()){
-                    if(chr instanceof FormatString.NormalChar){
-                        stdout += ((FormatString.NormalChar) chr).getValue();
-                    }else if(chr instanceof FormatString.FormatChar) {
-                        stdout += getIntValue(rValues.get(i++)).value;
-                    }else{
-                        throw new SemanticException();
-                    }
-                }
-            });
+            inject(PrintInt.class, printf -> stdout += getIntValue(printf.getRValue()).value);
+            inject(PrintString.class, printf -> stdout += printf.getString());
 
             inject(Store.class, store -> saveValueToAddress(getAddress(store.getLeft()), getIntValue(store.getRight())));
 

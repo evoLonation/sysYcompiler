@@ -62,13 +62,12 @@ public class FuncCallGenerator extends InstrumentGenerator{
 //                    addInstrument(new Param(new Constant(0)));
                 }
             }
+            params.forEach(value -> addInstrument(new Param(value)));
             if(funcType.isReturn()){
-                params.forEach(value -> addInstrument(new Param(value)));
                 Temp ret = valueFactory.newTemp();
                 addInstrument(new Call(function, ret));
                 result = ret;
             } else {
-
                 addInstrument(new Call(function, params));
             }
         }

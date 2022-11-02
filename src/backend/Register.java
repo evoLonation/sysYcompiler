@@ -21,6 +21,7 @@ public class Register {
             case 29 : return "$sp";
             case 31 : return "$ra";
             case 2 : return "$v0";
+            case 4 : return "$a0";
             default: return "$" + no;
         }
     }
@@ -51,4 +52,5 @@ public class Register {
     static Register getZero(){
         return registers.get(0);
     }
+    static Register getA0(){return registers.get(4);}
 }

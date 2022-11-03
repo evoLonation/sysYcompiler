@@ -1,5 +1,7 @@
 package backend;
 
+import java.util.*;
+
 public class MipsSegment {
     private final boolean COMMENT = true;
 
@@ -10,7 +12,12 @@ public class MipsSegment {
         dataContent += "\t" + instrument + "\n";
     }
     private void addTextLine(String instrument){
-        textContent += "\t" + instrument + "\n";
+        if(isInBackFill()){
+            backFillQueue.add(instrument);
+            needFillQueue.add(false);
+        }else{
+            textContent += "\t" + instrument + "\n";
+        }
     }
 
     public String print(){
@@ -111,9 +118,11 @@ public class MipsSegment {
     void la(Register register, String label){
         addTextLine(String.format("la %s, %s", register.print(), label));
     }
+
     void sll(Register register1, Register register2, int number){
         addTextLine(String.format("sll %s, %s, %d", register1.print(), register2.print(), number));
     }
+
     void jal(String label){
         addTextLine(String.format("jal %s", label));
     }
@@ -121,6 +130,7 @@ public class MipsSegment {
     void j(String label){
         addTextLine(String.format("j %s", label));
     }
+
     void jr(Register register){
         addTextLine(String.format("jr %s", register.print()));
     }
@@ -131,6 +141,38 @@ public class MipsSegment {
 
     void syscall(){
         addTextLine("syscall");
+    }
+
+    private final Deque<String> backFillQueue = new LinkedList<>();
+    private final Deque<Boolean> needFillQueue = new LinkedList<>();
+    private int backFillNumber = 0;
+
+    // offset wait to back fill
+    void swBackFill(Register register, Register address){
+        backFillNumber ++;
+        backFillQueue.add(String.format("sw %s, ", register.print()) + "%d" + String.format("(%s)", address.print()));
+        needFillQueue.add(true);
+    }
+
+    void backFill(int offset){
+        while(!backFillQueue.isEmpty()){
+            if(needFillQueue.pop()){
+                textContent += "\t" + String.format(backFillQueue.pop(), offset) + "\n";
+                backFillNumber --;
+                break;
+            }
+            textContent += "\t" + backFillQueue.pop() + "\n";
+        }
+        if(backFillNumber == 0){
+            while(!backFillQueue.isEmpty()){
+                needFillQueue.pop();
+                textContent += "\t" + backFillQueue.pop() + "\n";
+            }
+        }
+    }
+
+    boolean isInBackFill(){
+        return backFillNumber != 0;
     }
 
 

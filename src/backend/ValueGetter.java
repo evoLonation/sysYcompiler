@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 public class ValueGetter {
     // repeatable
-    List<Value> getAllValues(MidCode midCode){
+    List<LValue> getAllValues(MidCode midCode){
         return Stream.concat(getUseValues(midCode).stream(),
                 getDefValue(midCode).map(Stream::of).orElse(Stream.empty()))
                 .collect(Collectors.toList());
@@ -20,11 +20,12 @@ public class ValueGetter {
     /**
      * 这里面包括了lvalue和addressValue，没有包括constant（因为一般constant不需要存到寄存器里）
       */
-    List<Value> getUseValues(MidCode midCode){
-        return new ArrayList<>(useValueExecution.exec(midCode));
-//        return useValueExecution.exec(midCode).stream()
-//                .filter(value -> !(value instanceof Constant))
-//                .collect(Collectors.toList());
+    List<LValue> getUseValues(MidCode midCode){
+//        return new ArrayList<>(useValueExecution.exec(midCode));
+        return useValueExecution.exec(midCode).stream()
+                .map(value -> value instanceof AddressValue ? ((AddressValue) value).getOffset() : value)
+                .filter(value -> value instanceof LValue).map(value -> (LValue) value)
+                .collect(Collectors.toList());
     }
     Optional<LValue> getDefValue(MidCode midCode){
         return defValueExecution.exec(midCode);
@@ -37,17 +38,15 @@ public class ValueGetter {
             inject(BinaryOperation.class , param -> Arrays.asList(param.getLeft(), param.getRight()));
             inject(UnaryOperation.class, param -> Collections.singletonList(param.getValue()));
             inject(Assignment.class, param -> Collections.singletonList(param.getRight()));
-            inject(Return.class, param -> param.getReturnValue().map(r -> Collections.singletonList((Value)r)).orElse(new ArrayList<>()));
+            inject(Return.class, param -> param.getReturnValue().map(r -> Collections.singletonList((Value)r)).orElse(Collections.emptyList()));
             inject(CondGoto.class, param -> Collections.singletonList(param.getCond()));
             inject(Param.class, param -> Collections.singletonList(param.getValue()));
             inject(PrintInt.class, param -> Collections.singletonList(param.getRValue()));
-            inject(Store.class, param -> Stream.concat(getAddressValue(param.getLeft()), Stream.of(param.getRight())).collect(Collectors.toList()));
-            inject(Load.class, param -> getAddressValue(param.getRight()).collect(Collectors.toList()));
+            inject(Store.class, param -> Arrays.asList(param.getRight(), param.getLeft()));
+            inject(Load.class, param -> Collections.singletonList(param.getRight()));
         }
     };
-    private  Stream<Value> getAddressValue(AddressValue addressValue){
-        return Stream.of(addressValue, addressValue.getOffset());
-    }
+
     private final Execution<MidCode, Optional<LValue>> defValueExecution = new Execution<MidCode, Optional<LValue>>() {
         @Override
         public void inject() {

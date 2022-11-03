@@ -9,6 +9,7 @@ import midcode.Module;
 import frontend.parser.Parser;
 import frontend.parser.nonterminal.CompUnit;
 import frontend.semantic.ModuleGenerator;
+import vm.VirtualMachine;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,7 +21,7 @@ public class Compiler {
 
 
     public static void main(String[] args) {
-        lab5(true, true);
+        mips(true, true);
     }
 
     static List<Character> getCharList(String fileName){
@@ -72,10 +73,9 @@ public class Compiler {
         return new ParserResult(parser.analysis(), parser.getPostOrderList());
     }
 
-    static void lab5(boolean isStdin, boolean isGenerateMidCode){
+    static void mips(boolean isStdin, boolean isGenerateMidCode){
         String srcFile = "testfile.txt";
         String inputFile = "input.txt";
-        String outputFile = "pcoderesult.txt";
         String codeFile = "midcode.txt";
         String mipsFile = "mips.txt";
         ParserResult result = parser(lexer(srcFile));
@@ -86,26 +86,41 @@ public class Compiler {
 //            str.append(frontend.error.detail()).append("\n");
             }
             throw new SemanticException();
-
         }
         if(isGenerateMidCode){
             printAndWrite(codeFile, module.print());
         }
-//        VirtualMachine virtualMachine;
-//        if(isStdin){
-//            virtualMachine = new VirtualMachine(module);
-//        }else{
-//            String input = "";
-//            for(Character c : getCharList(inputFile)){
-//                input += c;
-//            }
-//            virtualMachine = new VirtualMachine(module, input);
-//        }
-
-//        virtualMachine.run();
-
-//        printAndWrite(outputFile, virtualMachine.getStdout());
         printAndWrite(mipsFile, new Generator(module).generate());
+    }
+    static void midcode(boolean isStdin, boolean isGenerateMidCode){
+        String srcFile = "testfile.txt";
+        String inputFile = "input.txt";
+        String outputFile = "pcoderesult.txt";
+        String codeFile = "midcode.txt";
+        ParserResult result = parser(lexer(srcFile));
+        Module module = new ModuleGenerator(result.compUnit).generate();
+        if(ErrorRecorder.getInstance().getErrorSet().size() != 0){
+            for(Error error : ErrorRecorder.getInstance().getErrorSet()){
+                System.out.println(error.detail());
+//            str.append(frontend.error.detail()).append("\n");
+            }
+            throw new SemanticException();
+        }
+        if(isGenerateMidCode){
+            printAndWrite(codeFile, module.print());
+        }
+        VirtualMachine virtualMachine;
+        if(isStdin){
+            virtualMachine = new VirtualMachine(module);
+        }else{
+            String input = "";
+            for(Character c : getCharList(inputFile)){
+                input += c;
+            }
+            virtualMachine = new VirtualMachine(module, input);
+        }
+        virtualMachine.run();
+        printAndWrite(outputFile, virtualMachine.getStdout());
     }
 
     static void lab4(){

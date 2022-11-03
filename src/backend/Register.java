@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+// todo 分类（通用、传参、返回值等等）
 public class Register {
     private final int no;
 

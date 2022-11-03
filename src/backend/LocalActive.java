@@ -2,13 +2,11 @@ package backend;
 
 import midcode.BasicBlock;
 import midcode.MidCode;
-import midcode.instrument.Call;
 import midcode.instrument.Instrument;
 import midcode.instrument.Jump;
 import midcode.value.*;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -19,26 +17,39 @@ import java.util.stream.Stream;
 public class LocalActive {
     private final ValueGetter valueGetter = ValueGetter.getInstance();
     //value是key对应的activeinfo，每个instrument都会对应一个activeInfo，对应的是从该instrument找起第一个activeInfo
-    private final Map<Value, Map<MidCode, ActiveInfo>> activeInfosMap = new HashMap<>();
-    private final Map<Value, ActiveInfo> firstActiveInfos = new HashMap<>();
-    private final Set<Value> allValues;
+    private final Map<LValue, Map<MidCode, ActiveInfo>> activeInfosMap = new HashMap<>();
+    private final Map<LValue, ActiveInfo> firstActiveInfos = new HashMap<>();
+    private final Set<LValue> allValues;
     private final List<MidCode> midCodes;
-    private MidCode nowMidCode;
+    private final List<Instrument> instruments;
+    private final Jump lastJump;
+    private int nowIndex;
+    private Instrument nowInstrument;
 
-    public void forEach(Consumer<? super Instrument> instrumentAction, Runnable beforeJump, Consumer<? super Jump> jumpAction) {
-        for (MidCode midCode : midCodes) {
-            nowMidCode = midCode;
-            if(midCode instanceof Jump){
-                beforeJump.run();
-                jumpAction.accept((Jump) midCode);
-                break;
-            }
-            instrumentAction.accept((Instrument) midCode);
-        }
+    Instrument getNowInstrument() throws NoSuchElementException {
+        if(nowInstrument == null)throw new NoSuchElementException();
+        return nowInstrument;
     }
 
-    public MidCode getNowMidCode() {
-        return nowMidCode;
+    Jump getLastJump(){
+        return lastJump;
+    }
+
+    MidCode getNow(){
+        if(nowInstrument == null) return lastJump;
+        return nowInstrument;
+    }
+
+    boolean hasNowInstrument(){
+        return nowInstrument != null;
+    }
+
+    void next() {
+        if(nowIndex >= instruments.size()){
+            nowInstrument = null;
+        }else{
+            nowInstrument = instruments.get(nowIndex++);
+        }
     }
 
     private static class OutInstrument implements Instrument{
@@ -50,14 +61,16 @@ public class LocalActive {
 
     LocalActive(BasicBlock basicBlock) {
         OutInstrument outInstrument = new OutInstrument();
-        midCodes = Stream.concat(basicBlock.getInstruments().stream(),
-                Stream.of(basicBlock.getLastInstrument()
+        instruments = basicBlock.getInstruments();
+        lastJump = basicBlock.getLastInstrument();
+        midCodes = Stream.concat(instruments.stream(),
+                Stream.of(lastJump
                         , outInstrument))
                 .collect(Collectors.toList());
         //假设基本块中的所有variable都可能会在基本快结束后活跃
         allValues = midCodes.stream()
                 .flatMap(midCode -> valueGetter.getAllValues(midCode).stream()).collect(Collectors.toSet());
-        for(Value value : allValues) {
+        for(LValue value : allValues) {
             if(value instanceof Variable){
                 ActiveInfo lastActiveInfo = new ActiveInfo(outInstrument, true, false);
                 Map<MidCode, ActiveInfo> activeInfoMap = new HashMap<>();
@@ -72,8 +85,8 @@ public class LocalActive {
         ListIterator<MidCode> listIterator = midCodes.listIterator(midCodes.size());
         while(listIterator.hasPrevious()){
             MidCode midCode = listIterator.previous();
-            Map<Value, ActiveInfo> nowActiveInfos = new HashMap<>();
-            for(Value value : valueGetter.getUseValues(midCode)){
+            Map<LValue, ActiveInfo> nowActiveInfos = new HashMap<>();
+            for(LValue value : valueGetter.getUseValues(midCode)){
                 nowActiveInfos.put(value, new ActiveInfo(midCode, true, false));
             }
             valueGetter.getDefValue(midCode).ifPresent(value->{
@@ -84,15 +97,15 @@ public class LocalActive {
                 }
             });
 
-            for(Map.Entry<Value, ActiveInfo> entry : nowActiveInfos.entrySet()){
-                Value value = entry.getKey();
+            for(Map.Entry<LValue, ActiveInfo> entry : nowActiveInfos.entrySet()){
+                LValue value = entry.getKey();
                 ActiveInfo nowActiveInfo = entry.getValue();
                 if(firstActiveInfos.containsKey(value)){
                     nowActiveInfo.next = firstActiveInfos.get(value);
                 }
                 firstActiveInfos.put(value, nowActiveInfo);
             }
-            for(Value value : allValues){
+            for(LValue value : allValues){
                 ActiveInfo firstActiveInfo = firstActiveInfos.get(value);
                 if(firstActiveInfo != null){
                     activeInfosMap.get(value).put(midCode, firstActiveInfo);
@@ -100,6 +113,7 @@ public class LocalActive {
             }
         }
         System.out.println(check(basicBlock));
+        next();
     }
 
     // 如果use和def都同时为true，则使用肯定在定义前面
@@ -124,14 +138,14 @@ public class LocalActive {
      * @param startToAfter 为true代表从instrument之后开始寻找使用
      * @return check if lvalue's last def (not include this instrument) will be used
      */
-    boolean isStillUse(Value value, boolean startToAfter){
-        ActiveInfo activeInfo = activeInfosMap.get(value).get(nowMidCode);
+    boolean isStillUse(LValue value, boolean startToAfter){
+        ActiveInfo activeInfo = activeInfosMap.get(value).get(getNow());
         if(startToAfter){
             // check now
             if(activeInfo == null){
                 return false;
             }
-            if(activeInfo.midCode == nowMidCode){
+            if(activeInfo.midCode == getNow()){
                 if(activeInfo.isDef) return false;
                 activeInfo = activeInfo.next;
             }
@@ -151,7 +165,7 @@ public class LocalActive {
         List<MidCode> midCodes = new ArrayList<>(basicBlock.getInstruments());
         midCodes.add(basicBlock.getLastInstrument());
         StringBuilder ret = new StringBuilder();
-        for(Map.Entry<Value, ActiveInfo> entry : firstActiveInfos.entrySet()){
+        for(Map.Entry<LValue, ActiveInfo> entry : firstActiveInfos.entrySet()){
             Value value = entry.getKey();
             ActiveInfo activeInfo = entry.getValue();
             ret.append(value.print()).append(" ");
@@ -170,7 +184,7 @@ public class LocalActive {
         return ret.toString();
     }
 
-    public Set<Value> getAllValues() {
+    public Set<LValue> getAllLValues() {
         return allValues;
     }
 }

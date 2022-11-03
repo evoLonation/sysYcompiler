@@ -9,4 +9,8 @@ public class SemanticException extends CompileException{
     public SemanticException() {
         this(0);
     }
+    public SemanticException(String info) {
+        this(0);
+        information = info;
+    }
 }

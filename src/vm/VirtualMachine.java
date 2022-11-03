@@ -54,7 +54,11 @@ public class VirtualMachine {
                 valueStack[i] = ((Address) valueValue).address;
                 isGlobalStack[i] = ((Address) valueValue).isGlobal;
             }else if(valueValue instanceof IntValue){
-                isAddressStack[i] = false;
+                try{
+                    isAddressStack[i] = false;
+                }catch (ArrayIndexOutOfBoundsException e){
+                    e.printStackTrace();
+                }
                 valueStack[i] = ((IntValue) valueValue).value;
             }else{
                 throw new SemanticException();

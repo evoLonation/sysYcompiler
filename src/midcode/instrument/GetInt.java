@@ -2,7 +2,7 @@ package midcode.instrument;
 
 import midcode.value.LValue;
 
-public class GetInt implements Instrument{
+public class GetInt implements Sequence{
     private final LValue lValue;
 
     public GetInt(LValue lValue) {

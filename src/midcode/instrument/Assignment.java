@@ -3,7 +3,7 @@ package midcode.instrument;
 import midcode.value.LValue;
 import midcode.value.RValue;
 
-public class Assignment implements Instrument{
+public class Assignment implements Sequence{
     private LValue left;
     private RValue right;
 

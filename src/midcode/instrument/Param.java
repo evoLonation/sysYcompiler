@@ -2,7 +2,7 @@ package midcode.instrument;
 
 import midcode.value.Value;
 
-public class Param implements Instrument{
+public class Param implements Sequence {
     // 可以传指针，可以传int
     private final Value value;
 

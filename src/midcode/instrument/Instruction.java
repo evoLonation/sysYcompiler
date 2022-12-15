@@ -2,6 +2,6 @@ package midcode.instrument;
 
 import midcode.MidCode;
 
-public interface Instrument extends MidCode {
+public interface Instruction extends MidCode {
 
 }

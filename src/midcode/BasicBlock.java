@@ -1,6 +1,6 @@
 package midcode;
 
-import midcode.instrument.Instrument;
+import midcode.instrument.Instruction;
 import midcode.instrument.Jump;
 
 import java.util.ArrayList;
@@ -14,12 +14,12 @@ import java.util.List;
 public class BasicBlock implements MidCode{
     private final String name;
 
-    private final List<Instrument> instruments = new ArrayList<>();
+    private final List<Instruction> instructions = new ArrayList<>();
     Jump lastInstrument;
 
 
-    public List<Instrument> getInstruments() {
-        return instruments;
+    public List<Instruction> getInstruments() {
+        return instructions;
     }
 
     BasicBlock(String name) {
@@ -33,8 +33,8 @@ public class BasicBlock implements MidCode{
     @Override
     public String print() {
         StringBuilder ret = new StringBuilder("  " + name + ":").append("\n");
-        for(Instrument instrument : instruments){
-            ret.append("    ").append(instrument.print()).append("\n");
+        for(Instruction instruction : instructions){
+            ret.append("    ").append(instruction.print()).append("\n");
         }
         ret.append("    ").append(lastInstrument.print()).append("\n");
         return ret.toString();

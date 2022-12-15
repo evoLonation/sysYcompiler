@@ -2,7 +2,7 @@ package midcode.instrument;
 
 import midcode.value.RValue;
 
-public class PrintInt implements Instrument{
+public class PrintInt implements Sequence {
     private final RValue rValue;
 
     public PrintInt(RValue rValue) {

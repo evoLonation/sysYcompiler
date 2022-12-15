@@ -1,7 +1,6 @@
 package vm;
 
 import common.SemanticException;
-import frontend.lexer.FormatString;
 import midcode.BasicBlock;
 import midcode.Function;
 import midcode.Module;
@@ -112,8 +111,8 @@ public class VirtualMachine {
     }
 
     private void run(BasicBlock basicBlock) {
-        for(Instrument instrument : basicBlock.getInstruments()){
-            run(instrument);
+        for(Instruction instruction : basicBlock.getInstruments()){
+            run(instruction);
         }
         Jump last = basicBlock.getLastInstrument();
         if(last instanceof Goto){
@@ -134,12 +133,12 @@ public class VirtualMachine {
         }
     }
 
-    private void run(Instrument instrument){
-        instrumentExecution.exec(instrument);
+    private void run(Instruction instruction){
+        instrumentExecution.exec(instruction);
     }
 
 
-    private final VoidExecution<Instrument> instrumentExecution = new VoidExecution<Instrument>() {
+    private final VoidExecution<Instruction> instrumentExecution = new VoidExecution<Instruction>() {
         @Override
         public void inject() {
             inject(Assignment.class, assign -> saveValueToLValue(assign.getLeft(), getIntValue(assign.getRight())));

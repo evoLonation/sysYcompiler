@@ -2,7 +2,7 @@ package backend;
 
 import midcode.BasicBlock;
 import midcode.MidCode;
-import midcode.instrument.Instrument;
+import midcode.instrument.Instruction;
 import midcode.instrument.Jump;
 import midcode.value.*;
 
@@ -21,14 +21,14 @@ public class LocalActive {
     private final Map<LValue, ActiveInfo> firstActiveInfos = new HashMap<>();
     private final Set<LValue> allValues;
     private final List<MidCode> midCodes;
-    private final List<Instrument> instruments;
+    private final List<Instruction> instructions;
     private final Jump lastJump;
     private int nowIndex;
-    private Instrument nowInstrument;
+    private Instruction nowInstruction;
 
-    Instrument getNowInstrument() throws NoSuchElementException {
-        if(nowInstrument == null)throw new NoSuchElementException();
-        return nowInstrument;
+    Instruction getNowInstrument() throws NoSuchElementException {
+        if(nowInstruction == null)throw new NoSuchElementException();
+        return nowInstruction;
     }
 
     Jump getLastJump(){
@@ -36,23 +36,23 @@ public class LocalActive {
     }
 
     MidCode getNow(){
-        if(nowInstrument == null) return lastJump;
-        return nowInstrument;
+        if(nowInstruction == null) return lastJump;
+        return nowInstruction;
     }
 
     boolean hasNowInstrument(){
-        return nowInstrument != null;
+        return nowInstruction != null;
     }
 
     void next() {
-        if(nowIndex >= instruments.size()){
-            nowInstrument = null;
+        if(nowIndex >= instructions.size()){
+            nowInstruction = null;
         }else{
-            nowInstrument = instruments.get(nowIndex++);
+            nowInstruction = instructions.get(nowIndex++);
         }
     }
 
-    private static class OutInstrument implements Instrument{
+    private static class OutInstruction implements Instruction {
         @Override
         public String print() {
             return "#outInstrument";
@@ -60,10 +60,10 @@ public class LocalActive {
     }
 
     LocalActive(BasicBlock basicBlock) {
-        OutInstrument outInstrument = new OutInstrument();
-        instruments = basicBlock.getInstruments();
+        OutInstruction outInstrument = new OutInstruction();
+        instructions = basicBlock.getInstruments();
         lastJump = basicBlock.getLastInstrument();
-        midCodes = Stream.concat(instruments.stream(),
+        midCodes = Stream.concat(instructions.stream(),
                 Stream.of(lastJump
                         , outInstrument))
                 .collect(Collectors.toList());
@@ -132,6 +132,7 @@ public class LocalActive {
         }
     }
 
+
     /**
      * 检查lvalue在instrument之前的定义从instrument开始（或之后开始）还是不是活跃的
      * 具体算法：从当前instrument往后遍历activeInfo，如果先找到use就代表是活跃的，如果先找到只有def没有use或者没找到，那么就是不活跃的
@@ -139,6 +140,11 @@ public class LocalActive {
      * @return check if lvalue's last def (not include this instrument) will be used
      */
     boolean isStillUse(LValue value, boolean startToAfter){
+//         todo bug: 如果value是一个全局变量，且value在当前基本快中的下一次是定义，则该函数一定返回false；不过实际上有可能还会活跃，因为这期间其他函数有可能使用
+        if(value instanceof Variable && ((Variable) value).isGlobal()){
+            // todo 需要检查其他函数的使用情况？
+            return true;
+        }
         ActiveInfo activeInfo = activeInfosMap.get(value).get(getNow());
         if(startToAfter){
             // check now

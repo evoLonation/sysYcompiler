@@ -1,8 +1,6 @@
 package midcode.instrument;
 
-import midcode.value.RValue;
-
-public class PrintString implements Instrument{
+public class PrintString implements Sequence {
     private final String string;
 
     public PrintString(String string) {

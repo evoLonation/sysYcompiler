@@ -37,9 +37,9 @@ public class BasicBlockFactory {
         return newBasicBlock;
     }
 
-    public void addInstrument(Instrument instrument) {
+    public void addInstrument(Instruction instruction) {
         assert nowBasicBlock != null;
-        nowBasicBlock.getInstruments().add(instrument);
+        nowBasicBlock.getInstruments().add(instruction);
     }
 
     public BackFill outBasicBlock(Goto outCode){

@@ -5,7 +5,7 @@ import midcode.value.LValue;
 import midcode.value.RValue;
 
 
-public class BinaryOperation implements Instrument{
+public class BinaryOperation implements Sequence{
     private RValue left;
     private RValue right;
     private BinaryOp op;

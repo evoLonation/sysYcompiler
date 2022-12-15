@@ -6,9 +6,6 @@ import midcode.instrument.*;
 import midcode.value.*;
 import util.VoidExecution;
 
-import java.util.Collections;
-import java.util.Set;
-
 public class BasicBlockGenerator {
     private final MipsSegment mipsSegment = MipsSegment.getInstance();
     private final StoreLoadManager storeLoadManager;
@@ -38,11 +35,11 @@ public class BasicBlockGenerator {
         mipsSegment.newSegment(basicBlock.getName());
         if(!isMain && isEntry) mipsSegment.sw(Register.getRa(), Register.getSp(), 4);
         while(localActive.hasNowInstrument()){
-            Instrument instrument = localActive.getNowInstrument();
-            if(!(instrument instanceof Param) && !(instrument instanceof Call)){
-                mipsSegment.comment(instrument.print());
+            Instruction instruction = localActive.getNowInstrument();
+            if(!(instruction instanceof Param) && !(instruction instanceof Call)){
+                mipsSegment.comment(instruction.print());
             }
-            instrumentExecution.exec(instrument);
+            instrumentExecution.exec(instruction);
             localActive.next();
         }
         Jump lastJump = localActive.getLastJump();
@@ -63,7 +60,7 @@ public class BasicBlockGenerator {
 
 
 
-    private final VoidExecution<Instrument> instrumentExecution = new VoidExecution<Instrument>() {
+    private final VoidExecution<Instruction> instrumentExecution = new VoidExecution<Instruction>() {
         @Override
         public void inject() {
             // todo 待优化：常量计算

@@ -6,7 +6,7 @@ import midcode.value.RValue;
 /**
  * 将left的值看作一个地址，将right的值传到该地址中
  */
-public class Store implements Instrument{
+public class Store implements Sequence {
     private AddressValue left;
     private RValue right;
 

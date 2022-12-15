@@ -26,6 +26,7 @@ public class StoreLoadManager {
     }
 
 
+    //todo 请及时为返回的寄存器分配一个值（它当前什么值都没有分配）
     Register loadRValue(RValue value){
         if(value instanceof Constant){
             Register register = stateManager.getReg();

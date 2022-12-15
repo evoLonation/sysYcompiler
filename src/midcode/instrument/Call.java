@@ -8,7 +8,7 @@ import midcode.value.Value;
 import java.util.List;
 import java.util.Optional;
 
-public class Call implements Instrument{
+public class Call implements Sequence{
     private Function function;
     private Temp ret;
 

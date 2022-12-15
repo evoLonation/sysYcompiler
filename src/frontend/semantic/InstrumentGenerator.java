@@ -1,10 +1,10 @@
 package frontend.semantic;
 
-import midcode.instrument.Instrument;
+import midcode.instrument.Instruction;
 
 public abstract class InstrumentGenerator extends Generator {
 
-    protected void addInstrument(Instrument code){
+    protected void addInstrument(Instruction code){
         basicBlockFactory.addInstrument(code);
     }
 }

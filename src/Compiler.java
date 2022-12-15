@@ -21,7 +21,7 @@ public class Compiler {
 
 
     public static void main(String[] args) {
-        mips(true, true);
+        mips(false);
     }
 
     static List<Character> getCharList(String fileName){
@@ -73,7 +73,7 @@ public class Compiler {
         return new ParserResult(parser.analysis(), parser.getPostOrderList());
     }
 
-    static void mips(boolean isStdin, boolean isGenerateMidCode){
+    static void mips(boolean isGenerateMidCode){
         String srcFile = "testfile.txt";
         String inputFile = "input.txt";
         String codeFile = "midcode.txt";

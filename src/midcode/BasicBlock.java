@@ -1,10 +1,13 @@
 package midcode;
 
-import midcode.instrument.Instruction;
-import midcode.instrument.Jump;
+import midcode.instruction.Instruction;
+import midcode.instruction.Jump;
+import midcode.instruction.Sequence;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -14,13 +17,18 @@ import java.util.List;
 public class BasicBlock implements MidCode{
     private final String name;
 
-    private final List<Instruction> instructions = new ArrayList<>();
-    Jump lastInstrument;
+    private final List<Sequence> instructions = new ArrayList<>();
+    Jump lastJump;
 
 
-    public List<Instruction> getInstruments() {
+    public List<Sequence> getSequenceList() {
         return instructions;
     }
+    //保证除了最后一个是jump，前面都是sequence
+    public List<Instruction> getInstructions() {
+        return Stream.concat(instructions.stream(), Stream.of(lastJump)).collect(Collectors.toList());
+    }
+
 
     BasicBlock(String name) {
         this.name = name;
@@ -36,11 +44,11 @@ public class BasicBlock implements MidCode{
         for(Instruction instruction : instructions){
             ret.append("    ").append(instruction.print()).append("\n");
         }
-        ret.append("    ").append(lastInstrument.print()).append("\n");
+        ret.append("    ").append(lastJump.print()).append("\n");
         return ret.toString();
     }
 
-    public Jump getLastInstrument() {
-        return lastInstrument;
+    public Jump getJump() {
+        return lastJump;
     }
 }

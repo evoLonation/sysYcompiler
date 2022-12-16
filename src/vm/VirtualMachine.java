@@ -4,7 +4,7 @@ import common.SemanticException;
 import midcode.BasicBlock;
 import midcode.Function;
 import midcode.Module;
-import midcode.instrument.*;
+import midcode.instruction.*;
 import midcode.value.*;
 import util.VoidExecution;
 
@@ -74,7 +74,7 @@ public class VirtualMachine {
             staticData[i] = new IntValue(module.getStaticData()[i]);
         }
         this.module = module;
-        instrumentExecution.inject();
+        instructionVoidExecution.inject();
         this.scanner = new Scanner(stdin);
     }
 
@@ -84,7 +84,7 @@ public class VirtualMachine {
             staticData[i] = new IntValue(module.getStaticData()[i]);
         }
         this.module = module;
-        instrumentExecution.inject();
+        instructionVoidExecution.inject();
         this.scanner = new Scanner(System.in);
     }
 
@@ -111,10 +111,10 @@ public class VirtualMachine {
     }
 
     private void run(BasicBlock basicBlock) {
-        for(Instruction instruction : basicBlock.getInstruments()){
+        for(Instruction instruction : basicBlock.getSequenceList()){
             run(instruction);
         }
-        Jump last = basicBlock.getLastInstrument();
+        Jump last = basicBlock.getJump();
         if(last instanceof Goto){
             run(((Goto) last).getBasicBlock());
         }else if(last instanceof CondGoto){
@@ -134,11 +134,11 @@ public class VirtualMachine {
     }
 
     private void run(Instruction instruction){
-        instrumentExecution.exec(instruction);
+        instructionVoidExecution.exec(instruction);
     }
 
 
-    private final VoidExecution<Instruction> instrumentExecution = new VoidExecution<Instruction>() {
+    private final VoidExecution<Instruction> instructionVoidExecution = new VoidExecution<Instruction>() {
         @Override
         public void inject() {
             inject(Assignment.class, assign -> saveValueToLValue(assign.getLeft(), getIntValue(assign.getRight())));
@@ -162,8 +162,8 @@ public class VirtualMachine {
                 Value paramValue = param.getValue();
                 if(paramValue instanceof RValue){
                     paramStack.push(getIntValue((RValue) paramValue));
-                }else if(paramValue instanceof PointerValue){
-                    paramStack.push(getAddress((PointerValue) paramValue));
+                }else if(paramValue instanceof AddressValue){
+                    paramStack.push(getAddress((AddressValue) paramValue));
                 }else{
                     throw new SemanticException();
                 }
@@ -233,6 +233,9 @@ public class VirtualMachine {
         boolean isGlobal;
         if(addressValue instanceof PointerValue){
             ValueValue ret = funcStack.get(sp + addressValue.getStaticOffset());
+            if (!(ret instanceof Address)){
+                int a = 1;
+            }
             assert ret instanceof Address;
             base = ((Address) ret).address;
             isGlobal = ((Address) ret).isGlobal;

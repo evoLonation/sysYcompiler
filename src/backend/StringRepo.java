@@ -1,7 +1,7 @@
 package backend;
 
 import midcode.BasicBlock;
-import midcode.instrument.PrintString;
+import midcode.instruction.PrintString;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,8 +13,8 @@ public class StringRepo {
 
 
     void scanBasicBlock(BasicBlock basicBlock){
-        basicBlock.getInstruments().stream().filter(instrument -> instrument instanceof PrintString)
-                .forEach((instrument) -> labelMap.put((PrintString) instrument, "string" + index++));
+        basicBlock.getSequenceList().stream().filter(sequence -> sequence instanceof PrintString)
+                .forEach((sequence) -> labelMap.put((PrintString) sequence, "string" + index++));
     }
     void print(){
         labelMap.forEach((key, value) -> mipsSegment.string(value, key.getString()));

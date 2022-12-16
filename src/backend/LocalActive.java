@@ -2,8 +2,9 @@ package backend;
 
 import midcode.BasicBlock;
 import midcode.MidCode;
-import midcode.instrument.Instruction;
-import midcode.instrument.Jump;
+import midcode.instruction.Instruction;
+import midcode.instruction.Jump;
+import midcode.instruction.Sequence;
 import midcode.value.*;
 
 import java.util.*;
@@ -17,83 +18,77 @@ import java.util.stream.Stream;
 public class LocalActive {
     private final ValueGetter valueGetter = ValueGetter.getInstance();
     //value是key对应的activeinfo，每个instrument都会对应一个activeInfo，对应的是从该instrument找起第一个activeInfo
-    private final Map<LValue, Map<MidCode, ActiveInfo>> activeInfosMap = new HashMap<>();
+    private final Map<LValue, Map<Instruction, ActiveInfo>> activeInfosMap = new HashMap<>();
     private final Map<LValue, ActiveInfo> firstActiveInfos = new HashMap<>();
     private final Set<LValue> allValues;
-    private final List<MidCode> midCodes;
-    private final List<Instruction> instructions;
+    private final List<Sequence> sequences;
     private final Jump lastJump;
     private int nowIndex;
-    private Instruction nowInstruction;
+    private Sequence nowSequence;
 
-    Instruction getNowInstrument() throws NoSuchElementException {
-        if(nowInstruction == null)throw new NoSuchElementException();
-        return nowInstruction;
+    Sequence getNowSequence() throws NoSuchElementException {
+        if(nowSequence == null)throw new NoSuchElementException();
+        return nowSequence;
     }
 
     Jump getLastJump(){
         return lastJump;
     }
 
-    MidCode getNow(){
-        if(nowInstruction == null) return lastJump;
-        return nowInstruction;
+    Instruction getNowInstruction(){
+        if(nowSequence == null) return lastJump;
+        return nowSequence;
     }
 
-    boolean hasNowInstrument(){
-        return nowInstruction != null;
+    boolean hasNowSequence(){
+        return nowSequence != null;
     }
 
     void next() {
-        if(nowIndex >= instructions.size()){
-            nowInstruction = null;
+        if(nowIndex >= sequences.size()){
+            nowSequence = null;
         }else{
-            nowInstruction = instructions.get(nowIndex++);
+            nowSequence = sequences.get(nowIndex++);
         }
     }
 
     private static class OutInstruction implements Instruction {
         @Override
         public String print() {
-            return "#outInstrument";
+            return "#outInstruction";
         }
     }
 
     LocalActive(BasicBlock basicBlock) {
-        OutInstruction outInstrument = new OutInstruction();
-        instructions = basicBlock.getInstruments();
-        lastJump = basicBlock.getLastInstrument();
-        midCodes = Stream.concat(instructions.stream(),
-                Stream.of(lastJump
-                        , outInstrument))
-                .collect(Collectors.toList());
+        OutInstruction outInstruction = new OutInstruction();
+        sequences = basicBlock.getSequenceList();
+        lastJump = basicBlock.getJump();
         //假设基本块中的所有variable都可能会在基本快结束后活跃
-        allValues = midCodes.stream()
-                .flatMap(midCode -> valueGetter.getAllValues(midCode).stream()).collect(Collectors.toSet());
+        allValues = basicBlock.getInstructions().stream().flatMap(midCode -> valueGetter.getAllValues(midCode).stream()).collect(Collectors.toSet());
         for(LValue value : allValues) {
             if(value instanceof Variable){
-                ActiveInfo lastActiveInfo = new ActiveInfo(outInstrument, true, false);
-                Map<MidCode, ActiveInfo> activeInfoMap = new HashMap<>();
-                activeInfoMap.put(outInstrument, lastActiveInfo);
+                ActiveInfo lastActiveInfo = new ActiveInfo(outInstruction, true, false);
+                Map<Instruction, ActiveInfo> activeInfoMap = new HashMap<>();
+                activeInfoMap.put(outInstruction, lastActiveInfo);
                 activeInfosMap.put(value, activeInfoMap);
                 firstActiveInfos.put(value, lastActiveInfo);
             }else {
                 activeInfosMap.put(value, new HashMap<>());
             }
         }
-
-        ListIterator<MidCode> listIterator = midCodes.listIterator(midCodes.size());
+        List<Instruction> instructionsWithOut = Stream.concat(basicBlock.getInstructions().stream(), Stream.of(outInstruction)).collect(Collectors.toList());
+        ListIterator<Instruction> listIterator = instructionsWithOut.listIterator(instructionsWithOut.size());
         while(listIterator.hasPrevious()){
-            MidCode midCode = listIterator.previous();
+            Instruction instruction = listIterator.previous();
             Map<LValue, ActiveInfo> nowActiveInfos = new HashMap<>();
-            for(LValue value : valueGetter.getUseValues(midCode)){
-                nowActiveInfos.put(value, new ActiveInfo(midCode, true, false));
+            for(LValue value : valueGetter.getUseValues(instruction)){
+                nowActiveInfos.put(value, new ActiveInfo(instruction, true, false));
             }
-            valueGetter.getDefValue(midCode).ifPresent(value->{
+            valueGetter.getDefValue(instruction).ifPresent(value->{
                 if(nowActiveInfos.containsKey(value)){
                     nowActiveInfos.get(value).isDef = true;
                 }else{
-                    nowActiveInfos.put(value, new ActiveInfo(midCode, false, true));
+                    nowActiveInfos.put(value, new ActiveInfo(instruction, false, true));
                 }
             });
 
@@ -108,7 +103,7 @@ public class LocalActive {
             for(LValue value : allValues){
                 ActiveInfo firstActiveInfo = firstActiveInfos.get(value);
                 if(firstActiveInfo != null){
-                    activeInfosMap.get(value).put(midCode, firstActiveInfo);
+                    activeInfosMap.get(value).put(instruction, firstActiveInfo);
                 }
             }
         }
@@ -134,10 +129,10 @@ public class LocalActive {
 
 
     /**
-     * 检查lvalue在instrument之前的定义从instrument开始（或之后开始）还是不是活跃的
-     * 具体算法：从当前instrument往后遍历activeInfo，如果先找到use就代表是活跃的，如果先找到只有def没有use或者没找到，那么就是不活跃的
-     * @param startToAfter 为true代表从instrument之后开始寻找使用
-     * @return check if lvalue's last def (not include this instrument) will be used
+     * 检查lvalue在instruction之前的定义从instruction开始（或之后开始）还是不是活跃的
+     * 具体算法：从当前instruction往后遍历activeInfo，如果先找到use就代表是活跃的，如果先找到只有def没有use或者没找到，那么就是不活跃的
+     * @param startToAfter 为true代表从instruction之后开始寻找使用
+     * @return check if lvalue's last def (not include this instruction) will be used
      */
     boolean isStillUse(LValue value, boolean startToAfter){
 //         todo bug: 如果value是一个全局变量，且value在当前基本快中的下一次是定义，则该函数一定返回false；不过实际上有可能还会活跃，因为这期间其他函数有可能使用
@@ -145,13 +140,13 @@ public class LocalActive {
             // todo 需要检查其他函数的使用情况？
             return true;
         }
-        ActiveInfo activeInfo = activeInfosMap.get(value).get(getNow());
+        ActiveInfo activeInfo = activeInfosMap.get(value).get(getNowInstruction());
         if(startToAfter){
             // check now
             if(activeInfo == null){
                 return false;
             }
-            if(activeInfo.midCode == getNow()){
+            if(activeInfo.midCode == getNowInstruction()){
                 if(activeInfo.isDef) return false;
                 activeInfo = activeInfo.next;
             }
@@ -168,8 +163,8 @@ public class LocalActive {
     }
 
     private String check(BasicBlock basicBlock){
-        List<MidCode> midCodes = new ArrayList<>(basicBlock.getInstruments());
-        midCodes.add(basicBlock.getLastInstrument());
+        List<MidCode> midCodes = new ArrayList<>(basicBlock.getSequenceList());
+        midCodes.add(basicBlock.getJump());
         StringBuilder ret = new StringBuilder();
         for(Map.Entry<LValue, ActiveInfo> entry : firstActiveInfos.entrySet()){
             Value value = entry.getKey();

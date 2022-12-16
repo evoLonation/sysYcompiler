@@ -1,7 +1,7 @@
 package backend;
 
 import midcode.MidCode;
-import midcode.instrument.*;
+import midcode.instruction.*;
 import midcode.value.*;
 import util.Execution;
 

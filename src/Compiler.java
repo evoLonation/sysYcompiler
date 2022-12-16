@@ -1,5 +1,4 @@
 import backend.Generator;
-import backend.MipsSegment;
 import common.SemanticException;
 import frontend.error.Error;
 import frontend.error.ErrorRecorder;
@@ -8,7 +7,7 @@ import frontend.lexer.Terminal;
 import midcode.Module;
 import frontend.parser.Parser;
 import frontend.parser.nonterminal.CompUnit;
-import frontend.semantic.ModuleGenerator;
+import frontend.generator.ModuleGenerator;
 import vm.VirtualMachine;
 
 import java.io.File;
@@ -22,6 +21,7 @@ public class Compiler {
 
     public static void main(String[] args) {
         mips(false);
+//        midcode(true, true);
     }
 
     static List<Character> getCharList(String fileName){

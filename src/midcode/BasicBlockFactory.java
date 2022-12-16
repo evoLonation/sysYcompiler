@@ -1,6 +1,6 @@
 package midcode;
 
-import midcode.instrument.*;
+import midcode.instruction.*;
 
 public class BasicBlockFactory {
 
@@ -37,13 +37,13 @@ public class BasicBlockFactory {
         return newBasicBlock;
     }
 
-    public void addInstrument(Instruction instruction) {
+    public void addSequence(Sequence instruction) {
         assert nowBasicBlock != null;
-        nowBasicBlock.getInstruments().add(instruction);
+        nowBasicBlock.getSequenceList().add(instruction);
     }
 
     public BackFill outBasicBlock(Goto outCode){
-        nowBasicBlock.lastInstrument = outCode;
+        nowBasicBlock.lastJump = outCode;
         BackFill backFill = new BackFill();
         backFill.add(outCode);
         nowBasicBlock = null;
@@ -61,7 +61,7 @@ public class BasicBlockFactory {
     }
 
     public CondGotoBackFill outBasicBlock(CondGoto outCode){
-        nowBasicBlock.lastInstrument = outCode;
+        nowBasicBlock.lastJump = outCode;
         BackFill trueBackFill = new BackFill();
         BackFill falseBackFill = new BackFill();
         trueBackFill.add(outCode, true);
@@ -71,7 +71,7 @@ public class BasicBlockFactory {
     }
 
     public void outBasicBlock(Return outCode){
-        nowBasicBlock.lastInstrument = outCode;
+        nowBasicBlock.lastJump = outCode;
         nowBasicBlock = null;
     }
 

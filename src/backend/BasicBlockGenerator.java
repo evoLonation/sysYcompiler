@@ -2,7 +2,7 @@ package backend;
 
 import common.SemanticException;
 import midcode.BasicBlock;
-import midcode.instrument.*;
+import midcode.instruction.*;
 import midcode.value.*;
 import util.VoidExecution;
 
@@ -27,19 +27,19 @@ public class BasicBlockGenerator {
         this.stateManager = new StateManager(localActive, offset);
         this.storeLoadManager = new StoreLoadManager(stateManager);
         stringRepo.scanBasicBlock(basicBlock);
-        instrumentExecution.inject();
+        instructionVoidExecution.inject();
         jumpExecution.inject();
     }
 
     void generate(){
         mipsSegment.newSegment(basicBlock.getName());
         if(!isMain && isEntry) mipsSegment.sw(Register.getRa(), Register.getSp(), 4);
-        while(localActive.hasNowInstrument()){
-            Instruction instruction = localActive.getNowInstrument();
+        while(localActive.hasNowSequence()){
+            Instruction instruction = localActive.getNowSequence();
             if(!(instruction instanceof Param) && !(instruction instanceof Call)){
                 mipsSegment.comment(instruction.print());
             }
-            instrumentExecution.exec(instruction);
+            instructionVoidExecution.exec(instruction);
             localActive.next();
         }
         Jump lastJump = localActive.getLastJump();
@@ -60,7 +60,7 @@ public class BasicBlockGenerator {
 
 
 
-    private final VoidExecution<Instruction> instrumentExecution = new VoidExecution<Instruction>() {
+    private final VoidExecution<Instruction> instructionVoidExecution = new VoidExecution<Instruction>() {
         @Override
         public void inject() {
             // todo 待优化：常量计算

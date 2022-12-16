@@ -1,10 +1,9 @@
 package backend;
 
-import midcode.instrument.Call;
-import midcode.instrument.Param;
+import midcode.instruction.Call;
+import midcode.instruction.Param;
 import midcode.value.Temp;
 import midcode.value.Value;
-import midcode.value.Variable;
 
 import java.util.stream.IntStream;
 
@@ -30,24 +29,24 @@ public class CallGenerator {
 
     void generate() {
         // 先将localActive迭代到call之后
-        while(localActive.getNowInstrument() instanceof Param){
+        while(localActive.getNowSequence() instanceof Param){
             generateParam();
             localActive.next();
         }
-        assert localActive.getNowInstrument() instanceof Call;
+        assert localActive.getNowSequence() instanceof Call;
         storeAllLValue();
         backFill();
         generateCall();
         stateManager.clearRegister();
-        ((Call) localActive.getNowInstrument()).getRet().ifPresent(this::getReturn);
+        ((Call) localActive.getNowSequence()).getRet().ifPresent(this::getReturn);
     }
 
     private int paramNumber = 0;
 
     private void generateParam(){
-        mipsSegment.comment(localActive.getNowInstrument().print());
+        mipsSegment.comment(localActive.getNowSequence().print());
         paramNumber ++;
-        Value value = ((Param)localActive.getNowInstrument()).getValue();
+        Value value = ((Param)localActive.getNowSequence()).getValue();
         Register register = storeLoadManager.loadValue(value);
         mipsSegment.swBackFill(register, Register.getSp());
     }
@@ -58,10 +57,10 @@ public class CallGenerator {
     }
 
     void generateCall(){
-        mipsSegment.comment(localActive.getNowInstrument().print());
+        mipsSegment.comment(localActive.getNowSequence().print());
         assert !mipsSegment.isInBackFill();
         mipsSegment.addi(Register.getSp(), Register.getSp(), - (stateManager.getNowMaxOffset() + 1) * 4);
-        mipsSegment.jal(((Call)localActive.getNowInstrument()).getFunction().getEntry().getName());
+        mipsSegment.jal(((Call)localActive.getNowSequence()).getFunction().getEntry().getName());
         mipsSegment.addi(Register.getSp(), Register.getSp(), (stateManager.getNowMaxOffset() + 1) * 4);
 
     }

@@ -8,15 +8,15 @@ public class MipsSegment {
     private String textContent = "\n.text\n";
     private String dataContent = ".data\n";
 
-    private void addDataLine(String instrument){
-        dataContent += "\t" + instrument + "\n";
+    private void addDataLine(String instruction){
+        dataContent += "\t" + instruction + "\n";
     }
-    private void addTextLine(String instrument){
+    private void addTextLine(String instruction){
         if(isInBackFill()){
-            backFillQueue.add(instrument);
+            backFillQueue.add(instruction);
             needFillQueue.add(false);
         }else{
-            textContent += "\t" + instrument + "\n";
+            textContent += "\t" + instruction + "\n";
         }
     }
 

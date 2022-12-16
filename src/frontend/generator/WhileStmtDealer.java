@@ -5,28 +5,47 @@ import midcode.BasicBlockFactory;
 import midcode.instruction.BackFill;
 import midcode.instruction.Goto;
 
+import java.util.Stack;
+
 public class WhileStmtDealer {
-    private int whileLayer = 0;
+//    private int whileLayer = 0;
 
     private final ErrorRecorder errorRecorder = ErrorRecorder.getInstance();
     private final BasicBlockFactory basicBlockFactory = BasicBlockFactory.getInstance();
 
-    public void inWhile(){
-        whileLayer++;
-    }
-    public void outWhile(){
-        whileLayer--;
+
+    static class WhileLayer {
+        private final BackFill breakBackFill;
+        private final BackFill continueBackFill;
+        public BackFill getBreakBackFill() {
+            return breakBackFill;
+        }
+        public BackFill getContinueBackFill() {
+            return continueBackFill;
+        }
+        WhileLayer(BackFill breakBackFill, BackFill continueBackFill) {
+            this.breakBackFill = breakBackFill;
+            this.continueBackFill = continueBackFill;
+        }
     }
 
-    private final BackFill breakBackFill = new BackFill();
-    private final BackFill continueBackFill = new BackFill();
+    private final Stack<WhileLayer> whileLayerStack = new Stack<>();
+
+    public void inWhile(){
+        whileLayerStack.push(new WhileLayer(new BackFill(), new BackFill()));
+//        whileLayer++;
+    }
+    public WhileLayer outWhile(){
+        return whileLayerStack.pop();
+//        whileLayer--;
+    }
 
     /**
      * @return 该basicBlock是否封底了
      */
     public boolean newBreak(int line){
-        if(whileLayer > 0){
-            basicBlockFactory.outBasicBlock(new Goto()).deliverTo(breakBackFill);
+        if(!whileLayerStack.empty()){
+            basicBlockFactory.outBasicBlock(new Goto()).deliverTo(whileLayerStack.peek().breakBackFill);
             return true;
         }else{
             errorRecorder.wrongBreak(line);
@@ -37,20 +56,13 @@ public class WhileStmtDealer {
      * @return 该basicBlock是否封底了
      */
     public boolean newContinue(int line){
-        if(whileLayer > 0){
-            basicBlockFactory.outBasicBlock(new Goto()).deliverTo(continueBackFill);
+        if(!whileLayerStack.empty()){
+            basicBlockFactory.outBasicBlock(new Goto()).deliverTo(whileLayerStack.peek().continueBackFill);
             return true;
         }else {
             errorRecorder.wrongContinue(line);
             return false;
         }
-    }
-
-    public BackFill getBreakBackFill(){
-        return breakBackFill;
-    }
-    public BackFill getContinueBackFill(){
-        return continueBackFill;
     }
 
     private WhileStmtDealer(){}

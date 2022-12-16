@@ -29,9 +29,9 @@ public class WhileGenerator extends BasicBlockGenerator{
             BackFill whileBlockBackFill = new NormalBlockGenerator(getBlock(whileStmt)).generate();
             symbolTable.outBlock();
             whileBlockBackFill.fill(condBasicBlock);
-            whileStmtDealer.getContinueBackFill().fill(condBasicBlock);
-            whileStmtDealer.getBreakBackFill().deliverTo(backFill);
-            whileStmtDealer.outWhile();
+            WhileStmtDealer.WhileLayer layer = whileStmtDealer.outWhile();
+            layer.getContinueBackFill().fill(condBasicBlock);
+            layer.getBreakBackFill().deliverTo(backFill);
         }else {
             condBackFill.trueBackFill.deliverTo(backFill);
         }

@@ -20,8 +20,8 @@ public class Compiler {
 
 
     public static void main(String[] args) {
-        mips(false);
-//        midcode(true, true);
+//        mips(true);
+        midcode(true, true);
     }
 
     static List<Character> getCharList(String fileName){

@@ -14,54 +14,101 @@ import java.util.*;
 public class VirtualMachine {
     private String stdout = "";
     private final Scanner scanner;
-    private final IntValue[] staticData;
+//    private final IntValue[] staticData;
+    private final StaticData staticData;
 //    private final ValueValue[] stack = new ValueValue[102400];
-    private final FuncStack funcStack = new FuncStack(102400);
-    private int sp;
+    // 16M
+    private final MemActiveStack memActiveStack = new MemActiveStack(1 << 24);
     private final Stack<Map<Temp, IntValue>> tempStack = new Stack<>();
 
     private final Stack<ValueValue> paramStack = new Stack<>();
     private final Stack<Function> functionStack = new Stack<>();
 
+    static class StaticData {
+        // data数据的前部分是默认值为0的，后部分是手动初始化的
+        private final int[] data;
 
-    static class FuncStack{
-        private final int[] valueStack;
-        private final boolean[] isGlobalStack;
-        private final boolean[] isAddressStack;
-        private final int size;
-
-        public FuncStack(int size) {
-            valueStack = new int[size];
-            isGlobalStack = new boolean[size];
-            isAddressStack = new boolean[size];
-            this.size = size;
+        /**
+         * @param data 初始化了的数据
+         * @param zeroNumber 未初始化（自动零值）的数据的长度
+         */
+        StaticData(int[] data, int zeroNumber) {
+            //todo test
+            this.data = new int[zeroNumber + data.length];
+            System.arraycopy(data, 0, this.data, zeroNumber, data.length + zeroNumber);
         }
 
-        public ValueValue get(int i){
-            assert i < size;
-            if(isAddressStack[i]){
-                return new Address(valueStack[i], isGlobalStack[i]);
+        IntValue get(int i) {
+            return new IntValue(data[i]);
+        }
+
+        void set(IntValue intValue, int i){
+            data[i] = intValue.value;
+        }
+    }
+
+    static class MemActiveStack {
+        private final int[] valueStack;
+        private final boolean[] isGlobalStack;
+        private final boolean[] isPointerStack;
+        private final int size;
+        private int sp;
+
+        public MemActiveStack(int size) {
+            // 数组初始化都是默认值
+            valueStack = new int[size];
+            isGlobalStack = new boolean[size];
+            isPointerStack = new boolean[size];
+            this.size = size;
+            sp = 1;
+        }
+
+        void push(int offset){
+            sp += offset;
+        }
+
+        void pop(int offset){
+            sp -= offset;
+        }
+
+        int getSp() {
+            return sp;
+        }
+
+        private ValueValue getAbsolute(int address){
+            check( address < size);
+            if(isPointerStack[address]){
+                return new Address(valueStack[address], isGlobalStack[address]);
             }else{
-                return new IntValue(valueStack[i]);
+                return new IntValue(valueStack[address]);
             }
         }
 
+        private ValueValue get(int i){
+            return getAbsolute(sp + i);
+        }
         public void set(ValueValue valueValue, int i){
-            assert i < size;
+            setAbsolute(valueValue, sp + i);
+        }
+
+        public void setAbsolute(ValueValue valueValue, int address) {
+            check(address < size);
             if(valueValue instanceof Address){
-                isAddressStack[i] = true;
-                valueStack[i] = ((Address) valueValue).address;
-                isGlobalStack[i] = ((Address) valueValue).isGlobal;
+                isPointerStack[address] = true;
+                valueStack[address] = ((Address) valueValue).address;
+                isGlobalStack[address] = ((Address) valueValue).isGlobal;
             }else if(valueValue instanceof IntValue){
-                try{
-                    isAddressStack[i] = false;
-                }catch (ArrayIndexOutOfBoundsException e){
-                    e.printStackTrace();
-                }
-                valueStack[i] = ((IntValue) valueValue).value;
+                isPointerStack[address] = false;
+                valueStack[address] = ((IntValue) valueValue).value;
             }else{
                 throw new SemanticException();
             }
+        }
+    }
+
+    static private void check(boolean cond) {
+        if(!cond){
+            throw new SemanticException();
         }
     }
 
@@ -69,23 +116,19 @@ public class VirtualMachine {
     private final Module module;
 
     public VirtualMachine(Module module, String stdin) {
-        staticData = new IntValue[module.getStaticData().length];
-        for(int i = 0; i < staticData.length; i++){
-            staticData[i] = new IntValue(module.getStaticData()[i]);
-        }
+        //todo zero number
+        staticData = new StaticData(module.getStaticData(), 0);
         this.module = module;
         instructionVoidExecution.inject();
-        this.scanner = new Scanner(stdin);
+        if(stdin == null){
+            this.scanner = new Scanner(System.in);
+        }else {
+            this.scanner = new Scanner(stdin);
+        }
     }
 
     public VirtualMachine(Module module) {
-        staticData = new IntValue[module.getStaticData().length];
-        for(int i = 0; i < staticData.length; i++){
-            staticData[i] = new IntValue(module.getStaticData()[i]);
-        }
-        this.module = module;
-        instructionVoidExecution.inject();
-        this.scanner = new Scanner(System.in);
+        this(module, null);
     }
 
     public void run(){
@@ -95,18 +138,18 @@ public class VirtualMachine {
     private void run(Function function) {
         if(!functionStack.isEmpty()){
             // 多一个用来存储返回值
-            sp += functionStack.peek().getOffset() + 1;
+            memActiveStack.push(functionStack.peek().getOffset() + 1);
         }
         functionStack.push(function);
         tempStack.push(new HashMap<>());
         while(!paramStack.isEmpty()){
-            funcStack.set(paramStack.pop(), sp + paramStack.size());
+            memActiveStack.set(paramStack.pop(), paramStack.size());
         }
         run(function.getEntry());
         tempStack.pop();
         functionStack.pop();
         if(!functionStack.isEmpty()){
-            sp = sp - (functionStack.peek().getOffset() + 1);
+            memActiveStack.pop(functionStack.peek().getOffset() + 1);
         }
     }
 
@@ -125,9 +168,7 @@ public class VirtualMachine {
             }
         }else if(last instanceof Return){
             // main函数时sp为0
-            if(sp > 0) {
-                funcStack.set(((Return) last).getReturnValue().map(this::getIntValue).orElse(new IntValue(0)), sp - 1);
-            }
+            memActiveStack.set(((Return) last).getReturnValue().map(this::getIntValue).orElse(new IntValue(0)), -1);
         }else{
             throw new SemanticException();
         }
@@ -148,8 +189,8 @@ public class VirtualMachine {
             inject(Call.class, call -> {
                 run(call.getFunction());
                 if(call.getRet().isPresent()){
-                    ValueValue ret = funcStack.get(sp + functionStack.peek().getOffset());
-                    assert ret instanceof IntValue;
+                    ValueValue ret = memActiveStack.get(functionStack.peek().getOffset());
+                    check(ret instanceof IntValue);
                     saveValueToLValue(call.getRet().get(), (IntValue) ret);
                 }
             });
@@ -170,7 +211,7 @@ public class VirtualMachine {
             });
 
             inject(PrintInt.class, printf -> stdout += getIntValue(printf.getRValue()).value);
-            inject(PrintString.class, printf -> stdout += printf.getString());
+            inject(PrintString.class, printf -> stdout += printf.getString().replace("\\n", "\n"));
 
             inject(Store.class, store -> saveValueToAddress(getAddress(store.getLeft()), getIntValue(store.getRight())));
 
@@ -185,9 +226,9 @@ public class VirtualMachine {
         if(lValue instanceof Variable){
             Variable variable = (Variable) lValue;
             if(variable.isGlobal()){
-                staticData[variable.getOffset()] = value;
+                staticData.set(value, variable.getOffset());
             }else{
-                funcStack.set(value, sp + variable.getOffset());
+                memActiveStack.set(value, variable.getOffset());
             }
         }else if(lValue instanceof Temp) {
             tempStack.peek().put((Temp) lValue, value);
@@ -198,12 +239,11 @@ public class VirtualMachine {
 
     private void saveValueToAddress(Address address, IntValue value){
         if(address.isGlobal){
-            staticData[address.address] = value;
+            staticData.set(value, address.address);
         }else{
-            funcStack.set(value, address.address);
+            memActiveStack.setAbsolute(value, address.address);
         }
     }
-
 
     private IntValue getIntValue(RValue value){
         if(value instanceof Constant){
@@ -213,13 +253,10 @@ public class VirtualMachine {
         }else if(value instanceof Variable){
             Variable variable = (Variable) value;
             if(variable.isGlobal()){
-                return staticData[((Variable) value).getOffset()];
+                return staticData.get(((Variable) value).getOffset());
             }else{
-                ValueValue ret = funcStack.get(sp + ((Variable) value).getOffset());
-                if(ret == null){
-                    ret = new IntValue(0);
-                }
-                assert ret instanceof IntValue;
+                ValueValue ret = memActiveStack.get(((Variable) value).getOffset());
+                check(ret instanceof IntValue);
                 return (IntValue) ret;
             }
         }else{
@@ -232,11 +269,8 @@ public class VirtualMachine {
         int base;
         boolean isGlobal;
         if(addressValue instanceof PointerValue){
-            ValueValue ret = funcStack.get(sp + addressValue.getStaticOffset());
-            if (!(ret instanceof Address)){
-                int a = 1;
-            }
-            assert ret instanceof Address;
+            ValueValue ret = memActiveStack.get(addressValue.getStaticOffset());
+            check(ret instanceof Address);
             base = ((Address) ret).address;
             isGlobal = ((Address) ret).isGlobal;
         }else{
@@ -246,18 +280,24 @@ public class VirtualMachine {
                 base = arrayValue.getStaticOffset();
             }else{
                 isGlobal = false;
-                base = sp + arrayValue.getStaticOffset();
+                base = memActiveStack.getSp() + arrayValue.getStaticOffset();
             }
         }
+        int address;
+        if(isGlobal){
+            address = base + offset;
+        }else{
+            address = base - offset;
+        }
+        return new Address(address, isGlobal);
 
-        return new Address(base + offset, isGlobal);
     }
 
     private ValueValue getValue(Address address){
         if(address.isGlobal){
-            return staticData[address.address];
+            return staticData.get(address.address);
         }else{
-            return funcStack.get(address.address);
+            return memActiveStack.getAbsolute(address.address);
         }
     }
 

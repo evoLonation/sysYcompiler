@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Module implements MidCode{
-     int[] staticData;
-     Function mainFunc;
-     List<Function> functions = new ArrayList<>();
+     private int[] staticData;
+     private Function mainFunc;
+     private final List<Function> functions = new ArrayList<>();
 
 
     @Override
@@ -33,8 +33,15 @@ public class Module implements MidCode{
         return mainFunc;
     }
 
-    public List<Function> getFunctions() {
+    public List<Function> getOtherFunctions() {
         return functions;
     }
 
+    public void setStaticData(int[] staticData) {
+        this.staticData = staticData;
+    }
+
+    public void setMainFunc(Function mainFunc) {
+        this.mainFunc = mainFunc;
+    }
 }

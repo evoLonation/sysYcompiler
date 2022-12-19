@@ -1,4 +1,4 @@
-package frontend.generator;
+package frontend.IRGenerate;
 
 import frontend.lexer.FormatString;
 import midcode.instruction.*;

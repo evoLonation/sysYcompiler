@@ -1,6 +1,8 @@
-package midcode.instruction;
+package frontend.IRGenerate.util;
 
 import midcode.BasicBlock;
+import midcode.instruction.CondGoto;
+import midcode.instruction.Goto;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,13 +29,13 @@ public class BackFill {
 
     public void fill(BasicBlock basicBlock){
         for(Goto go: gotos){
-            go.basicBlock = basicBlock;
+            go.setBasicBlock(basicBlock);
         }
         for(CondGotoInfo condGotoInfo : condGotos){
             if(condGotoInfo.isFirst){
-                condGotoInfo.condGoto.trueBasicBlock = basicBlock;
+                condGotoInfo.condGoto.setTrueBasicBlock(basicBlock);
             }else{
-                condGotoInfo.condGoto.falseBasicBlock = basicBlock;
+                condGotoInfo.condGoto.setFalseBasicBlock(basicBlock);
             }
         }
         gotos.clear();

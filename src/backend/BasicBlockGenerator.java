@@ -115,7 +115,7 @@ public class BasicBlockGenerator {
                 Register resultReg = stateManager.getResultReg();
                 stateManager.getNeedStore(resultReg, true).forEach(storeLoadManager::storeLValue);
                 mipsSegment.move(resultReg, Register.getV0());
-                stateManager.operate(resultReg, getInt.getlValue());
+                stateManager.operate(resultReg, getInt.getLeft());
             });
 
             inject(PrintInt.class, printf -> {
@@ -145,6 +145,7 @@ public class BasicBlockGenerator {
             inject(Param.class, param -> new CallGenerator(localActive, stateManager, storeLoadManager).generate());
             inject(Call.class, param -> new CallGenerator(localActive, stateManager, storeLoadManager).generate());
 
+            inject(ImplicitDef.class, param -> {});
         }
     };
 
@@ -155,7 +156,7 @@ public class BasicBlockGenerator {
             inject(Goto.class, go -> mipsSegment.j(go.getBasicBlock().getName()));
 
             inject(CondGoto.class, go -> {
-                LValue cond = go.getCond();
+                RValue cond = go.getCond();
                 Register register = storeLoadManager.loadValue(cond);
                 mipsSegment.bne(register, Register.getZero(), go.getTrueBasicBlock().getName());
                 mipsSegment.j(go.getFalseBasicBlock().getName());

@@ -20,7 +20,6 @@ public abstract class LValue implements RValue {
         return name;
     }
 
-    // todo 注意，这种相等的比较只能保证在一个函数内是唯一的，不保证跨函数的唯一性
     @Override
     public boolean equals(Object obj) {
         if(obj instanceof LValue){

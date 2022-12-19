@@ -1,8 +1,8 @@
-package frontend.generator;
+package frontend.IRGenerate;
 
-import midcode.instruction.BackFill;
+import frontend.IRGenerate.util.BackFill;
+import frontend.IRGenerate.util.BasicBlockFactory;
 import midcode.BasicBlock;
-import midcode.BasicBlockFactory;
 import midcode.instruction.CondGoto;
 import midcode.instruction.Goto;
 import midcode.value.Constant;

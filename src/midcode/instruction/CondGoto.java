@@ -2,21 +2,22 @@ package midcode.instruction;
 
 import midcode.BasicBlock;
 import midcode.value.LValue;
+import midcode.value.RValue;
 
 public class CondGoto implements Jump{
-    BasicBlock trueBasicBlock;
-    BasicBlock falseBasicBlock;
-    private final LValue cond;
+    private BasicBlock trueBasicBlock;
+    private BasicBlock falseBasicBlock;
+    private RValue cond;
 
     public CondGoto(LValue cond) {
         this.cond = cond;
     }
 
-    void setTrueBasicBlock(BasicBlock trueBasicBlock) {
+    public void setTrueBasicBlock(BasicBlock trueBasicBlock) {
         this.trueBasicBlock = trueBasicBlock;
     }
 
-    void setFalseBasicBlock(BasicBlock falseBasicBlock) {
+    public void setFalseBasicBlock(BasicBlock falseBasicBlock) {
         this.falseBasicBlock = falseBasicBlock;
     }
 
@@ -28,8 +29,12 @@ public class CondGoto implements Jump{
         return falseBasicBlock;
     }
 
-    public LValue getCond() {
+    public RValue getCond() {
         return cond;
+    }
+
+    public void setCond(RValue cond) {
+        this.cond = cond;
     }
 
     @Override

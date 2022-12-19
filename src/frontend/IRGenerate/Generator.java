@@ -1,8 +1,8 @@
-package frontend.generator;
+package frontend.IRGenerate;
 
+import frontend.IRGenerate.util.BasicBlockFactory;
+import frontend.IRGenerate.util.ValueFactory;
 import frontend.error.ErrorRecorder;
-import midcode.BasicBlockFactory;
-import midcode.value.ValueFactory;
 import frontend.type.SymbolTable;
 
 public abstract class Generator {

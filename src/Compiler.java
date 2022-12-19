@@ -4,10 +4,11 @@ import frontend.error.Error;
 import frontend.error.ErrorRecorder;
 import frontend.lexer.Lexer;
 import frontend.lexer.Terminal;
+import frontend.optimization.SSA;
 import midcode.Module;
 import frontend.parser.Parser;
 import frontend.parser.nonterminal.CompUnit;
-import frontend.generator.ModuleGenerator;
+import frontend.IRGenerate.ModuleGenerator;
 import vm.VirtualMachine;
 
 import java.io.File;
@@ -15,13 +16,15 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class Compiler {
 
 
     public static void main(String[] args) {
-//        mips(true);
-        midcode(true, true);
+//        mips(false);
+        runMidcode(midcode(true), true);
+
     }
 
     static List<Character> getCharList(String fileName){
@@ -92,10 +95,8 @@ public class Compiler {
         }
         printAndWrite(mipsFile, new Generator(module).generate());
     }
-    static void midcode(boolean isStdin, boolean isGenerateMidCode){
+    static Module midcode(boolean isGenerateMidCode){
         String srcFile = "testfile.txt";
-        String inputFile = "input.txt";
-        String outputFile = "pcoderesult.txt";
         String codeFile = "midcode.txt";
         ParserResult result = parser(lexer(srcFile));
         Module module = new ModuleGenerator(result.compUnit).generate();
@@ -109,6 +110,17 @@ public class Compiler {
         if(isGenerateMidCode){
             printAndWrite(codeFile, module.print());
         }
+        return module;
+    }
+    static void optimization(Module module){
+        Stream.concat(Stream.of(module.getMainFunc()), module.getOtherFunctions().stream()).forEach(function -> {
+            new SSA(function.getEntry(), function.getOtherBasicBlocks()).execute();
+        });
+    }
+
+    static void runMidcode(Module module, boolean isStdin){
+        String inputFile = "input.txt";
+        String outputFile = "pcoderesult.txt";
         VirtualMachine virtualMachine;
         if(isStdin){
             virtualMachine = new VirtualMachine(module);

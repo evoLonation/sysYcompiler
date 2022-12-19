@@ -27,4 +27,12 @@ public class Store implements Sequence {
     public RValue getRight() {
         return right;
     }
+
+    public void setLeft(AddressValue left) {
+        this.left = left;
+    }
+
+    public void setRight(RValue right) {
+        this.right = right;
+    }
 }

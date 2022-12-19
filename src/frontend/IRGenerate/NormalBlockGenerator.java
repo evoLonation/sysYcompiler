@@ -1,6 +1,6 @@
-package frontend.generator;
+package frontend.IRGenerate;
 
-import midcode.instruction.BackFill;
+import frontend.IRGenerate.util.BackFill;
 import midcode.instruction.Goto;
 import frontend.parser.nonterminal.Block;
 import frontend.parser.nonterminal.BlockItem;

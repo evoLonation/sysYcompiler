@@ -64,7 +64,7 @@ public class LocalActive {
         sequences = basicBlock.getSequenceList();
         lastJump = basicBlock.getJump();
         //假设基本块中的所有variable都可能会在基本快结束后活跃
-        allValues = basicBlock.getInstructions().stream().flatMap(midCode -> valueGetter.getAllValues(midCode).stream()).collect(Collectors.toSet());
+        allValues = basicBlock.getInstructionList().stream().flatMap(midCode -> valueGetter.getAllValues(midCode).stream()).collect(Collectors.toSet());
         for(LValue value : allValues) {
             if(value instanceof Variable){
                 ActiveInfo lastActiveInfo = new ActiveInfo(outInstruction, true, false);
@@ -76,7 +76,7 @@ public class LocalActive {
                 activeInfosMap.put(value, new HashMap<>());
             }
         }
-        List<Instruction> instructionsWithOut = Stream.concat(basicBlock.getInstructions().stream(), Stream.of(outInstruction)).collect(Collectors.toList());
+        List<Instruction> instructionsWithOut = Stream.concat(basicBlock.getInstructionList().stream(), Stream.of(outInstruction)).collect(Collectors.toList());
         ListIterator<Instruction> listIterator = instructionsWithOut.listIterator(instructionsWithOut.size());
         while(listIterator.hasPrevious()){
             Instruction instruction = listIterator.previous();

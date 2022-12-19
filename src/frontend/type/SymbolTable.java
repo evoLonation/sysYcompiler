@@ -33,11 +33,13 @@ public class SymbolTable {
         private final VarType type;
         private final int offset;
         private final int layer;
+        private final Function function;
 
         public VariableInfo(VarType type, int layer) {
             this.type = type;
             this.offset = layer == 0 ? currentGlobalOffset : currentTotalOffset + type.getSize() - 1;
             this.layer = layer;
+            this.function = layer == 0 ? null : currentFunction.function;
         }
 
         public Optional<Integer> getConstInteger(){
@@ -57,6 +59,10 @@ public class SymbolTable {
 
         public int getLayer() {
             return layer;
+        }
+
+        public Optional<Function> getFunction() {
+            return Optional.ofNullable(function);
         }
 
         public boolean isGlobal(){
@@ -212,10 +218,10 @@ public class SymbolTable {
         addVariable(ident, new VariableInfo(type, computeLayer(false)), false);
     }
 
-    public void newMain() {
+    public void newMain(Function function) {
         assert localVariableStack.isEmpty();
         currentMaxOffset = 0;
-        currentFunction = new FunctionInfo(new FuncType(true), null);
+        currentFunction = new FunctionInfo(new FuncType(true), function);
         newBlock();
     }
 

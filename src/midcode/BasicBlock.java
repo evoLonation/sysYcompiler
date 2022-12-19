@@ -6,6 +6,7 @@ import midcode.instruction.Sequence;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -18,19 +19,19 @@ public class BasicBlock implements MidCode{
     private final String name;
 
     private final List<Sequence> instructions = new ArrayList<>();
-    Jump lastJump;
+    private Jump lastJump;
 
 
     public List<Sequence> getSequenceList() {
         return instructions;
     }
     //保证除了最后一个是jump，前面都是sequence
-    public List<Instruction> getInstructions() {
+    public List<Instruction> getInstructionList() {
         return Stream.concat(instructions.stream(), Stream.of(lastJump)).collect(Collectors.toList());
     }
 
 
-    BasicBlock(String name) {
+    public BasicBlock(String name) {
         this.name = name;
     }
 
@@ -50,5 +51,23 @@ public class BasicBlock implements MidCode{
 
     public Jump getJump() {
         return lastJump;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof BasicBlock){
+            return name.equals(((BasicBlock) obj).name);
+        }else{
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
+
+    public void setLastJump(Jump lastJump) {
+        this.lastJump = lastJump;
     }
 }

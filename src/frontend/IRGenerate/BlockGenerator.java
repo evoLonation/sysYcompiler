@@ -1,7 +1,7 @@
-package frontend.generator;
+package frontend.IRGenerate;
 
 import common.SemanticException;
-import midcode.instruction.BackFill;
+import frontend.IRGenerate.util.BackFill;
 import midcode.BasicBlock;
 import midcode.instruction.Goto;
 import midcode.instruction.Return;

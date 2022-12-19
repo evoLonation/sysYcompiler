@@ -5,6 +5,7 @@ import midcode.value.RValue;
 
 public class Assignment implements Sequence{
     private LValue left;
+
     private RValue right;
 
     public Assignment(LValue left, RValue right) {
@@ -24,4 +25,14 @@ public class Assignment implements Sequence{
     public RValue getRight() {
         return right;
     }
+
+    public void setLeft(LValue left) {
+        this.left = left;
+    }
+
+    public void setRight(RValue right) {
+        this.right = right;
+    }
+
+
 }

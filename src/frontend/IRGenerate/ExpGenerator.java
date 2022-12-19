@@ -1,4 +1,4 @@
-package frontend.generator;
+package frontend.IRGenerate;
 
 import common.SemanticException;
 import frontend.lexer.Ident;

@@ -1,6 +1,7 @@
-package frontend.generator;
+package frontend.IRGenerate;
 
 import common.SemanticException;
+import frontend.IRGenerate.util.ModuleFactory;
 import frontend.lexer.Ident;
 import midcode.*;
 import midcode.Module;
@@ -171,7 +172,7 @@ public class ModuleGenerator extends Generator{
         Function function;
         function = basicBlockFactory.newMainFunction();
         Block block = mainFuncDef.getBlock();
-        symbolTable.newMain();
+        symbolTable.newMain(function);
         new FuncBlockGenerator(block).generate();
         symbolTable.outBlock();
         basicBlockFactory.outFunction(symbolTable.getMaxOffset());

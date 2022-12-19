@@ -27,4 +27,12 @@ public class Load implements Sequence {
     public AddressValue getRight() {
         return right;
     }
+
+    public void setLeft(LValue left) {
+        this.left = left;
+    }
+
+    public void setRight(AddressValue right) {
+        this.right = right;
+    }
 }

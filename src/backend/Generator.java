@@ -1,6 +1,5 @@
 package backend;
 
-import midcode.BasicBlock;
 import midcode.Function;
 import midcode.Module;
 
@@ -17,13 +16,13 @@ public class Generator {
     public String generate(){
         mipsSegment.word("static_data", module.getStaticData());
         generateFunction(module.getMainFunc(), true);
-        module.getFunctions().forEach(function ->  generateFunction(function, false));
+        module.getOtherFunctions().forEach(function ->  generateFunction(function, false));
         stringRepo.print();
         return mipsSegment.print();
     }
 
     void generateFunction(Function function, boolean isMain){
         new BasicBlockGenerator(function.getEntry(), function.getOffset(), isMain, true).generate();
-        function.getBasicBlocks().forEach(basicBlock -> new BasicBlockGenerator(basicBlock, function.getOffset(), isMain, false).generate());
+        function.getOtherBasicBlocks().forEach(basicBlock -> new BasicBlockGenerator(basicBlock, function.getOffset(), isMain, false).generate());
     }
 }

@@ -2,6 +2,7 @@ package backend;
 
 import midcode.instruction.Call;
 import midcode.instruction.Param;
+import midcode.value.LValue;
 import midcode.value.Temp;
 import midcode.value.Value;
 
@@ -65,11 +66,11 @@ public class CallGenerator {
 
     }
 
-    void getReturn(Temp temp){
+    void getReturn(LValue lValue){
         Register resultRegister = stateManager.getResultReg();
         stateManager.getNeedStore(resultRegister, true).forEach(storeLoadManager::storeLValue);
         mipsSegment.move(resultRegister, Register.getV0());
-        stateManager.operate(resultRegister, temp);
+        stateManager.operate(resultRegister, lValue);
     }
 
 

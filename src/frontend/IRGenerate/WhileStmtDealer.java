@@ -1,8 +1,8 @@
-package frontend.generator;
+package frontend.IRGenerate;
 
+import frontend.IRGenerate.util.BackFill;
+import frontend.IRGenerate.util.BasicBlockFactory;
 import frontend.error.ErrorRecorder;
-import midcode.BasicBlockFactory;
-import midcode.instruction.BackFill;
 import midcode.instruction.Goto;
 
 import java.util.Stack;

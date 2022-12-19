@@ -2,6 +2,7 @@ package midcode.instruction;
 
 
 import midcode.Function;
+import midcode.value.LValue;
 import midcode.value.Temp;
 import midcode.value.Value;
 
@@ -10,9 +11,9 @@ import java.util.Optional;
 
 public class Call implements Sequence{
     private Function function;
-    private Temp ret;
+    private LValue ret;
 
-    public Call(Function function, Temp ret) {
+    public Call(Function function, LValue ret) {
         this.function = function;
         this.ret = ret;
     }
@@ -26,7 +27,7 @@ public class Call implements Sequence{
     }
 
 
-    public Optional<Temp> getRet() {
+    public Optional<LValue> getRet() {
         return Optional.ofNullable(ret);
     }
 
@@ -39,4 +40,13 @@ public class Call implements Sequence{
             return ret.print() +  " = call " + function.getEntry().getName() ;
         }
     }
+
+    public void setFunction(Function function) {
+        this.function = function;
+    }
+
+    public void setRet(LValue ret) {
+        this.ret = ret;
+    }
+
 }

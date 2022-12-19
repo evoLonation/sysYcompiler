@@ -1,15 +1,14 @@
 package midcode;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Function implements MidCode{
-    int offset;
+    private int offset;
     // 除了entry之外的其他basicBlock
-    List<BasicBlock> basicBlocks = new ArrayList<>();
-    BasicBlock entry;
+    Set<BasicBlock> basicBlocks = new LinkedHashSet<>();
+    private BasicBlock entry;
 
-    public List<BasicBlock> getBasicBlocks() {
+    public Set<BasicBlock> getOtherBasicBlocks() {
         return basicBlocks;
     }
 
@@ -17,7 +16,7 @@ public class Function implements MidCode{
         return entry;
     }
 
-    Function() {}
+    public Function() {}
 
     @Override
     public String print() {
@@ -33,5 +32,13 @@ public class Function implements MidCode{
 
     public int getOffset() {
         return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
+    public void setEntry(BasicBlock entry) {
+        this.entry = entry;
     }
 }

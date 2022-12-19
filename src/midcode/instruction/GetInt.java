@@ -3,18 +3,22 @@ package midcode.instruction;
 import midcode.value.LValue;
 
 public class GetInt implements Sequence{
-    private final LValue lValue;
+    private LValue left;
 
-    public GetInt(LValue lValue) {
-        this.lValue = lValue;
+    public GetInt(LValue left) {
+        this.left = left;
     }
 
     @Override
     public String print() {
-        return lValue.print() + " = getint";
+        return left.print() + " = getint";
     }
 
-    public LValue getlValue() {
-        return lValue;
+    public LValue getLeft() {
+        return left;
+    }
+
+    public void setLeft(LValue left) {
+        this.left = left;
     }
 }

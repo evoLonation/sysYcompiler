@@ -3,18 +3,22 @@ package midcode.instruction;
 import midcode.value.RValue;
 
 public class PrintInt implements Sequence {
-    private final RValue rValue;
+    private RValue value;
 
-    public PrintInt(RValue rValue) {
-        this.rValue = rValue;
+    public PrintInt(RValue value) {
+        this.value = value;
     }
 
     public RValue getRValue() {
-        return rValue;
+        return value;
+    }
+
+    public void setValue(RValue value) {
+        this.value = value;
     }
 
     @Override
     public String print() {
-        return "printInt " + rValue.print();
+        return "printInt " + value.print();
     }
 }

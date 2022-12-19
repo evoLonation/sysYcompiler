@@ -1,8 +1,9 @@
-package frontend.generator;
+package frontend.IRGenerate;
 
 import common.SemanticException;
 import frontend.lexer.Ident;
 import midcode.instruction.Assignment;
+import midcode.instruction.ImplicitDef;
 import midcode.instruction.Store;
 import midcode.value.Constant;
 import midcode.value.AddressValue;
@@ -74,6 +75,7 @@ public class DeclGenerator extends SequenceGenerator {
     private void assignment0(Ident ident, IntInitVal initVal, boolean isConst){
         if(initVal == null){
             symbolTable.newInteger(ident, false);
+            addSequence(new ImplicitDef(valueFactory.newVariable(ident)));
         }else{
             RValue rValue = new ExpGenerator(initVal.getExp()).generate().getRValueResult();
             if(isConst){

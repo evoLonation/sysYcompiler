@@ -1,4 +1,4 @@
-package frontend.generator;
+package frontend.IRGenerate;
 
 import frontend.parser.nonterminal.Block;
 import frontend.parser.nonterminal.BlockItem;

@@ -1,4 +1,4 @@
-package frontend.generator;
+package frontend.IRGenerate;
 
 import frontend.lexer.Ident;
 import midcode.Function;

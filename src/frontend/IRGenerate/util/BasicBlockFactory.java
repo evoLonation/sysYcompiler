@@ -1,5 +1,7 @@
-package midcode;
+package frontend.IRGenerate.util;
 
+import midcode.BasicBlock;
+import midcode.Function;
 import midcode.instruction.*;
 
 public class BasicBlockFactory {
@@ -13,9 +15,9 @@ public class BasicBlockFactory {
         assert nowFunction == null;
         assert nowBasicBlock == null;
         Function ret = new Function();
-        ret.entry = new BasicBlock("function$" + symbol);
+        ret.setEntry(new BasicBlock("function$" + symbol));
         nowFunction = ret;
-        nowBasicBlock = nowFunction.entry;
+        nowBasicBlock = nowFunction.getEntry();
         return ret;
     }
 
@@ -26,13 +28,13 @@ public class BasicBlockFactory {
     public void outFunction(int offset){
         assert nowFunction != null;
         assert nowBasicBlock == null;
-        nowFunction.offset = offset;
+        nowFunction.setOffset(offset);
         nowFunction = null;
     }
 
     public BasicBlock newBasicBlock(){
         BasicBlock newBasicBlock = new BasicBlock("basicBlock$" + ++basicBlockNumber);
-        nowFunction.basicBlocks.add(newBasicBlock);
+        nowFunction.getOtherBasicBlocks().add(newBasicBlock);
         nowBasicBlock = newBasicBlock;
         return newBasicBlock;
     }
@@ -43,7 +45,7 @@ public class BasicBlockFactory {
     }
 
     public BackFill outBasicBlock(Goto outCode){
-        nowBasicBlock.lastJump = outCode;
+        nowBasicBlock.setLastJump(outCode);
         BackFill backFill = new BackFill();
         backFill.add(outCode);
         nowBasicBlock = null;
@@ -61,7 +63,7 @@ public class BasicBlockFactory {
     }
 
     public CondGotoBackFill outBasicBlock(CondGoto outCode){
-        nowBasicBlock.lastJump = outCode;
+        nowBasicBlock.setLastJump(outCode);
         BackFill trueBackFill = new BackFill();
         BackFill falseBackFill = new BackFill();
         trueBackFill.add(outCode, true);
@@ -71,7 +73,7 @@ public class BasicBlockFactory {
     }
 
     public void outBasicBlock(Return outCode){
-        nowBasicBlock.lastJump = outCode;
+        nowBasicBlock.setLastJump(outCode);
         nowBasicBlock = null;
     }
 

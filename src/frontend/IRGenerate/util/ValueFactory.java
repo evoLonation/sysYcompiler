@@ -1,14 +1,13 @@
-package midcode.value;
+package frontend.IRGenerate.util;
 
 import frontend.lexer.Ident;
 import frontend.type.ArrayType;
 import frontend.type.IntType;
 import frontend.type.PointerType;
 import frontend.type.SymbolTable;
+import midcode.value.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class ValueFactory {
     private final SymbolTable symbolTable = SymbolTable.getInstance();
@@ -19,8 +18,6 @@ public class ValueFactory {
         return new Temp("temp%" + ++tempNumber);
     }
 
-    private final Map<SymbolTable.VariableInfo, Integer> numberMap = new HashMap<>();
-    // todo need clean
     private final Map<SymbolTable.VariableInfo, Variable> variableMap = new HashMap<>();
 
     /**
@@ -41,9 +38,6 @@ public class ValueFactory {
     }
 
 
-    // todo ssa
-    // now is not ssa
-    // the same local variable will return the same variable object
     public Variable newVariable(Ident ident) {
         String symbol = ident.getValue();
         Optional<SymbolTable.VariableInfo> optionalVariableInfo = symbolTable.getVariable(ident);
@@ -53,22 +47,30 @@ public class ValueFactory {
         if(variableMap.containsKey(variableInfo)){
             return variableMap.get(variableInfo);
         }else{
-            Variable ret = new Variable(symbol + "#" + variableInfo.getLayer(), variableInfo.isGlobal(), variableInfo.getOffset());
+            Variable ret;
+            if(variableInfo.getFunction().isPresent()){
+                ret = new Variable(symbol + "#" + variableInfo.getLayer(), variableInfo.getFunction().get(), variableInfo.getOffset());
+            }else{
+                ret = new Variable(symbol + "#" + variableInfo.getLayer(), variableInfo.getOffset());
+            }
             variableMap.put(variableInfo, ret);
+            numberMap.put(ret, 0);
             return ret;
         }
-//        int number;
-//        if(numberMap.containsKey(variableInfo)){
-//            number = numberMap.get(variableInfo) + 1;
-//        }else{
-//            number = 1;
-//        }
-//        numberMap.put(variableInfo, number);
-//        Variable ret = new Variable(symbol + "#" + variableInfo.getLayer() + "%" + number, variableInfo.isGlobal(), variableInfo.getOffset());
-//        variableMap.put(variableInfo, ret);
-//        return ret;
     }
 
+
+    private final Map<Variable, Integer> numberMap = new HashMap<>();
+
+    public Variable newSubscriptVariable(Variable variable){
+        int count = numberMap.get(variable);
+        numberMap.put(variable, count + 1);
+        if(variable.getFunction().isPresent()){
+            return new Variable(variable.getName() + "@" + count, variable.getFunction().get(), variable.getOffset());
+        }else{
+            return new Variable(variable.getName() + "@" + count, variable.getOffset());
+        }
+    }
 
     public Variable getNewestVariable(Ident ident){
         Optional<SymbolTable.VariableInfo> optionalVariableInfo = symbolTable.getVariable(ident);

@@ -1,6 +1,7 @@
 package midcode.instruction;
 
 import common.SemanticException;
+import midcode.value.LValue;
 import midcode.value.RValue;
 import midcode.value.Temp;
 
@@ -8,7 +9,7 @@ import midcode.value.Temp;
  * 考虑到实际机器码的计算是将结果放在寄存器，因此result限制为Temp
  */
 public class UnaryOperation implements Sequence {
-    private Temp result;
+    private LValue result;
     private RValue value;
     private UnaryOp op;
 
@@ -18,7 +19,7 @@ public class UnaryOperation implements Sequence {
         NOT,
     }
 
-    public UnaryOperation(RValue value, UnaryOp op, Temp result) {
+    public UnaryOperation(RValue value, UnaryOp op, LValue result) {
         this.result = result;
         this.value = value;
         this.op = op;
@@ -36,7 +37,7 @@ public class UnaryOperation implements Sequence {
         return result.print() + " = " + opStr + " " + value.print();
     }
 
-    public Temp getResult() {
+    public LValue getResult() {
         return result;
     }
 
@@ -46,5 +47,17 @@ public class UnaryOperation implements Sequence {
 
     public UnaryOp getOp() {
         return op;
+    }
+
+    public void setResult(LValue result) {
+        this.result = result;
+    }
+
+    public void setValue(RValue value) {
+        this.value = value;
+    }
+
+    public void setOp(UnaryOp op) {
+        this.op = op;
     }
 }

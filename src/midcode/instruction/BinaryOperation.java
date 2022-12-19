@@ -67,4 +67,20 @@ public class BinaryOperation implements Sequence{
     public LValue getResult() {
         return result;
     }
+
+    public void setLeft(RValue left) {
+        this.left = left;
+    }
+
+    public void setRight(RValue right) {
+        this.right = right;
+    }
+
+    public void setOp(BinaryOp op) {
+        this.op = op;
+    }
+
+    public void setResult(LValue result) {
+        this.result = result;
+    }
 }

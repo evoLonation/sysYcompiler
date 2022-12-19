@@ -182,6 +182,8 @@ public class VirtualMachine {
     private final VoidExecution<Instruction> instructionVoidExecution = new VoidExecution<Instruction>() {
         @Override
         public void inject() {
+            inject(ImplicitDef.class, param -> {});
+
             inject(Assignment.class, assign -> saveValueToLValue(assign.getLeft(), getIntValue(assign.getRight())));
 
             inject(BinaryOperation.class, operation -> saveValueToLValue(operation.getResult(), new IntValue(compute(getIntValue(operation.getLeft()).value, operation.getOp(), getIntValue(operation.getRight()).value))));
@@ -195,7 +197,7 @@ public class VirtualMachine {
                 }
             });
 
-            inject(GetInt.class, getint -> saveValueToLValue(getint.getlValue(), new IntValue(scanner.nextInt())));
+            inject(GetInt.class, getint -> saveValueToLValue(getint.getLeft(), new IntValue(scanner.nextInt())));
 
             inject(Load.class, load -> saveValueToLValue(load.getLeft(), (IntValue) getValue(getAddress(load.getRight()))));
 

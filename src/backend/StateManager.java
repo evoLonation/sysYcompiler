@@ -1,6 +1,7 @@
 package backend;
 
 import common.SemanticException;
+import common.ValueGetter;
 import midcode.value.*;
 
 import java.util.*;

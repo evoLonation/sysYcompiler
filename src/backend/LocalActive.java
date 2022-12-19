@@ -1,5 +1,6 @@
 package backend;
 
+import common.ValueGetter;
 import midcode.BasicBlock;
 import midcode.MidCode;
 import midcode.instruction.Instruction;

@@ -6,6 +6,9 @@ public class Goto implements Jump{
     BasicBlock basicBlock;
 
     public Goto(){}
+    public Goto(BasicBlock basicBlock){
+        this.basicBlock = basicBlock;
+    }
     @Override
     public String print() {
         return "goto " + basicBlock.getName();

@@ -24,6 +24,7 @@ public class PhiConverter {
     }
     private final Set<BasicBlock> basicBlocks;
     public void execute(){
+        Set<BasicBlock> newBasicBlocks = new HashSet<>();
         basicBlocks.forEach(basicBlock -> {
             Iterator<Sequence> iterator = basicBlock.getSequenceList().iterator();
             Map<BasicBlock, Set<Assignment>> predecessorVariableMap = new HashMap<>();
@@ -59,9 +60,10 @@ public class PhiConverter {
                         throw new SemanticException();
                     }
                     newBasicBlock.setLastJump(newGoto);
+                    newBasicBlocks.add(newBasicBlock);
                 }
             });
-
         });
+        basicBlocks.addAll(newBasicBlocks);
     }
 }

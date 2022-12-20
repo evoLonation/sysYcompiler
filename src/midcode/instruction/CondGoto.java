@@ -13,6 +13,12 @@ public class CondGoto implements Jump{
         this.cond = cond;
     }
 
+    public CondGoto(BasicBlock trueBasicBlock, BasicBlock falseBasicBlock, RValue cond) {
+        this.trueBasicBlock = trueBasicBlock;
+        this.falseBasicBlock = falseBasicBlock;
+        this.cond = cond;
+    }
+
     public void setTrueBasicBlock(BasicBlock trueBasicBlock) {
         this.trueBasicBlock = trueBasicBlock;
     }

@@ -4,6 +4,7 @@ import common.ValueGetter;
 import common.SemanticException;
 import midcode.BasicBlock;
 import midcode.Function;
+import midcode.value.GlobalVariable;
 import midcode.value.LValue;
 import frontend.IRGenerate.util.ValueFactory;
 import midcode.value.Variable;
@@ -195,8 +196,10 @@ public class SSA {
             basicBlock.getInstructionList().forEach(instruction -> {
                 valueGetter.getLValueUseValues(instruction).forEach(lValue -> {
                     if(!varKillMap.contains(lValue)){
-                        assert lValue instanceof Variable;
-                        globals.add((Variable) lValue);
+                        assert lValue instanceof Variable || lValue instanceof GlobalVariable;
+                        if(lValue instanceof Variable){
+                            globals.add((Variable) lValue);
+                        }
                     }
                 });
                 valueGetter.getDefValue(instruction).ifPresent(lValue -> {
@@ -269,11 +272,12 @@ public class SSA {
         return originVariableMap.getOrDefault(variable, variable);
     }
 
+    //该局部变量在当前上下文是否被定义
+    private boolean isDefVariable(Variable variable){
+        return !variableStackMap.get(variable).empty();
+    }
     //variable必须是未SSA之前的
     public Variable getTopVariable(Variable variable){
-        if(variableStackMap.get(variable) == null){
-            int a = 1;
-        }
         return specifySubscriptVariable(variable, variableStackMap.get(variable).peek());
     }
     public void popStack(Variable variable){
@@ -322,7 +326,9 @@ public class SSA {
             phiMap.get(successor).forEach(phiAssignment -> {
                 Phi phi = phiAssignment.getPhi();
                 Variable variable = getOrigin(phiAssignment.getLeft());
-                phi.addParameter(getTopVariable(variable), basicBlock);
+                if(isDefVariable(variable)){
+                    phi.addParameter(getTopVariable(variable), basicBlock);
+                }
             });
         });
         getDOMSuccessor(basicBlock).forEach(this::rename);

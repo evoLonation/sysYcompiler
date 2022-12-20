@@ -23,7 +23,7 @@ public class Compiler {
 
 
     public static void main(String[] args) {
-//        Module module = midcode(true, false);
+//        Module module = midcode(true, true);
 //        runMidcode(module, true);
         mips(true, false);
 

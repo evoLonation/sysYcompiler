@@ -1,6 +1,7 @@
 package backend;
 
 import common.SemanticException;
+import common.ValueGetter;
 import midcode.BasicBlock;
 import midcode.instruction.*;
 import midcode.value.*;
@@ -13,6 +14,7 @@ public class BasicBlockGenerator {
     private final StateManager stateManager;
     private final StringRepo stringRepo = StringRepo.getInstance();
     private final BasicBlock basicBlock;
+    private final ValueGetter valueGetter = ValueGetter.getInstance();
 
 
     private final boolean isMain;
@@ -54,10 +56,17 @@ public class BasicBlockGenerator {
 
 
     void saveLocalVariable(){
-        localActive.getAllLValues().stream()
-                .filter(lValue -> lValue instanceof Variable)
-                .filter(value -> localActive.isStillUse(value, true))
-                .forEach(storeLoadManager::storeLValue);
+        basicBlock.getInstructionList().forEach(instruction -> {
+            valueGetter.getAllValues(instruction).forEach(lValue -> {
+                if(lValue instanceof Variable && localActive.isStillUse(lValue, true)){
+                    storeLoadManager.storeLValue(lValue);
+                }
+            });
+        });
+//        localActive.getAllLValues().stream()
+//                .filter(lValue -> lValue instanceof Variable)
+//                .filter(value -> localActive.isStillUse(value, true))
+//                .forEach(storeLoadManager::storeLValue);
     }
     void saveGlobalVariable(){
         localActive.getAllLValues().stream()

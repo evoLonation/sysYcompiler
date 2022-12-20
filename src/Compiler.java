@@ -4,7 +4,7 @@ import frontend.error.Error;
 import frontend.error.ErrorRecorder;
 import frontend.lexer.Lexer;
 import frontend.lexer.Terminal;
-import frontend.optimization.SSA;
+import frontend.optimization.ssa.SSA;
 import midcode.Module;
 import frontend.parser.Parser;
 import frontend.parser.nonterminal.CompUnit;
@@ -22,8 +22,8 @@ public class Compiler {
 
 
     public static void main(String[] args) {
-//        mips(false);
-        runMidcode(midcode(true), true);
+        mips(false);
+//        runMidcode(midcode(true), true);
 
     }
 

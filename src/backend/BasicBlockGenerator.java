@@ -119,7 +119,7 @@ public class BasicBlockGenerator {
             });
 
             inject(PrintInt.class, printf -> {
-                mipsSegment.move(Register.getA0(), storeLoadManager.loadRValue(printf.getRValue()));
+                mipsSegment.move(Register.getA0(), storeLoadManager.loadRValue(printf.getValue()));
                 mipsSegment.li(Register.getV0(), 1);
                 mipsSegment.syscall();
             });

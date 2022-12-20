@@ -9,7 +9,7 @@ public class PrintInt implements Sequence {
         this.value = value;
     }
 
-    public RValue getRValue() {
+    public RValue getValue() {
         return value;
     }
 

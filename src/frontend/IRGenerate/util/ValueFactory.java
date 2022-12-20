@@ -18,7 +18,6 @@ public class ValueFactory {
         return new Temp("temp%" + ++tempNumber);
     }
 
-    private final Map<SymbolTable.VariableInfo, Variable> variableMap = new HashMap<>();
 
     /**
      * 指针类型变量并不会被改变，因此不用重新赋值（非SSA形式）
@@ -44,41 +43,15 @@ public class ValueFactory {
         assert optionalVariableInfo.isPresent();
         SymbolTable.VariableInfo variableInfo = optionalVariableInfo.get();
         assert variableInfo.getType() instanceof IntType;
-        if(variableMap.containsKey(variableInfo)){
-            return variableMap.get(variableInfo);
+        if(variableInfo.getFunction().isPresent()){
+            return new Variable(symbol + "#" + variableInfo.getLayer(), variableInfo.getFunction().get(), variableInfo.getOffset());
         }else{
-            Variable ret;
-            if(variableInfo.getFunction().isPresent()){
-                ret = new Variable(symbol + "#" + variableInfo.getLayer(), variableInfo.getFunction().get(), variableInfo.getOffset());
-            }else{
-                ret = new Variable(symbol + "#" + variableInfo.getLayer(), variableInfo.getOffset());
-            }
-            variableMap.put(variableInfo, ret);
-            numberMap.put(ret, 0);
-            return ret;
+            return new Variable(symbol + "#" + variableInfo.getLayer(), variableInfo.getOffset());
         }
     }
 
 
-    private final Map<Variable, Integer> numberMap = new HashMap<>();
 
-    public Variable newSubscriptVariable(Variable variable){
-        int count = numberMap.get(variable);
-        numberMap.put(variable, count + 1);
-        if(variable.getFunction().isPresent()){
-            return new Variable(variable.getName() + "@" + count, variable.getFunction().get(), variable.getOffset());
-        }else{
-            return new Variable(variable.getName() + "@" + count, variable.getOffset());
-        }
-    }
-
-    public Variable getNewestVariable(Ident ident){
-        Optional<SymbolTable.VariableInfo> optionalVariableInfo = symbolTable.getVariable(ident);
-        assert optionalVariableInfo.isPresent();
-        SymbolTable.VariableInfo variableInfo = optionalVariableInfo.get();
-        assert variableInfo.getType() instanceof IntType;
-        return variableMap.get(variableInfo);
-    }
 
     static private final ValueFactory instance = new ValueFactory();
     static public ValueFactory getInstance(){

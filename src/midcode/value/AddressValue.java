@@ -13,7 +13,7 @@ package midcode.value;
  */
 public abstract class AddressValue implements Value {
     private final String name;
-    private final RValue offset;
+    private RValue offset;
 
     // staticOffset是在编译器就计算好的，可以用来与 sp/静态base得到基地址；然后再生成与offset相加的指令
     private final int staticOffset;
@@ -35,6 +35,10 @@ public abstract class AddressValue implements Value {
 
     public RValue getOffset() {
         return offset;
+    }
+
+    public void setOffset(RValue offset) {
+        this.offset = offset;
     }
 
     public int getStaticOffset() {

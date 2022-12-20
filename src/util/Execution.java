@@ -12,7 +12,7 @@ public abstract class Execution<T, RT> {
     private Executor<? extends T, RT> defaultExec = ast -> {throw new SemanticException();};
 
 
-    protected <TT extends T> void inject(Class<TT> clazz, Executor<TT, RT> executor) {
+    public  <TT extends T> void inject(Class<TT> clazz, Executor<TT, RT> executor) {
         map.put(clazz, executor);
     }
 
@@ -35,7 +35,7 @@ public abstract class Execution<T, RT> {
         return ((Executor<T, RT>)map.get(nowClass)).innerExec(param);
     }
 
-    protected interface Executor<TT, RTT>{
+    public interface Executor<TT, RTT>{
         RTT innerExec(TT param);
     }
 

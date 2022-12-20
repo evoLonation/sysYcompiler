@@ -62,6 +62,7 @@ public class LocalActive {
 
     LocalActive(BasicBlock basicBlock) {
         OutInstruction outInstruction = new OutInstruction();
+        valueGetter.addUseDefGSetter(OutInstruction.class, param -> null, param -> Collections.emptyList());
         sequences = basicBlock.getSequenceList();
         lastJump = basicBlock.getJump();
         //假设基本块中的所有variable都可能会在基本快结束后活跃
@@ -82,7 +83,7 @@ public class LocalActive {
         while(listIterator.hasPrevious()){
             Instruction instruction = listIterator.previous();
             Map<LValue, ActiveInfo> nowActiveInfos = new HashMap<>();
-            for(LValue value : valueGetter.getUseValues(instruction)){
+            for(LValue value : valueGetter.getLValueUseValues(instruction)){
                 nowActiveInfos.put(value, new ActiveInfo(instruction, true, false));
             }
             valueGetter.getDefValue(instruction).ifPresent(value->{

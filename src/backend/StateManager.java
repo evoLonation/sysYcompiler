@@ -201,7 +201,7 @@ public class StateManager {
      * 启发式的为当前中间代码的一个use值分配一个寄存器
      */
     Register getFactorReg(LValue factor) {
-        assert valueGetter.getUseValues(localActive.getNowSequence()).contains(factor);
+        assert valueGetter.getLValueUseValues(localActive.getNowSequence()).contains(factor);
         // 先找已经有的
         return anyRegister(factor).orElseGet(this::getReg);
     }
@@ -239,7 +239,7 @@ public class StateManager {
                                 return // 如果是结果，则不需要排除
                                         overrideCurrentUse ||
                                         // 在所有的值都不包含在本指令要使用的值中时，保留
-                                        entry.getValue().stream().noneMatch(value -> valueGetter.getUseValues(localActive.getNowInstruction()).contains(value));
+                                        entry.getValue().stream().noneMatch(value -> valueGetter.getLValueUseValues(localActive.getNowInstruction()).contains(value));
                             }
                     }).map(Map.Entry::getKey)
                     .min((register1, register2)-> {

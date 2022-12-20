@@ -212,7 +212,7 @@ public class VirtualMachine {
                 }
             });
 
-            inject(PrintInt.class, printf -> stdout += getIntValue(printf.getRValue()).value);
+            inject(PrintInt.class, printf -> stdout += getIntValue(printf.getValue()).value);
             inject(PrintString.class, printf -> stdout += printf.getString().replace("\\n", "\n"));
 
             inject(Store.class, store -> saveValueToAddress(getAddress(store.getLeft()), getIntValue(store.getRight())));

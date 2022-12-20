@@ -1,6 +1,7 @@
 package frontend.optimization;
 
 import frontend.optimization.cfg.CFGSimplify;
+import frontend.optimization.ssa.PhiConverter;
 import frontend.optimization.ssa.SSA;
 import midcode.Function;
 import midcode.Module;
@@ -17,7 +18,8 @@ public class Optimizer {
     public void optimize(){
         getAllFunction().forEach(function -> {
             new CFGSimplify(function).exec();
-//            new SSA(function).execute();
+            new SSA(function).execute();
+            new PhiConverter(function).execute();
         });
 
     }

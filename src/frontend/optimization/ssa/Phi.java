@@ -1,29 +1,29 @@
 package frontend.optimization.ssa;
 
+import midcode.BasicBlock;
 import midcode.value.RValue;
 import midcode.value.Value;
 import midcode.value.Variable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Phi implements Value {
-    private final List<Variable> parameters = new ArrayList<>();
+    private final Map<Variable, BasicBlock> parametersMap = new LinkedHashMap<>();
 
     Phi() {}
 
-    void addParameter(Variable variable){
-        parameters.add(variable);
+    void addParameter(Variable variable, BasicBlock basicBlock){
+        parametersMap.put(variable, basicBlock);
     }
 
-    public List<Variable> getParameters() {
-        return parameters;
+    public Map<Variable, BasicBlock> getParametersMap() {
+        return parametersMap;
     }
 
     @Override
     public String print() {
         StringBuilder stringBuilder = new StringBuilder();
-        parameters.forEach(variable -> stringBuilder.append(variable.getName()).append(", "));
+        parametersMap.forEach((variable, v) -> stringBuilder.append(variable.getName()).append(", "));
         return "phi ( " + stringBuilder.toString() + " )";
     }
 }

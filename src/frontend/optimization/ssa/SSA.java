@@ -109,13 +109,23 @@ public class SSA {
         return parent != null;
     }
 
+    private final Set<BasicBlock> visitedSet = new HashSet<>();
+    private void dfs(BasicBlock basicBlock, BasicBlock father){
+        if(visitedSet.contains(basicBlock))return;
+        visitedSet.add(basicBlock);
+        if(father != null){
+            iDOMMap.put(basicBlock, father);
+        }
+        valueGetter.getJumpBasicBlock(basicBlock.getJump()).forEach(successor -> {
+            dfs(successor, basicBlock);
+        });
+
+    }
+
     private void computeDominatorTree(){
         //先构建出一个生成树
-        //构建方式：只需要将前驱map拿来，每个节点的前驱删的就剩一个就行了
-        predecessorMap.forEach((basicBlock, basicBlocks) -> {
-            if (basicBlock.equals(getEntry())) return;
-            iDOMMap.put(basicBlock, basicBlocks.stream().filter(b -> !b.equals(basicBlock)).findAny().orElseThrow(SemanticException::new));
-        });
+        //使用DFS构建生成树
+        dfs(entry, null);
         AtomicBoolean changed = new AtomicBoolean(true);
         while (changed.get()) {
             changed.set(false);
@@ -176,9 +186,6 @@ public class SSA {
     private final Set<Variable> globals = new HashSet<>();
     private final Map<Variable, Set<BasicBlock>> blockMap = new HashMap<>();
     private final Map<BasicBlock, Set<PhiAssignment>> phiMap = new HashMap<>();
-    private Set<Variable> getGlobalVariables(){
-        return globals;
-    }
 
     private void generatePhi(){
 
@@ -240,6 +247,7 @@ public class SSA {
 
     private final Map<Variable, Integer> numberMap = new HashMap<>();
     private final Map<Variable, Stack<Integer>> variableStackMap = new HashMap<>();
+    private final Map<Variable, Variable> originVariableMap = new HashMap<>();
 
     //variable必须是未SSA之前的
     public Variable newSubscriptVariable(Variable variable){
@@ -249,20 +257,32 @@ public class SSA {
         return specifySubscriptVariable(variable, count);
     }
     private Variable specifySubscriptVariable(Variable variable, int count){
+        Variable ret;
         if(variable.getFunction().isPresent()){
-            return new Variable(variable.getName() + "@" + count, variable.getFunction().get(), variable.getOffset());
+            ret = new Variable(variable.getName() + "@" + count, variable.getFunction().get(), variable.getOffset());
         }else{
-            return new Variable(variable.getName() + "@" + count, variable.getOffset());
+            ret = new Variable(variable.getName() + "@" + count, variable.getOffset());
         }
+        originVariableMap.put(ret, variable);
+        return ret;
+    }
+
+    //如果本身就是为加下标的则直接返回自身
+    private Variable getOrigin(Variable variable){
+        return originVariableMap.getOrDefault(variable, variable);
     }
 
     //variable必须是未SSA之前的
     public Variable getTopVariable(Variable variable){
+        if(variableStackMap.get(variable) == null){
+            int a = 1;
+        }
         return specifySubscriptVariable(variable, variableStackMap.get(variable).peek());
     }
     public void popStack(Variable variable){
         variableStackMap.get(variable).pop();
     }
+
 
 
 
@@ -304,8 +324,8 @@ public class SSA {
         valueGetter.getJumpBasicBlock(basicBlock.getJump()).forEach(successor -> {
             phiMap.get(successor).forEach(phiAssignment -> {
                 Phi phi = phiAssignment.getPhi();
-                Variable variable = phiAssignment.getLeft();
-                phi.addParameter(getTopVariable(variable));
+                Variable variable = getOrigin(phiAssignment.getLeft());
+                phi.addParameter(getTopVariable(variable), basicBlock);
             });
         });
         getDOMSuccessor(basicBlock).forEach(this::rename);

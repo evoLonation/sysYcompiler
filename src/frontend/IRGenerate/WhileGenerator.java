@@ -15,15 +15,15 @@ public class WhileGenerator extends BasicBlockGenerator{
 
     BackFill generate() {
         BackFill backFill = new BackFill();
-        BackFill preBackFill = basicBlockFactory.outBasicBlock(new Goto());
-        BasicBlock condBasicBlock = basicBlockFactory.newBasicBlock();
+        BackFill preBackFill = basicBlockManager.outBasicBlock(new Goto());
+        BasicBlock condBasicBlock = basicBlockManager.newBasicBlock();
         preBackFill.fill(condBasicBlock);
         CondGenerator.CondBackFill condBackFill = new CondGenerator(whileNode.getCond()).generate();
         condBackFill.falseBackFill.deliverTo(backFill);
         if(whileNode.getStmt().isPresent()) {
             whileStmtDealer.inWhile();
             Stmt whileStmt = whileNode.getStmt().get();
-            BasicBlock whileBasicBlock = basicBlockFactory.newBasicBlock();
+            BasicBlock whileBasicBlock = basicBlockManager.newBasicBlock();
             condBackFill.trueBackFill.fill(whileBasicBlock);
             symbolTable.newBlock();
             BackFill whileBlockBackFill = new NormalBlockGenerator(getBlock(whileStmt)).generate();

@@ -18,7 +18,7 @@ public class IfGenerator extends BasicBlockGenerator {
         CondGenerator.CondBackFill condBackFill = new CondGenerator(ifNode.getCond()).generate();
         if(ifNode.getIfStmt().isPresent()) {
             Stmt ifStmt = ifNode.getIfStmt().get();
-            BasicBlock ifBasicBlock = basicBlockFactory.newBasicBlock();
+            BasicBlock ifBasicBlock = basicBlockManager.newBasicBlock();
             condBackFill.trueBackFill.fill(ifBasicBlock);
             symbolTable.newBlock();
             new NormalBlockGenerator(getBlock(ifStmt)).generate().deliverTo(backFill);
@@ -28,7 +28,7 @@ public class IfGenerator extends BasicBlockGenerator {
         }
         if(ifNode.getElseStmt().isPresent()) {
             Stmt elseStmt = ifNode.getElseStmt().get();
-            BasicBlock elseBasicBlock = basicBlockFactory.newBasicBlock();
+            BasicBlock elseBasicBlock = basicBlockManager.newBasicBlock();
             condBackFill.falseBackFill.fill(elseBasicBlock);
             symbolTable.newBlock();
             new NormalBlockGenerator(getBlock(elseStmt)).generate().deliverTo(backFill);

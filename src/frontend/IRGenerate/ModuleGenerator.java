@@ -170,12 +170,12 @@ public class ModuleGenerator extends Generator{
     }
     private Function dealMain(MainFuncDef mainFuncDef){
         Function function;
-        function = basicBlockFactory.newMainFunction();
+        function = basicBlockManager.newMainFunction();
         Block block = mainFuncDef.getBlock();
         symbolTable.newMain(function);
         new FuncBlockGenerator(block).generate();
         symbolTable.outBlock();
-        basicBlockFactory.outFunction(symbolTable.getMaxOffset());
+        basicBlockManager.outFunction(symbolTable.getMaxOffset());
         return function;
     }
 }

@@ -23,7 +23,7 @@ public class FuncDefGenerator extends Generator{
 
     Function generate() {
         Function function;
-        function = basicBlockFactory.newFunction(funcDef.getIdent().getValue());
+        function = basicBlockManager.newFunction(funcDef.getIdent().getValue());
         symbolTable.newFuncDomain(function, funcDef.getIdent(), funcDef.isInt());
         for(FuncDef.FuncFParam funcFParam : funcDef.getFuncFParams()){
             if(funcFParam instanceof FuncDef.IntFParam){
@@ -44,7 +44,7 @@ public class FuncDefGenerator extends Generator{
         Block block = funcDef.getBlock();
         new FuncBlockGenerator(block).generate();
         symbolTable.outBlock();
-        basicBlockFactory.outFunction(symbolTable.getMaxOffset());
+        basicBlockManager.outFunction(symbolTable.getMaxOffset());
         return function;
     }
 }

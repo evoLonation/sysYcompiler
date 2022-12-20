@@ -1,7 +1,7 @@
 package frontend.IRGenerate;
 
 import frontend.IRGenerate.util.BackFill;
-import frontend.IRGenerate.util.BasicBlockFactory;
+import frontend.IRGenerate.util.BasicBlockManager;
 import midcode.BasicBlock;
 import midcode.instruction.CondGoto;
 import midcode.instruction.Goto;
@@ -37,7 +37,7 @@ public class CondGenerator extends BasicBlockGenerator {
             BinaryExp binaryExp = (BinaryExp) exp;
             if(binaryExp.getOp() == BinaryOp.OR || binaryExp.getOp() == BinaryOp.AND){
                 CondBackFill cond1BackFill = new CondGenerator(binaryExp.getExp1()).generate();
-                BasicBlock rightBasicBlock = basicBlockFactory.newBasicBlock();
+                BasicBlock rightBasicBlock = basicBlockManager.newBasicBlock();
                 CondBackFill cond2BackFill = new CondGenerator(binaryExp.getExp2()).generate();
                 if(binaryExp.getOp() == BinaryOp.OR) {
                     cond1BackFill.falseBackFill.fill(rightBasicBlock);
@@ -60,7 +60,7 @@ public class CondGenerator extends BasicBlockGenerator {
     private void normalGenerate(Exp exp){
         RValue expResult = new ExpGenerator(exp).generate().getRValueResult();
         if(expResult instanceof Constant){
-            BackFill result = basicBlockFactory.outBasicBlock(new Goto());
+            BackFill result = basicBlockManager.outBasicBlock(new Goto());
             if(((Constant) expResult).getNumber() == 0){
                 result.deliverTo(falseBackFill);
             }else{
@@ -69,7 +69,7 @@ public class CondGenerator extends BasicBlockGenerator {
         }else{
             assert expResult instanceof LValue;
             CondGoto jump = new CondGoto((LValue) expResult);
-            BasicBlockFactory.CondGotoBackFill result = basicBlockFactory.outBasicBlock(jump);
+            BasicBlockManager.CondGotoBackFill result = basicBlockManager.outBasicBlock(jump);
             result.falseBackFill.deliverTo(falseBackFill);
             result.trueBackFill.deliverTo(trueBackFill);
         }

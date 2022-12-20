@@ -3,10 +3,10 @@ package frontend.IRGenerate.util;
 import midcode.BasicBlock;
 import midcode.Function;
 import midcode.instruction.*;
+import midcode.util.BasicBlockFactory;
 
-public class BasicBlockFactory {
+public class BasicBlockManager {
 
-    private int basicBlockNumber = 0;
     private Function nowFunction;
 
     private BasicBlock nowBasicBlock;
@@ -15,7 +15,7 @@ public class BasicBlockFactory {
         assert nowFunction == null;
         assert nowBasicBlock == null;
         Function ret = new Function();
-        ret.setEntry(new BasicBlock("function$" + symbol));
+        ret.setEntry(BasicBlockFactory.newEntryBasicBlock(symbol));
         nowFunction = ret;
         nowBasicBlock = nowFunction.getEntry();
         return ret;
@@ -33,7 +33,7 @@ public class BasicBlockFactory {
     }
 
     public BasicBlock newBasicBlock(){
-        BasicBlock newBasicBlock = new BasicBlock("basicBlock$" + ++basicBlockNumber);
+        BasicBlock newBasicBlock = BasicBlockFactory.newBasicBlock();
         nowFunction.getOtherBasicBlocks().add(newBasicBlock);
         nowBasicBlock = newBasicBlock;
         return newBasicBlock;
@@ -77,9 +77,9 @@ public class BasicBlockFactory {
         nowBasicBlock = null;
     }
 
-    private BasicBlockFactory() {}
-    static private final BasicBlockFactory instance = new BasicBlockFactory();
-    static public BasicBlockFactory getInstance(){
+    private BasicBlockManager() {}
+    static private final BasicBlockManager instance = new BasicBlockManager();
+    static public BasicBlockManager getInstance(){
         return instance;
     }
 

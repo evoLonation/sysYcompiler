@@ -1,7 +1,7 @@
 package frontend.IRGenerate;
 
 import frontend.IRGenerate.util.BackFill;
-import frontend.IRGenerate.util.BasicBlockFactory;
+import frontend.IRGenerate.util.BasicBlockManager;
 import frontend.error.ErrorRecorder;
 import midcode.instruction.Goto;
 
@@ -11,7 +11,7 @@ public class WhileStmtDealer {
 //    private int whileLayer = 0;
 
     private final ErrorRecorder errorRecorder = ErrorRecorder.getInstance();
-    private final BasicBlockFactory basicBlockFactory = BasicBlockFactory.getInstance();
+    private final BasicBlockManager basicBlockManager = BasicBlockManager.getInstance();
 
 
     static class WhileLayer {
@@ -45,7 +45,7 @@ public class WhileStmtDealer {
      */
     public boolean newBreak(int line){
         if(!whileLayerStack.empty()){
-            basicBlockFactory.outBasicBlock(new Goto()).deliverTo(whileLayerStack.peek().breakBackFill);
+            basicBlockManager.outBasicBlock(new Goto()).deliverTo(whileLayerStack.peek().breakBackFill);
             return true;
         }else{
             errorRecorder.wrongBreak(line);
@@ -57,7 +57,7 @@ public class WhileStmtDealer {
      */
     public boolean newContinue(int line){
         if(!whileLayerStack.empty()){
-            basicBlockFactory.outBasicBlock(new Goto()).deliverTo(whileLayerStack.peek().continueBackFill);
+            basicBlockManager.outBasicBlock(new Goto()).deliverTo(whileLayerStack.peek().continueBackFill);
             return true;
         }else {
             errorRecorder.wrongContinue(line);

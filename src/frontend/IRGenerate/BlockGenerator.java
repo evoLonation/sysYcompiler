@@ -26,11 +26,11 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
     protected final boolean dealBlockItem(BlockItem blockItem) {
         if(blockItem instanceof If){
             BackFill ifBackFill = new IfGenerator((If) blockItem).generate();
-            BasicBlock afterBasicBlock = basicBlockFactory.newBasicBlock();
+            BasicBlock afterBasicBlock = basicBlockManager.newBasicBlock();
             ifBackFill.fill(afterBasicBlock);
         }else if(blockItem instanceof While){
             BackFill whileBackFill = new WhileGenerator((While) blockItem).generate();
-            BasicBlock afterBasicBlock = basicBlockFactory.newBasicBlock();
+            BasicBlock afterBasicBlock = basicBlockManager.newBasicBlock();
             whileBackFill.fill(afterBasicBlock);
         }else if(blockItem instanceof Assign || blockItem instanceof GetIntNode || blockItem instanceof PrintfNode ||
                 blockItem instanceof Exp || blockItem instanceof Decl){
@@ -40,14 +40,14 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
             if(((ReturnNode) blockItem).getExp().isPresent()){
                 if(!symbolTable.nowIsReturn()){
                     errorRecorder.voidFuncReturnValue(returnNode.line());
-                    basicBlockFactory.outBasicBlock(new Return());
+                    basicBlockManager.outBasicBlock(new Return());
                 }else{
                     Exp exp = ((ReturnNode) blockItem).getExp().get();
                     RValue returnValue = new ExpGenerator(exp).generate().getRValueResult();
-                    basicBlockFactory.outBasicBlock(new Return( returnValue));
+                    basicBlockManager.outBasicBlock(new Return( returnValue));
                 }
             }else{
-                basicBlockFactory.outBasicBlock(new Return());
+                basicBlockManager.outBasicBlock(new Return());
             }
             return true;
         }else if(blockItem instanceof Block){
@@ -63,13 +63,13 @@ public abstract class BlockGenerator extends BasicBlockGenerator{
     }
 
     protected final void dealBlock(Block block){
-        BackFill frontBlockBackFill = basicBlockFactory.outBasicBlock(new Goto());
-        BasicBlock newBasicBlock = basicBlockFactory.newBasicBlock();
+        BackFill frontBlockBackFill = basicBlockManager.outBasicBlock(new Goto());
+        BasicBlock newBasicBlock = basicBlockManager.newBasicBlock();
         frontBlockBackFill.fill(newBasicBlock);
         symbolTable.newBlock();
         BackFill subBackFill = new NormalBlockGenerator(block).generate();
         symbolTable.outBlock();
-        BasicBlock backBasicBlock = basicBlockFactory.newBasicBlock();
+        BasicBlock backBasicBlock = basicBlockManager.newBasicBlock();
         subBackFill.fill(backBasicBlock);
     }
 }

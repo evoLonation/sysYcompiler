@@ -23,6 +23,7 @@ public class StateManager {
 
     private final Set<Memory> otherMemories;
     private final Map<Variable, Memory> variableMemories;
+    private final Map<GlobalVariable, Memory> globalVariableMemories;
 
 
     private static final int dataAddress = 0x10010000;
@@ -35,7 +36,10 @@ public class StateManager {
             this.isGlobal = isGlobal;
         }
         Memory(Variable variable){
-            this(variable.getOffset(), variable.isGlobal());
+            this(variable.getOffset(), false);
+        }
+        Memory(GlobalVariable globalVariable){
+            this(globalVariable.getOffset(), true);
         }
     }
 
@@ -44,13 +48,20 @@ public class StateManager {
         this.localActive = localActive;
         this.nowMaxOffset = offset;
         this.variableMemories = new HashMap<>();
+        this.globalVariableMemories = new HashMap<>();
         this.valueMemoryMap = new HashMap<>();
         this.otherMemories = new HashSet<>();
         localActive.getAllLValues().stream()
-                .filter(lValue -> lValue instanceof Variable)
+                .filter(lValue -> lValue instanceof Variable || lValue instanceof GlobalVariable)
                 .forEach(value -> {
-                    Memory variableMemory = new Memory((Variable) value);
-                    variableMemories.put((Variable) value, variableMemory);
+                    Memory variableMemory;
+                    if(value instanceof Variable){
+                        variableMemory = new Memory((Variable) value);
+                        variableMemories.put((Variable) value, variableMemory);
+                    }else{
+                        variableMemory = new Memory((GlobalVariable) value);
+                        globalVariableMemories.put((GlobalVariable) value, variableMemory);
+                    }
                     valueMemoryMap.put(value, variableMemory);
                 });
 
@@ -120,6 +131,8 @@ public class StateManager {
     Memory store(LValue value){
         if(value instanceof Variable){
             valueMemoryMap.put(value, variableMemories.get((Variable) value));
+        }else if(value instanceof GlobalVariable){
+            valueMemoryMap.put(value, globalVariableMemories.get((GlobalVariable) value));
         }else{
             if(!valueMemoryMap.containsKey(value)){
                 // 查找空闲tempMemory

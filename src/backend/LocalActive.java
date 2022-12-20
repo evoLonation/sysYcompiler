@@ -68,7 +68,7 @@ public class LocalActive {
         //假设基本块中的所有variable都可能会在基本快结束后活跃
         allValues = basicBlock.getInstructionList().stream().flatMap(midCode -> valueGetter.getAllValues(midCode).stream()).collect(Collectors.toSet());
         for(LValue value : allValues) {
-            if(value instanceof Variable){
+            if(value instanceof Variable || value instanceof GlobalVariable){
                 ActiveInfo lastActiveInfo = new ActiveInfo(outInstruction, true, false);
                 Map<Instruction, ActiveInfo> activeInfoMap = new HashMap<>();
                 activeInfoMap.put(outInstruction, lastActiveInfo);
@@ -138,7 +138,7 @@ public class LocalActive {
      */
     boolean isStillUse(LValue value, boolean startToAfter){
 //         todo bug: 如果value是一个全局变量，且value在当前基本快中的下一次是定义，则该函数一定返回false；不过实际上有可能还会活跃，因为这期间其他函数有可能使用
-        if(value instanceof Variable && ((Variable) value).isGlobal()){
+        if(value instanceof GlobalVariable){
             // todo 需要检查其他函数的使用情况？
             return true;
         }

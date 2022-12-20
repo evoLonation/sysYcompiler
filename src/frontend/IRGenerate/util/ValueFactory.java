@@ -43,11 +43,18 @@ public class ValueFactory {
         assert optionalVariableInfo.isPresent();
         SymbolTable.VariableInfo variableInfo = optionalVariableInfo.get();
         assert variableInfo.getType() instanceof IntType;
-        if(variableInfo.getFunction().isPresent()){
-            return new Variable(symbol + "#" + variableInfo.getLayer(), variableInfo.getFunction().get(), variableInfo.getOffset());
-        }else{
-            return new Variable(symbol + "#" + variableInfo.getLayer(), variableInfo.getOffset());
-        }
+        assert variableInfo.getFunction().isPresent();
+        return new Variable(symbol + "#" + variableInfo.getLayer(), variableInfo.getFunction().get(), variableInfo.getOffset());
+    }
+
+    public GlobalVariable newGlobalVariable(Ident ident){
+        String symbol = ident.getValue();
+        Optional<SymbolTable.VariableInfo> optionalVariableInfo = symbolTable.getVariable(ident);
+        assert optionalVariableInfo.isPresent();
+        SymbolTable.VariableInfo variableInfo = optionalVariableInfo.get();
+        assert variableInfo.getType() instanceof IntType;
+        assert !variableInfo.getFunction().isPresent();
+        return new GlobalVariable(symbol + "#global", variableInfo.getOffset());
     }
 
 

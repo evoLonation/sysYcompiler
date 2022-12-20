@@ -14,33 +14,22 @@ public class Variable extends LValue{
         this.function = function;
         this.offset = offset;
     }
-    //全局变量构造
-    public Variable(String name, int offset) {
-        this(name, null, offset);
-    }
 
     private final int offset;
     private final Function function;
-
-    public boolean isGlobal() {
-        return function == null;
-    }
 
     public int getOffset() {
         return offset;
     }
 
-    public Optional<Function> getFunction(){
-        return Optional.ofNullable(function);
+    public Function getFunction(){
+        return function;
     }
 
     @Override
     public boolean equals(Object obj) {
         if(super.equals(obj)){
             Variable variable = (Variable) obj;
-            if(variable.function == null){
-                return ((Variable) obj).function == null;
-            }
             return variable.function.equals(function);
         }else{
             return false;

@@ -43,17 +43,25 @@ public class BasicBlockGenerator {
             localActive.next();
         }
         Jump lastJump = localActive.getLastJump();
-//        if(!(lastJump instanceof Return)){
-        // todo 如果是return，则需要保存全局变量，不需要保存局部变量
-            saveAllVariable();
-//        }
+        // 如果是return，则需要保存全局变量，不需要保存局部变量
+        saveGlobalVariable();
+        if(!(lastJump instanceof Return)){
+            saveLocalVariable();
+        }
         mipsSegment.comment(lastJump.print());
         jumpExecution.exec(lastJump);
     }
 
-    void saveAllVariable() {
+
+    void saveLocalVariable(){
         localActive.getAllLValues().stream()
                 .filter(lValue -> lValue instanceof Variable)
+                .filter(value -> localActive.isStillUse(value, true))
+                .forEach(storeLoadManager::storeLValue);
+    }
+    void saveGlobalVariable(){
+        localActive.getAllLValues().stream()
+                .filter(lValue -> lValue instanceof GlobalVariable)
                 .filter(value -> localActive.isStillUse(value, true))
                 .forEach(storeLoadManager::storeLValue);
     }

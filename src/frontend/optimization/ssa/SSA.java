@@ -184,6 +184,7 @@ public class SSA {
 
     //先求全局变量
     private final Set<Variable> globals = new HashSet<>();
+    //todo blockMap中可能没有整个程序的全局变量
     private final Map<Variable, Set<BasicBlock>> blockMap = new HashMap<>();
     private final Map<BasicBlock, Set<PhiAssignment>> phiMap = new HashMap<>();
 
@@ -258,11 +259,7 @@ public class SSA {
     }
     private Variable specifySubscriptVariable(Variable variable, int count){
         Variable ret;
-        if(variable.getFunction().isPresent()){
-            ret = new Variable(variable.getName() + "@" + count, variable.getFunction().get(), variable.getOffset());
-        }else{
-            ret = new Variable(variable.getName() + "@" + count, variable.getOffset());
-        }
+        ret = new Variable(variable.getName() + "@" + count, variable.getFunction(), variable.getOffset());
         originVariableMap.put(ret, variable);
         return ret;
     }

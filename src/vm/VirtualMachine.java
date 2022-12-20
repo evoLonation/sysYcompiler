@@ -226,12 +226,9 @@ public class VirtualMachine {
 
     private void saveValueToLValue(LValue lValue, IntValue value){
         if(lValue instanceof Variable){
-            Variable variable = (Variable) lValue;
-            if(variable.isGlobal()){
-                staticData.set(value, variable.getOffset());
-            }else{
-                memActiveStack.set(value, variable.getOffset());
-            }
+            memActiveStack.set(value, ((Variable) lValue).getOffset());
+        }else if(lValue instanceof GlobalVariable){
+            staticData.set(value, ((GlobalVariable)lValue).getOffset());
         }else if(lValue instanceof Temp) {
             tempStack.peek().put((Temp) lValue, value);
         }
@@ -253,14 +250,11 @@ public class VirtualMachine {
         }else if(value instanceof Temp){
             return tempStack.peek().getOrDefault(value, new IntValue(0));
         }else if(value instanceof Variable){
-            Variable variable = (Variable) value;
-            if(variable.isGlobal()){
-                return staticData.get(((Variable) value).getOffset());
-            }else{
-                ValueValue ret = memActiveStack.get(((Variable) value).getOffset());
-                check(ret instanceof IntValue);
-                return (IntValue) ret;
-            }
+            ValueValue ret = memActiveStack.get(((Variable) value).getOffset());
+            check(ret instanceof IntValue);
+            return (IntValue) ret;
+        }else if(value instanceof GlobalVariable){
+            return staticData.get(((GlobalVariable) value).getOffset());
         }else{
             throw new SemanticException();
         }

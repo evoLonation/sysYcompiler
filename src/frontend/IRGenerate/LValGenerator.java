@@ -101,6 +101,8 @@ public class LValGenerator extends SequenceGenerator {
                 assert exps.size() == 0;
                 if(info.getConstInteger().isPresent()){
                     result = new ConstantResult(new Constant(info.getConstInteger().get()));
+                }else if(info.isGlobal()) {
+                    result = new LValueResult(valueFactory.newGlobalVariable(ident));
                 }else {
                     result = new LValueResult(valueFactory.newVariable(ident));
                 }

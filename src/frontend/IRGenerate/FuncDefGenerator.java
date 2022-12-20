@@ -2,6 +2,7 @@ package frontend.IRGenerate;
 
 import common.SemanticException;
 import midcode.Function;
+import midcode.instruction.ImplicitDef;
 import midcode.value.Constant;
 import midcode.value.RValue;
 import frontend.parser.nonterminal.Block;
@@ -28,6 +29,7 @@ public class FuncDefGenerator extends Generator{
         for(FuncDef.FuncFParam funcFParam : funcDef.getFuncFParams()){
             if(funcFParam instanceof FuncDef.IntFParam){
                 symbolTable.addParam(funcFParam.getIdent(), new IntType());
+                basicBlockManager.addSequence(new ImplicitDef(valueFactory.newVariable(funcFParam.getIdent())));
             }else if(funcFParam instanceof FuncDef.PointerFParam){
                 Optional<Exp> constExp = ((FuncDef.PointerFParam) funcFParam).getConstExp();
                 if(constExp.isPresent()){

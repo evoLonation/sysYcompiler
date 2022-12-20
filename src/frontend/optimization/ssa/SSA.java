@@ -3,8 +3,7 @@ package frontend.optimization.ssa;
 import common.ValueGetter;
 import common.SemanticException;
 import midcode.BasicBlock;
-import midcode.instruction.Assignment;
-import midcode.instruction.Instruction;
+import midcode.Function;
 import midcode.value.LValue;
 import frontend.IRGenerate.util.ValueFactory;
 import midcode.value.Variable;
@@ -15,34 +14,25 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SSA {
-    /**
-     * @param entry 起始基本块
-     * @param basicBlocks 其余的基本块
-     * 前两个参数共同构成一个控制流图
-     */
-    public SSA(BasicBlock entry, Set<BasicBlock> basicBlocks) {
-        this.entry = entry;
-        this.basicBlocks = basicBlocks;
-        this.allBasicBlock = Stream.concat(basicBlocks.stream(), Stream.of(entry)).collect(Collectors.toSet());
+    public SSA(Function function) {
+        this.entry = function.getEntry();
+        this.otherBasicBlocks = function.getOtherBasicBlocks();
+        this.allBasicBlock = Stream.concat(otherBasicBlocks.stream(), Stream.of(entry)).collect(Collectors.toSet());
     }
 
     private final BasicBlock entry;
-    private final Set<BasicBlock> basicBlocks;
+    private final Set<BasicBlock> otherBasicBlocks;
     private final Set<BasicBlock> allBasicBlock;
 
     private final ValueGetter valueGetter = ValueGetter.getInstance();
-    private final ValueFactory valueFactory = ValueFactory.getInstance();
 
-    private boolean isExecute;
 
     public void execute() {
-        if(isExecute){
-            throw new SemanticException();
-        }
-        isExecute = true;
         computePredecessor();
         computeDominatorTree();
         computeDominanceFrontier();
+        generatePhi();
+        rename();
         insertPhi();
     }
 
@@ -53,7 +43,7 @@ public class SSA {
         return entry;
     }
     private Set<BasicBlock> getOtherBasicBlock(){
-        return basicBlocks;
+        return otherBasicBlocks;
     }
 
     // 前驱节点计算
@@ -99,6 +89,7 @@ public class SSA {
     //一个基本块的IDOM指他的严格支配节点集中与该基本快最接近的节点
     // key中不包括entry，因为entry没有idom
     private final Map<BasicBlock, BasicBlock> iDOMMap = new HashMap<>();
+    private final Map<BasicBlock, Set<BasicBlock>> dominatorTreeSuccessorMap = new HashMap<>();
 
 
     private BasicBlock getNearestCommonAncestor(BasicBlock b1, BasicBlock b2){
@@ -138,12 +129,21 @@ public class SSA {
                 });
             });
         }
+        getAllBasicBlock().forEach(basicBlock -> {
+            dominatorTreeSuccessorMap.put(basicBlock, new HashSet<>());
+        });
+        iDOMMap.forEach((basicBlock, predecessor) -> {
+            dominatorTreeSuccessorMap.get(predecessor).add(basicBlock);
+        });
     }
 
     //只能用于非entry
     private BasicBlock getIDOM(BasicBlock basicBlock){
         assert !basicBlock.equals(getEntry());
         return iDOMMap.get(basicBlock);
+    }
+    private Set<BasicBlock> getDOMSuccessor(BasicBlock basicBlock){
+        return dominatorTreeSuccessorMap.get(basicBlock);
     }
 
 
@@ -180,7 +180,7 @@ public class SSA {
         return globals;
     }
 
-    private void insertPhi(){
+    private void generatePhi(){
 
         getAllBasicBlock().forEach(basicBlock ->{
             Set<LValue> varKillMap = new HashSet<>();
@@ -267,34 +267,56 @@ public class SSA {
 
 
     private void rename(){
-        getGlobalVariables().forEach(variable -> {
-            numberMap.put(variable, 0);
-            variableStackMap.put(variable, new Stack<>());
-        });
-        rename(getEntry());
+        //初始化数据结构
         getAllBasicBlock().forEach(basicBlock -> {
-            phiMap.get(basicBlock).forEach(phiAssignment -> {
-                basicBlock.getSequenceList().add(0, phiAssignment);
+            basicBlock.getInstructionList().forEach(instruction -> {
+                valueGetter.getAllValues(instruction).forEach(lValue -> {
+                    if(lValue instanceof Variable){
+                        numberMap.put((Variable) lValue, 0);
+                        variableStackMap.put((Variable) lValue, new Stack<>());
+                    }
+                });
             });
         });
+        //开始递归
+        rename(getEntry());
     }
 
     private void rename(BasicBlock basicBlock){
+        List<Variable> popList = new ArrayList<>();
         phiMap.get(basicBlock).forEach(phiAssignment -> {
+            popList.add(phiAssignment.getLeft());
             phiAssignment.setLeft(newSubscriptVariable(phiAssignment.getLeft()));
         });
         basicBlock.getInstructionList().forEach(instruction -> {
+            valueGetter.getUseGetterSetter(instruction).forEach(gs -> {
+                if(gs.get() instanceof Variable){
+                    gs.set(getTopVariable((Variable) gs.get()));
+                }
+            });
+            valueGetter.getDefGetterSetter(instruction).ifPresent(gs -> {
+                if(gs.get() instanceof Variable){
+                    popList.add((Variable) gs.get());
+                    gs.set(newSubscriptVariable((Variable) gs.get()));
+                }
+            });
+        });
+        valueGetter.getJumpBasicBlock(basicBlock.getJump()).forEach(successor -> {
+            phiMap.get(successor).forEach(phiAssignment -> {
+                Phi phi = phiAssignment.getPhi();
+                Variable variable = phiAssignment.getLeft();
+                phi.addParameter(getTopVariable(variable));
+            });
+        });
+        getDOMSuccessor(basicBlock).forEach(this::rename);
+        popList.forEach(this::popStack);
+    }
 
-            if(instruction instanceof Assignment && ((Assignment) instruction).getRight() instanceof Phi){
-
-            }else{
-                valueGetter.getDefValue(instruction).ifPresent(lValue -> {
-                    if(lValue instanceof Variable){
-
-                    }
-                });
-            }
-
+    private void insertPhi(){
+        phiMap.forEach((b, phis) -> {
+            phis.forEach(phiAssignment -> {
+                b.getSequenceList().add(0, phiAssignment);
+            });
         });
     }
 }

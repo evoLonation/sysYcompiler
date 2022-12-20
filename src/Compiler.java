@@ -4,6 +4,7 @@ import frontend.error.Error;
 import frontend.error.ErrorRecorder;
 import frontend.lexer.Lexer;
 import frontend.lexer.Terminal;
+import frontend.optimization.Optimizer;
 import frontend.optimization.ssa.SSA;
 import midcode.Module;
 import frontend.parser.Parser;
@@ -22,8 +23,9 @@ public class Compiler {
 
 
     public static void main(String[] args) {
-        mips(false);
-//        runMidcode(midcode(true), true);
+//        Module module = midcode(true, true);
+//        runMidcode(module, true);
+        mips(true, true);
 
     }
 
@@ -76,26 +78,16 @@ public class Compiler {
         return new ParserResult(parser.analysis(), parser.getPostOrderList());
     }
 
-    static void mips(boolean isGenerateMidCode){
+    static void mips(boolean isGenerateMidCode, boolean isOptimization){
         String srcFile = "testfile.txt";
         String inputFile = "input.txt";
         String codeFile = "midcode.txt";
         String mipsFile = "mips.txt";
         ParserResult result = parser(lexer(srcFile));
-        Module module = new ModuleGenerator(result.compUnit).generate();
-        if(ErrorRecorder.getInstance().getErrorSet().size() != 0){
-            for(Error error : ErrorRecorder.getInstance().getErrorSet()){
-                System.out.println(error.detail());
-//            str.append(frontend.error.detail()).append("\n");
-            }
-            throw new SemanticException();
-        }
-        if(isGenerateMidCode){
-            printAndWrite(codeFile, module.print());
-        }
+        Module module = midcode(isGenerateMidCode, isOptimization);
         printAndWrite(mipsFile, new Generator(module).generate());
     }
-    static Module midcode(boolean isGenerateMidCode){
+    static Module midcode(boolean isGenerateMidCode, boolean isOptimization){
         String srcFile = "testfile.txt";
         String codeFile = "midcode.txt";
         ParserResult result = parser(lexer(srcFile));
@@ -106,6 +98,9 @@ public class Compiler {
 //            str.append(frontend.error.detail()).append("\n");
             }
             throw new SemanticException();
+        }
+        if(isOptimization){
+            optimization(module);
         }
         if(isGenerateMidCode){
             printAndWrite(codeFile, module.print());
@@ -113,9 +108,7 @@ public class Compiler {
         return module;
     }
     static void optimization(Module module){
-        Stream.concat(Stream.of(module.getMainFunc()), module.getOtherFunctions().stream()).forEach(function -> {
-            new SSA(function.getEntry(), function.getOtherBasicBlocks()).execute();
-        });
+        new Optimizer(module).optimize();
     }
 
     static void runMidcode(Module module, boolean isStdin){

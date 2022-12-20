@@ -185,10 +185,10 @@ public class ValueGetter {
     public static class GetterSetter<T>{
         private final Setter<T> setter;
         private final Getter<T> getter;
-        void set(T value){
+        public void set(T value){
             setter.set(value);
         }
-        T get(){
+        public T get(){
             return getter.get();
         }
 

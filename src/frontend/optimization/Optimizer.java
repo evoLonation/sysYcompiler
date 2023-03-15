@@ -18,8 +18,8 @@ public class Optimizer {
     public void optimize(){
         getAllFunction().forEach(function -> {
             new CFGSimplify(function).exec();
-            new SSA(function).execute();
-            new PhiConverter(function).execute();
+//            new SSA(function).execute();
+//            new PhiConverter(function).execute();
         });
 
     }

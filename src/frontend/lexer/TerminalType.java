@@ -38,7 +38,8 @@ public enum TerminalType {
     LBRACK("LBRACK"),
     RBRACK("RBRACK"),
     LBRACE("LBRACE"),
-    RBRACE("RBRACE");
+    RBRACE("RBRACE"),
+    BITAND("BITAND");
     private final String typeName;
     TerminalType(String typeName) {
         this.typeName = typeName;

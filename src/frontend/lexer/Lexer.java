@@ -77,6 +77,7 @@ public class Lexer {
             case "printf" : type = TerminalType.PRINTFTK; break;
             case "return" : type = TerminalType.RETURNTK; break;
             case "void" : type = TerminalType.VOIDTK; break;
+            case "bitand" : type = TerminalType.BITAND; break;
             default: return new Ident(lex, nowLine);
         }
         return new Terminal(type, lex, nowLine);

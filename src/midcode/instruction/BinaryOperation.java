@@ -17,6 +17,7 @@ public class BinaryOperation implements Sequence{
         MULT,
         DIV,
         MOD,
+        BITAND,
         LSS,
         LEQ,
         GRE,
@@ -47,6 +48,7 @@ public class BinaryOperation implements Sequence{
             case MOD: opStr = "%"; break;
             case NEQ: opStr = "!="; break;
             case MULT: opStr = "*"; break;
+            case BITAND: opStr = "&"; break;
             default: throw new SemanticException();
         }
         return result.print() + " = " + left.print() + " " + opStr + " " + right.print();

@@ -330,6 +330,7 @@ public class VirtualMachine {
             case MULT: return a * b;
             case DIV: return  a / b;
             case MOD: return a % b;
+            case BITAND: return a & b;
             case LEQ: return a <= b ? 1 : 0;
             case GRE: return a > b ? 1 : 0;
             case GEQ: return a >= b ? 1 : 0;

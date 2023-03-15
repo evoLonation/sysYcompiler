@@ -23,9 +23,9 @@ public class Compiler {
 
 
     public static void main(String[] args) {
-//        Module module = midcode(true, true);
+//        Module module = midcode(true, false);
 //        runMidcode(module, true);
-        mips(true, false);
+        mips(true, true);
 
     }
 

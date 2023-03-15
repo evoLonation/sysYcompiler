@@ -6,6 +6,7 @@ public enum BinaryOp {
     MULT,
     DIV,
     MOD,
+    BITAND,
     LSS,
     LEQ,
     GRE,

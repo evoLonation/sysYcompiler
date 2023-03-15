@@ -185,6 +185,7 @@ public class ExpGenerator extends SequenceGenerator {
             case GRE: return BinaryOperation.BinaryOp.GRE;
             case GEQ: return BinaryOperation.BinaryOp.GEQ;
             case LEQ: return BinaryOperation.BinaryOp.LEQ;
+            case BITAND: return BinaryOperation.BinaryOp.BITAND;
         }
         throw new SemanticException();
     }
@@ -202,6 +203,7 @@ public class ExpGenerator extends SequenceGenerator {
             case LSS: return a < b ? 1 : 0;
             case NEQ: return a != b ? 1 : 0;
             case EQL: return a == b ? 1 : 0;
+            case BITAND: return a & b;
             default: throw new SemanticException();
         }
     }

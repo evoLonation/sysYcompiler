@@ -51,6 +51,10 @@ public class MipsSegment {
         addTextLine(String.format("addu %s, %s, %s", register1.print(), register2.print(), register3.print()));
     }
 
+    void and(Register register1, Register register2, Register register3){
+        addTextLine(String.format("and %s, %s, %s", register1.print(), register2.print(), register3.print()));
+    }
+
     void addi(Register register1, Register register2, int number){
         addTextLine(String.format("addi %s, %s, %d", register1.print(), register2.print(), number));
     }

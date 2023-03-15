@@ -3,6 +3,7 @@ package frontend.IRGenerate;
 import common.SemanticException;
 import frontend.lexer.Ident;
 import midcode.instruction.Assignment;
+import midcode.instruction.GetInt;
 import midcode.instruction.ImplicitDef;
 import midcode.instruction.Store;
 import midcode.value.Constant;
@@ -37,15 +38,20 @@ public class DeclGenerator extends SequenceGenerator {
                 isConst = true;
                 initVal = ((ConstDef) def).getInitVal();
             }else if(def instanceof VarDef){
-                isConst = false;
-                initVal = ((VarDef)def).getInitVal().orElse(null);
+                if(def instanceof GetIntDef){
+                    assignment0(ident, null, false, true);
+                    continue;
+                }else{
+                    isConst = false;
+                    initVal = ((VarDef)def).getInitVal().orElse(null);
+                }
             }else{
                 throw new SemanticException();
             }
             switch (dimension) {
                 case 0: {
                     assert initVal == null || initVal instanceof IntInitVal;
-                    assignment0(ident, (IntInitVal) initVal, isConst);
+                    assignment0(ident, (IntInitVal) initVal, isConst, false);
                     break;
                 }
                 case 1: {
@@ -72,7 +78,12 @@ public class DeclGenerator extends SequenceGenerator {
         return lens;
     }
 
-    private void assignment0(Ident ident, IntInitVal initVal, boolean isConst){
+    private void assignment0(Ident ident, IntInitVal initVal, boolean isConst, boolean isGetInt){
+        if(isGetInt){
+            symbolTable.newInteger(ident, false);
+            addSequence(new GetInt(valueFactory.newVariable(ident)));
+            return;
+        }
         if(initVal == null){
             symbolTable.newInteger(ident, false);
             addSequence(new ImplicitDef(valueFactory.newVariable(ident)));

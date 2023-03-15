@@ -100,6 +100,7 @@ public class BasicBlockGenerator {
                     case LSS: mipsSegment.slt(resultReg, leftRegister, rightRegister); break;
                     case NEQ: mipsSegment.sne(resultReg, leftRegister, rightRegister);break;
                     case EQL: mipsSegment.seq(resultReg, leftRegister, rightRegister);break;
+                    case BITAND : mipsSegment.and(resultReg, leftRegister, rightRegister);break;
                     default: throw new SemanticException();
                 }
                 stateManager.operate(resultReg, param.getResult());

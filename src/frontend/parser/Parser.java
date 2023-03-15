@@ -149,9 +149,17 @@ public class Parser {
         }else{
             if(is(TerminalType.ASSIGN)){
                 skipTerminal();
-                initVal = InitVal(false);
-                postOrderList.add("<VarDef>");
-                return new VarDef(ident, exps, initVal);
+                if(is(TerminalType.GETINTTK)){
+                    skipTerminal();
+                    check(TerminalType.LPARENT);
+                    checkRParent();
+                    return new GetIntDef(ident, exps);
+                }else{
+                    initVal = InitVal(false);
+                    postOrderList.add("<VarDef>");
+                    return new VarDef(ident, exps, initVal);
+                }
+
             } else {
                 postOrderList.add("<VarDef>");
                 return new VarDef(ident, exps);
@@ -477,6 +485,7 @@ public class Parser {
                     case MULT: return BinaryOp.MULT;
                     case DIV: return BinaryOp.DIV;
                     case MOD: return BinaryOp.MOD;
+                    case BITAND: return BinaryOp.BITAND;
                 }
                 break;
             case EQ:
@@ -625,7 +634,7 @@ public class Parser {
             case ADD: return is(TerminalType.PLUS, TerminalType.MINU);
             case LOR: return is(TerminalType.OR);
             case LAND: return is(TerminalType.AND);
-            case MUL: return is(TerminalType.MULT, TerminalType.DIV, TerminalType.MOD);
+            case MUL: return is(TerminalType.MULT, TerminalType.DIV, TerminalType.MOD, TerminalType.BITAND);
             case REL: return is(TerminalType.LEQ, TerminalType.GEQ, TerminalType.GRE, TerminalType.LSS);
         }
         throw new ParserException();
